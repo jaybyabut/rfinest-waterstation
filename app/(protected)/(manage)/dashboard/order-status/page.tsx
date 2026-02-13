@@ -20,19 +20,16 @@ export default function OrderStatusPage() {
     { id: "ORD-1027", name: "Pedro Penduko", zone: "Lakeshore", slim: 1, round: 1, total: 90, status: "Delivered" },
   ]);
 
-  // Logic para ma-filter ang listahan base sa pinindot na button
   const filteredOrders = activeFilter === "All" 
     ? orders 
     : orders.filter(order => order.status === activeFilter);
 
-  // Function para ma-update ng admin yung status ng isang order
   const updateOrderStatus = (orderId: string, newStatus: string) => {
     setOrders(orders.map(order => 
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
   };
 
-  // Helper function para mag-iba-iba ang kulay ng status badge
   const getStatusColor = (status: string) => {
     switch(status) {
       case "Pending": return "bg-gray-200 text-gray-700 border-gray-400";
@@ -47,7 +44,6 @@ export default function OrderStatusPage() {
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
       <div className="w-full max-w-md">
         
-        {/* Navigation Tabs */}
         <div className="flex w-full mb-6 rounded-full overflow-hidden border-2 border-[#1e3d58] shadow-sm">
           <Link href="/dashboard/order" className="flex-1 py-3 text-center text-lg font-bold bg-[#1e3d58] text-white hover:bg-[#152c40] transition-colors">
             Order
@@ -57,7 +53,6 @@ export default function OrderStatusPage() {
           </button>
         </div>
 
-        {/* Main Card */}
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl">
           <div className="flex items-center mb-6 relative px-2">
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
@@ -70,7 +65,6 @@ export default function OrderStatusPage() {
 
           <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left">
             
-            {/* Filter Buttons (2x2 Grid Layout) */}
             <div className="grid grid-cols-2 gap-2 pb-4 mb-2">
               {FILTERS.map((filter) => (
                 <button
@@ -89,7 +83,6 @@ export default function OrderStatusPage() {
               ))}
             </div>
 
-            {/* Orders List */}
             <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 pb-2">
               {filteredOrders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-medium">
@@ -99,7 +92,6 @@ export default function OrderStatusPage() {
                 filteredOrders.map((order) => (
                   <div key={order.id} className="border-2 border-[#1e3d58] rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3">
                     
-                    {/* Header ng Order Card */}
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="text-lg font-black text-[#1e3d58]">{order.id}</h3>
@@ -110,7 +102,6 @@ export default function OrderStatusPage() {
                       </div>
                     </div>
 
-                    {/* Details ng Order */}
                     <div className="flex justify-between items-center bg-[#e8eef1] p-3 rounded-[15px]">
                       <div className="text-sm font-semibold text-[#1e3d58]">
                         Slim: <span className="text-[#43b0f1] font-black">{order.slim}</span> | Round: <span className="text-[#43b0f1] font-black">{order.round}</span>
@@ -120,7 +111,6 @@ export default function OrderStatusPage() {
                       </div>
                     </div>
 
-                    {/* Update Status Dropdown */}
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-sm font-bold text-[#1e3d58]">Update Status:</span>
                       <select 

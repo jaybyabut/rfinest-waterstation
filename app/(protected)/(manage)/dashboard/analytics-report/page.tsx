@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
 export default function AnalyticsReportPage() {
-  // Dummy data for UI presentation. Re-wire with Supabase later!
+  // Dummy data for UI presentation
   const [gallons] = useState({ slim: 45, round: 62, total: 107 });
   const [earnings] = useState({
     walkIn: 1500,
@@ -46,7 +46,6 @@ export default function AnalyticsReportPage() {
 
           <div className="bg-white rounded-[40px] p-6 shadow-inner border border-gray-100 text-left space-y-8">
             
-            {/* SECTION 1: TODAY's SUMMARY */}
             <div className="bg-[#e8eef1] rounded-[30px] p-5 border border-gray-200 shadow-sm">
               <h2 className="text-3xl font-black text-[#1e3d58] text-center mb-6 tracking-tight">Today's Summary</h2>
               
@@ -71,7 +70,7 @@ export default function AnalyticsReportPage() {
               <div>
                 <h3 className="text-2xl font-bold text-[#1e3d58] text-center mb-3">Earnings:</h3>
                 <div className="border border-black rounded-[20px] bg-white p-4 space-y-2">
-                  {/* Order Source */}
+                 
                   <div className="flex justify-between items-center px-4">
                     <span className="text-lg text-[#1e3d58]">Walk-in:</span>
                     <span className="text-xl font-medium text-[#1e3d58]">₱{earnings.walkIn}</span>
@@ -81,10 +80,8 @@ export default function AnalyticsReportPage() {
                     <span className="text-xl font-medium text-[#1e3d58]">₱{earnings.online}</span>
                   </div>
                   
-                  {/* Divider */}
                   <div className="w-full h-px bg-gray-200 my-2"></div>
-                  
-                  {/* Payment Method (Newly Added based on request) */}
+                 
                   <div className="flex justify-between items-center px-4">
                     <span className="text-lg text-[#1e3d58]">Cash:</span>
                     <span className="text-xl font-medium text-[#1e3d58]">₱{earnings.cash}</span>
@@ -94,7 +91,6 @@ export default function AnalyticsReportPage() {
                     <span className="text-xl font-medium text-[#1e3d58]">₱{earnings.eBank}</span>
                   </div>
 
-                  {/* Total Amount */}
                   <div className="flex justify-between items-center px-4 pt-3 mt-1 border-t border-gray-300">
                     <span className="text-xl font-bold text-[#1e3d58]">Total:</span>
                     <span className="text-2xl font-bold text-[#43b0f1]">₱{earnings.total}</span>
@@ -103,7 +99,6 @@ export default function AnalyticsReportPage() {
               </div>
             </div>
 
-            {/* SECTION 2: MONTHLY EARNINGS */}
             <div className="bg-[#e8eef1] rounded-[30px] p-5 border border-gray-200 shadow-sm">
               <h2 className="text-3xl font-black text-[#1e3d58] text-center mb-4 tracking-tight">Monthly Earnings:</h2>
               
