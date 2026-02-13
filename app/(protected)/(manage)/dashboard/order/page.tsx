@@ -4,10 +4,20 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+const ZONE_RATES = {
+  "Zone 1": 30,
+  "Zone 2": 35,
+  "Zone 3": 40,
+  "Zone 4": 45, // sample lang mga 'to
+};
+
 export default function AdminPlaceOrderPage() {
+  const [selectedZone, setSelectedZone] = useState<keyof typeof ZONE_RATES>("Zone 1");
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
-  const totalAmount = (slimCount + roundCount) * 30 // palitan nyan to depende sa location dapat;
+
+  const pricePerUnit = ZONE_RATES[selectedZone];
+  const totalAmount = (slimCount + roundCount) * pricePerUnit;
 
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
@@ -32,15 +42,21 @@ export default function AdminPlaceOrderPage() {
               </div>
 
               <div>
-                <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
-                <textarea 
-                  className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] focus:outline-none resize-none" 
-                />
+                <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
+                <select 
+                  value={selectedZone}
+                  onChange={(e) => setSelectedZone(e.target.value as keyof typeof ZONE_RATES)}
+                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] focus:outline-none appearance-none cursor-pointer"
+                >
+                  {Object.keys(ZONE_RATES).map((zone) => (
+                    <option key={zone} value={zone}>{zone} (₱{ZONE_RATES[zone as keyof typeof ZONE_RATES]}/pc)</option>
+                  ))}
+                </select>
               </div>
 
               <div>
-                <label className="block text-xl font-bold mb-1 ml-2">Mobile Number:</label>
-                <input type="text" className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] focus:outline-none" />
+                <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
+                <textarea className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] focus:outline-none resize-none" />
               </div>
 
               <div>
@@ -67,7 +83,10 @@ export default function AdminPlaceOrderPage() {
 
               <div className="flex justify-between items-center pt-4 px-2">
                 <span className="text-xl font-bold">Total Amount:</span>
-                <span className="text-4xl font-black text-[#43b0f1]">₱{totalAmount}</span>
+                <div className="text-right">
+                  <p className="text-xs font-bold text-gray-400">Rate: ₱{pricePerUnit}/pc</p>
+                  <span className="text-4xl font-black text-[#43b0f1]">₱{totalAmount}</span>
+                </div>
               </div>
 
               <div className="pt-4">
