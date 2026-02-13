@@ -4,15 +4,25 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
+// Alphabetical order para mabilis hanapin sa dropdown
 const ZONE_RATES = {
-  "Zone 1": 30,
-  "Zone 2": 35,
-  "Zone 3": 40,
-  "Zone 4": 45, // sample lang mga 'to
+  "Bulaon": 30,
+  "Calulut": 30,
+  "Golden Haven": 35,
+  "Hauslands": 30,
+  "Lakeshore": 45,
+  "Maimpis": 35,
+  "Malpitic": 30,
+  "Mexico": 35,
+  "Montana": 45,
+  "Royal Residences": 30,
 };
 
 export default function AdminPlaceOrderPage() {
-  const [selectedZone, setSelectedZone] = useState<keyof typeof ZONE_RATES>("Zone 1");
+  const [name, setName] = useState("");
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [location, setLocation] = useState("");
+  const [selectedZone, setSelectedZone] = useState<keyof typeof ZONE_RATES>("Bulaon");
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
 
@@ -38,7 +48,12 @@ export default function AdminPlaceOrderPage() {
             <div className="space-y-5">
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
-                <input type="text" className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] focus:outline-none" />
+                <input 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]" 
+                />
               </div>
 
               <div>
@@ -46,7 +61,7 @@ export default function AdminPlaceOrderPage() {
                 <select 
                   value={selectedZone}
                   onChange={(e) => setSelectedZone(e.target.value as keyof typeof ZONE_RATES)}
-                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] focus:outline-none appearance-none cursor-pointer"
+                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer"
                 >
                   {Object.keys(ZONE_RATES).map((zone) => (
                     <option key={zone} value={zone}>{zone} (₱{ZONE_RATES[zone as keyof typeof ZONE_RATES]}/pc)</option>
@@ -56,7 +71,21 @@ export default function AdminPlaceOrderPage() {
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
-                <textarea className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] focus:outline-none resize-none" />
+                <textarea 
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none" 
+                />
+              </div>
+
+              <div>
+                <label className="block text-xl font-bold mb-1 ml-2">Mobile Number:</label>
+                <input 
+                  type="text" 
+                  value={mobileNumber}
+                  onChange={(e) => setMobileNumber(e.target.value)}
+                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]" 
+                />
               </div>
 
               <div>
@@ -65,17 +94,17 @@ export default function AdminPlaceOrderPage() {
                   <div className="flex justify-between items-center text-xl font-bold">
                     <span>Slim Gallon:</span>
                     <div className="flex items-center gap-5">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-3xl font-bold">-</button>
+                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">-</button>
                       <span className="w-8 text-center text-2xl">{slimCount}</span>
-                      <button onClick={() => setSlimCount(slimCount + 1)} className="text-3xl font-bold">+</button>
+                      <button onClick={() => setSlimCount(slimCount + 1)} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">+</button>
                     </div>
                   </div>
                   <div className="flex justify-between items-center text-xl font-bold border-t border-gray-100 pt-3">
                     <span>Round Gallon:</span>
                     <div className="flex items-center gap-5">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-3xl font-bold">-</button>
+                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">-</button>
                       <span className="w-8 text-center text-2xl">{roundCount}</span>
-                      <button onClick={() => setRoundCount(roundCount + 1)} className="text-3xl font-bold">+</button>
+                      <button onClick={() => setRoundCount(roundCount + 1)} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">+</button>
                     </div>
                   </div>
                 </div>

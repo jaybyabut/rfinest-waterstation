@@ -23,17 +23,20 @@ export default function AdminManagePage() {
           <div className="bg-white rounded-[40px] p-8 shadow-inner border border-gray-100">
             <h2 className="text-3xl font-extrabold mb-10 text-[#1e3d58]">{today}</h2>
             <div className="flex flex-col gap-4">
-              <Button variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
-                Edit Order
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
+                <Link href="/dashboard/edit-order">Edit Order</Link>
               </Button>
-              <Button variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
-                Order Status
+              
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
+                <Link href="/dashboard/order-status">Order Status</Link>
               </Button>
-              <Button variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
-                Manage Prices
+              
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
+                <Link href="/dashboard/manage-prices">Manage Prices</Link>
               </Button>
-              <Button variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
-                Analytics & Report
+              
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
+                <Link href="/dashboard/analytics-report">Analytics & Report</Link>
               </Button>
             </div>
           </div>
