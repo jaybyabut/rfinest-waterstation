@@ -7,7 +7,7 @@ import Link from "next/link";
 export default function AdminPlaceOrderPage() {
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
-  const totalAmount = (slimCount + roundCount) * 30;
+  const totalAmount = (slimCount + roundCount) * 30 // palitan nyan to depende sa location dapat;
 
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
