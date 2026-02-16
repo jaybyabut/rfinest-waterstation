@@ -38,6 +38,7 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
+
   // Do not run code between createServerClient and
   // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
@@ -45,7 +46,9 @@ export async function updateSession(request: NextRequest) {
   // IMPORTANT: If you remove getClaims() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
   const { data } = await supabase.auth.getClaims();
+
   const user = data?.claims;
+  const role = user?.app_metadata?.role;
 
   if (
     request.nextUrl.pathname !== "/" &&
@@ -56,6 +59,16 @@ export async function updateSession(request: NextRequest) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
+  } else if (
+    //request url starts with /dashboard and the user is authenticated and 
+    request.nextUrl.pathname.startsWith("/dashboard") &&
+    user &&
+    role !== "employee"
+  ) {
+    // user is not an employee, redirect to home
+    const url = request.nextUrl.clone();
+    url.pathname = "/home";
     return NextResponse.redirect(url);
   }
 

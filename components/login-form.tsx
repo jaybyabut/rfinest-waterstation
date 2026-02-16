@@ -30,7 +30,11 @@ export default function LoginForm({
         password,
       });
       if (error) throw error;
-      router.push("/dashboard");
+      const {data} = await supabase.auth.getClaims();
+      const role =  data?.claims.app_metadata?.role;
+      if (role === "employee"){
+        router.push("/dashboard");
+      }else router.push("/home");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
