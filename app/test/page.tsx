@@ -10,6 +10,8 @@ export default function TestPage() {
             locationId: 1,
             slimCount: 1,
             roundCount: 1,
+            payment_mode: "Cash",
+            transaction_type: "Call-in"
         });
         console.log(result);
     };
