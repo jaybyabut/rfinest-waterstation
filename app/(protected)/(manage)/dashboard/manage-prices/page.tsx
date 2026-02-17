@@ -1,4 +1,4 @@
-import ManagePricesForm from "@/components/admin/manage-orders"
+import ManagePricesForm from "@/components/admin/manage-prices"
 
 export default function ManagePrices(){
     return(

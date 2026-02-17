@@ -49,7 +49,6 @@ export default function ManagePricesPage() {
     console.log("Ready to send to backend:", prices);
   };
 
-  // Filter prices based on search query
   const filteredPrices = prices.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -57,7 +56,7 @@ export default function ManagePricesPage() {
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24">
       <div className="w-full max-w-md">
-        
+
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl">
           <div className="flex items-center mb-8 relative px-2">
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
@@ -69,13 +68,13 @@ export default function ManagePricesPage() {
           </div>
 
           <div className="bg-white rounded-[40px] p-5 sm:p-6 shadow-inner border border-gray-100 text-left">
-         
-            <div className="bg-[#eef2f5] rounded-[20px] p-3 mb-4 border border-[#1e3d58]/10 flex items-center justify-between gap-2">
+            
+            <div className="bg-[#eef2f5] rounded-[20px] p-3 mb-4 border border-[#1e3d58]/10 flex flex-col sm:flex-row items-center justify-between gap-3">
               <label className="text-xs sm:text-sm font-bold text-[#1e3d58] uppercase tracking-widest whitespace-nowrap pl-1">
                 Bulk Increase:
               </label>
-              <div className="flex items-center gap-2 flex-1 justify-end">
-                <div className="relative w-24 sm:w-28">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
+                <div className="relative w-28 sm:w-28">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1e3d58] font-black text-lg">₱</span>
                   <input
                     type="number"
