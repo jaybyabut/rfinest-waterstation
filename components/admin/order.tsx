@@ -1,37 +1,99 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import AdminTabs from "@/components/admin/tabs";
+import { getLocations } from "@/app/actions/locations";
+import { createOrder } from "@/app/actions/createOrder";
 
-const ZONE_RATES = {
-  "Bulaon": 30,
-  "Calulut": 30,
-  "Hauslands": 30,
-  "Malpitic": 30,
-  "Royal Residences": 30,
-  "Golden Haven": 35,
-  "Maimpis": 35,
-  "Mexico": 35,
-  "Lakeshore": 45,
-  "Montana": 45,
-};
+interface Location {
+  location_id: number;
+  location_name: string;
+  location_price: number;
+}
 
 export default function PlaceOrderForm() {
+  const [locations, setLocations] = useState<Location[]>([]);
   const [name, setName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [location, setLocation] = useState("");
-  const [selectedZone, setSelectedZone] = useState<keyof typeof ZONE_RATES>("Bulaon");
+  const [selectedZone, setSelectedZone] = useState<string>("");
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const pricePerUnit = ZONE_RATES[selectedZone];
+  useEffect(() => {
+    const fetchLocations = async () => {
+      const data = await getLocations();
+      if (Array.isArray(data)) {
+        setLocations(data);
+        if (data.length > 0) {
+          setSelectedZone(data[0].location_name);
+        }
+      } else {
+        console.error("Failed to fetch locations:", data);
+      }
+    };
+    fetchLocations();
+  }, []);
+
+  const selectedLocation = locations.find((l) => l.location_name === selectedZone);
+  const pricePerUnit = selectedLocation ? selectedLocation.location_price : 0;
   const totalAmount = (slimCount + roundCount) * pricePerUnit;
+
+  const handlePlaceOrder = async () => {
+    if (!selectedLocation) {
+      alert("Please select a location/zone.");
+      return;
+    }
+
+    if (slimCount === 0 && roundCount === 0) {
+      alert("Please select at least one item (Slim or Round gallon).");
+      return;
+    }
+
+    if (!name || !location) {
+      alert("Please fill in Name and Location/Address.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await createOrder({
+        name,
+        mobileNumber,
+        location: location, // Address text
+        locationId: selectedLocation?.location_id,
+        selectedZone,
+        slimCount,
+        roundCount,
+        pricePerUnit
+      });
+
+      if (result?.error) {
+        alert("Error creating order: " + result.error);
+      } else {
+        alert("Order placed successfully!");
+        // Reset form
+        setName("");
+        setMobileNumber("");
+        setLocation("");
+        setSlimCount(0);
+        setRoundCount(0);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
       <div className="w-full max-w-md">
-        
+
         <AdminTabs active="order" />
 
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-white shadow-xl text-[#1e3d58]">
@@ -41,43 +103,50 @@ export default function PlaceOrderForm() {
             <div className="space-y-5">
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]" 
+                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
                 />
               </div>
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
-                <select 
+                <select
                   value={selectedZone}
-                  onChange={(e) => setSelectedZone(e.target.value as keyof typeof ZONE_RATES)}
+                  onChange={(e) => { setSelectedZone(e.target.value); console.log(e.target.value); }}
                   className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer"
+                  disabled={locations.length === 0}
                 >
-                  {Object.keys(ZONE_RATES).map((zone) => (
-                    <option key={zone} value={zone}>{zone} (₱{ZONE_RATES[zone as keyof typeof ZONE_RATES]}/pc)</option>
-                  ))}
+                  {locations.length === 0 ? (
+                    <option>Loading locations...</option>
+                  ) : (
+                    locations.map((loc) => (
+                      <option key={loc.location_id} value={loc.location_name}>
+                        {loc.location_name} (₱{loc.location_price}/pc)
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
-                <textarea 
+                <textarea
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none" 
+                  className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none"
                 />
               </div>
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Mobile Number:</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={mobileNumber}
                   onChange={(e) => setMobileNumber(e.target.value)}
-                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]" 
+                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
                 />
               </div>
 
@@ -112,14 +181,18 @@ export default function PlaceOrderForm() {
               </div>
 
               <div className="pt-4">
-                <Button className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] transition-all active:scale-95">
-                  Place Order
+                <Button
+                  onClick={handlePlaceOrder}
+                  disabled={loading}
+                  className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Placing Order..." : "Place Order"}
                 </Button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
