@@ -56,19 +56,16 @@ export default function ManagePricesPage() {
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24">
       <div className="w-full max-w-md">
-
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl">
           <div className="flex items-center mb-8 relative px-2">
-            <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
-              <ChevronLeft size={44} strokeWidth={3} />
-            </Link>
-            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center ml-4">
-              Zone Rates
+          <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
+            <ChevronLeft size={44} strokeWidth={3} />
+          </Link>
+          <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center ml-4">
+              Manage Prices
             </h1>
           </div>
-
           <div className="bg-white rounded-[40px] p-5 sm:p-6 shadow-inner border border-gray-100 text-left">
-            
             <div className="bg-[#eef2f5] rounded-[20px] p-3 mb-4 border border-[#1e3d58]/10 flex flex-col sm:flex-row items-center justify-between gap-3">
               <label className="text-xs sm:text-sm font-bold text-[#1e3d58] uppercase tracking-widest whitespace-nowrap pl-1">
                 Bulk Increase:
@@ -96,21 +93,21 @@ export default function ManagePricesPage() {
             <hr className="border-dashed border-gray-300 mb-4" />
 
             <div className="relative mb-4">
-               <input 
-                  type="text" 
-                  placeholder="Search location..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 rounded-full border-2 border-gray-200 bg-gray-50 text-[#1e3d58] font-bold focus:outline-none focus:border-[#43b0f1] focus:ring-1 focus:ring-[#43b0f1] transition-all"
-               />
-               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} strokeWidth={3} />
+              <input
+                type="text"
+                placeholder="Search location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-12 pl-12 pr-4 rounded-full border-2 border-gray-200 bg-gray-50 text-[#1e3d58] font-bold focus:outline-none focus:border-[#43b0f1] focus:ring-1 focus:ring-[#43b0f1] transition-all"
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} strokeWidth={3} />
             </div>
 
             <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 pb-2 custom-scrollbar">
               {filteredPrices.length === 0 ? (
-                 <div className="text-center py-8 text-gray-400 font-bold italic">
-                    No locations found.
-                 </div>
+                <div className="text-center py-8 text-gray-400 font-bold italic">
+                  No locations found.
+                </div>
               ) : (
                 filteredPrices.map((location) => (
                   <div key={location.id} className="flex justify-between items-center p-4 border border-black rounded-[20px] bg-white">
