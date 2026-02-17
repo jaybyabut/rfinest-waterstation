@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 export async function createOrder(orderInfo: any) {
     const supabase = await createClient();
 
+    // get product details
     const { data: products, error: productError } = await supabase
         .from('products')
         .select('product_id, product_name')
@@ -52,6 +53,8 @@ export async function createOrder(orderInfo: any) {
         return { error: "Location or Zone is required to determine price" };
     }
 
+
+
     const items = [];
     if (orderInfo.slimCount > 0) {
         if (!slimProduct) return { error: "Slim Gallon product not found in database" };
@@ -74,17 +77,17 @@ export async function createOrder(orderInfo: any) {
         return { error: "No items to order" };
     }
 
-    // Append contact number to address since RPC might not have a dedicated field for it yet
+
     const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-        p_user_id: null, // Treating as guest/manual order for now
+        p_user_id: null,
         p_name: orderInfo.name,
         p_address: orderInfo.location,
         p_number: orderInfo.mobileNumber,
         p_location_id: locationId,
         p_items: items,
-        // Adding these to resolve ambiguity with the overloaded function
-        p_transaction_type: 'Call-in',
-        p_payment_mode: 'Cash'
+
+        p_transaction_type: orderInfo.transaction_type,
+        p_payment_mode: orderInfo.payment_mode
     });
 
     if (error) {
