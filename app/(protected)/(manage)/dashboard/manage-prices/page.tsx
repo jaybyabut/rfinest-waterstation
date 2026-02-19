@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client";
 
 import { useState } from "react";
@@ -125,4 +126,14 @@ export default function ManagePricesPage() {
       </div>
     </div>
   );
+=======
+import ManagePricesForm from "@/components/admin/manage-prices"
+
+export default function ManagePrices(){
+    return(
+        <div className="flex-1 w-full flex flex-col items-center justify-center">
+            <ManagePricesForm />
+        </div>
+    );
+>>>>>>> 95f8ca87f23649e6f12b864762860517e6a46861
 }

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client";
 
 import { useState } from "react";
@@ -8,10 +9,16 @@ import Link from "next/link";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
+=======
+import Header from "@/components/Header"
+import Footer from "@/components/Footer"
+import ForgotPasswordForm from "@/components/forgot-password-form";
+>>>>>>> 95f8ca87f23649e6f12b864762860517e6a46861
 
   return (
     <main className="min-h-screen flex flex-col bg-white">
       <Header />
+<<<<<<< HEAD
       
       <div className="flex-1 flex flex-col items-center justify-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
         <div className="w-full max-w-md bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-[#e8eef1] shadow-xl">
@@ -63,6 +70,11 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
 
+=======
+      <div className="flex-1 flex flex-col items-center justify-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
+        <ForgotPasswordForm />
+      </div>
+>>>>>>> 95f8ca87f23649e6f12b864762860517e6a46861
       <Footer />
     </main>
   );

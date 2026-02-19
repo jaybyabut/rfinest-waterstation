@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client";
 
 import { useState } from "react";
@@ -123,4 +124,14 @@ export default function EditOrderPage() {
       </div>
     </div>
   );
+=======
+import EditOrderForm from "@/components/admin/edit-order";
+
+export default function EditOrderPage(){
+    return(
+        <div className="flex-1 w-full flex flex-col items-center justify-center">
+            <EditOrderForm />
+        </div>
+    );
+>>>>>>> 95f8ca87f23649e6f12b864762860517e6a46861
 }
