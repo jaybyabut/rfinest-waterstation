@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
+import ConfirmationModal from "@/components/ui/confirmation-modal"; 
 
 interface Location {
   location_id: number;
@@ -21,6 +22,8 @@ export default function PlaceOrderForm() {
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -41,7 +44,7 @@ export default function PlaceOrderForm() {
   const pricePerUnit = selectedLocation ? selectedLocation.location_price : 0;
   const totalAmount = (slimCount + roundCount) * pricePerUnit;
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrderClick = () => {
     if (!selectedLocation) {
       alert("Please select a location/zone.");
       return;
@@ -56,14 +59,17 @@ export default function PlaceOrderForm() {
       alert("Please fill in Name and Location/Address.");
       return;
     }
+    setIsModalOpen(true);
+  };
 
+  const confirmAndProcessOrder = async () => {
     setLoading(true);
 
     try {
       const result = await createOrder({
         name,
         mobileNumber,
-        location: location, // Address text
+        location: location, 
         locationId: selectedLocation?.location_id,
         selectedZone,
         slimCount,
@@ -75,7 +81,6 @@ export default function PlaceOrderForm() {
         alert("Error creating order: " + result.error);
       } else {
         alert("Order placed successfully!");
-        // Reset form
         setName("");
         setMobileNumber("");
         setLocation("");
@@ -88,10 +93,10 @@ export default function PlaceOrderForm() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
+    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 relative">
       <div className="w-full max-w-md">
 
         <AdminTabs active="order" />
@@ -182,7 +187,7 @@ export default function PlaceOrderForm() {
 
               <div className="pt-4">
                 <Button
-                  onClick={handlePlaceOrder}
+                  onClick={handlePlaceOrderClick} 
                   disabled={loading}
                   className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -193,6 +198,16 @@ export default function PlaceOrderForm() {
           </div>
         </div>
       </div>
+
+      <ConfirmationModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={confirmAndProcessOrder}
+        title="Confirm Order"
+        message={`Are you sure you want to place this order for ${name}? Total amount is ₱${totalAmount}.`}
+        confirmText="Yes, Place Order"
+      />
+
     </div >
   );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Search, Minus, Plus, MapPin, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ConfirmationModal from "@/components/ui/confirmation-modal";
 
 export default function EditOrderForm() {
     // [BACKEND TODO]: Replace these static values with data fetched from the database
@@ -16,6 +17,8 @@ export default function EditOrderForm() {
     const [slimCount, setSlimCount] = useState(5);
     const [roundCount, setRoundCount] = useState(0);
 
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     // [BACKEND TODO]: Ensure this calculation logic matches the server-side validation
     const newTotal = (slimCount + roundCount) * pricePerUnit;
 
@@ -25,8 +28,7 @@ export default function EditOrderForm() {
     };
 
     return (
-        // Added animation classes for a smooth entrance
-        <div className="w-full max-w-md mx-auto mb-24 animate-in fade-in zoom-in duration-500">
+        <div className="w-full max-w-md mx-auto mb-24 animate-in fade-in zoom-in duration-500 relative">
 
             <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl mt-6">
                 
@@ -140,7 +142,7 @@ export default function EditOrderForm() {
 
                         <div className="pt-4 flex justify-center">
                             <Button 
-                                onClick={handleSave}
+                                onClick={() => setIsModalOpen(true)}
                                 className="w-full h-14 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 shadow-md"
                             >
                                 Confirm Edit
@@ -150,6 +152,16 @@ export default function EditOrderForm() {
                     </div>
                 </div>
             </div>
+
+            <ConfirmationModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={handleSave}
+                title="Update Order Details"
+                message={`Are you sure you want to update ${orderId}? The new total amount will be ₱${newTotal}.`} // pwede pa palitan to ng mas magandang message 
+                confirmText="Save Changes"
+            />
+
         </div>
     );
 }
