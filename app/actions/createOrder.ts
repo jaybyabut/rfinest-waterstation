@@ -77,17 +77,16 @@ export async function createOrder(orderInfo: any) {
         return { error: "No items to order" };
     }
 
-
     const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-        p_user_id: null,
-        p_name: orderInfo.name,
-        p_address: orderInfo.location,
-        p_number: orderInfo.mobileNumber,
-        p_location_id: locationId,
+        p_user_id: null, 
+        p_name: "Walk-in", 
+        p_address: "Walk-in", 
+        p_number: "0000", 
+        p_location_id: 1,
         p_items: items,
-
-        p_transaction_type: orderInfo.transaction_type,
-        p_payment_mode: orderInfo.payment_mode
+        
+        p_transaction_type: 'Walk-in',
+        p_payment_mode: 'Cash'
     });
 
     if (error) {
@@ -127,6 +126,28 @@ const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
     p_transaction_type: 'Walk-in',
     p_payment_mode: 'Cash'
 });
+
+
+
+
+const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
+        p_user_id: null,
+        p_name: orderInfo.name,
+        p_address: orderInfo.location,
+        p_number: orderInfo.mobileNumber,
+        p_location_id: locationId,
+        p_items: items,
+
+        p_transaction_type: orderInfo.transaction_type,
+        p_payment_mode: orderInfo.payment_mode
+    });
+
+    if (error) {
+        console.error("RPC Error:", error);
+        return { error: error.message };
+    }
+
+    return { success: true, data: rpcData };
 
 
 
