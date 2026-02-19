@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ChevronLeft, SquarePen, Plus, Search } from "lucide-react";
+import ConfirmationModal from "@/components/ui/confirmation-modal"; // IMPORT THE MODAL
 
 export default function ManagePricesPage() {
   // [BACKEND TODO]: Fetch this initial data from the 'zones' table in the database
@@ -23,6 +24,8 @@ export default function ManagePricesPage() {
   const [increaseAmount, setIncreaseAmount] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+ 
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const applyGlobalIncrease = () => {
     const amount = parseInt(increaseAmount);
@@ -54,7 +57,7 @@ export default function ManagePricesPage() {
   );
 
   return (
-    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24">
+    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative">
       <div className="w-full max-w-md">
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl">
           <div className="flex items-center mb-8 relative px-2">
@@ -143,7 +146,7 @@ export default function ManagePricesPage() {
 
             <div className="pt-6 flex justify-center">
               <Button 
-                onClick={handleSave}
+                onClick={() => setIsModalOpen(true)} 
                 className="w-3/4 h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] transition-all active:scale-95 shadow-md"
               >
                 Save Changes
@@ -152,6 +155,16 @@ export default function ManagePricesPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmationModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleSave}
+        title="Save Price Updates?"
+        message="Are you sure you want to apply these new prices? This will reflect on all future orders."
+        confirmText="Save Prices"
+      />
+
     </div>
   );
 }
