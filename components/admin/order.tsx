@@ -21,8 +21,9 @@ export default function PlaceOrderForm() {
   const [selectedZone, setSelectedZone] = useState<string>("");
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
+  const [note, setNote] = useState("");
+  
   const [loading, setLoading] = useState(false);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -74,7 +75,8 @@ export default function PlaceOrderForm() {
         selectedZone,
         slimCount,
         roundCount,
-        pricePerUnit
+        pricePerUnit,
+        note // [BACKEND TODO]: Ensure 'note' is saved in the database
       });
 
       if (result?.error) {
@@ -86,6 +88,7 @@ export default function PlaceOrderForm() {
         setLocation("");
         setSlimCount(0);
         setRoundCount(0);
+        setNote(""); 
       }
     } catch (e) {
       console.error(e);
@@ -152,6 +155,15 @@ export default function PlaceOrderForm() {
                   value={mobileNumber}
                   onChange={(e) => setMobileNumber(e.target.value)}
                   className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xl font-bold mb-1 ml-2">Note: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="w-full h-24 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-medium text-base focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none placeholder:text-gray-400"
                 />
               </div>
 
