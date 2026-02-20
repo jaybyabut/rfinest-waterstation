@@ -1,23 +1,108 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
+import { getAllOrders } from "@/app/actions/getAllOrders";
 
 const status_options = ["Pending", "Picked-up", "Refilled", "Delivered", "Cancelled"];
 const FILTERS = ["All", ...status_options];
 
+interface OrderItem {
+  quantity: number;
+  products: {
+    product_name: string;
+  } | {
+    product_name: string;
+  }[] | null;
+}
+
+interface FetchedOrder {
+  order_id: number;
+  order_dt: string; 
+  name: string;
+  total_amount: number;
+  transaction_type: string; 
+  current_status: string;
+  location_pricing: {
+    location_name: string;
+  } | {
+    location_name: string;
+  }[] | null;
+  order_items: OrderItem[];
+}
+
+interface DisplayOrder {
+  id: string;
+  name: string;
+  zone: string;
+  slim: number;
+  round: number;
+  total: number;
+  status: string;
+}
+
 export default function OrderStatus() {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [orders, setOrders] = useState<DisplayOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // [BACKEND TODO]: Replace this dummy data with a fetch from the database
-  const [orders, setOrders] = useState([
-    { id: "ORD-1024", name: "Januard Esguerra", zone: "Bulaon", slim: 5, round: 6, total: 330, status: "Pending" },
-    { id: "ORD-1025", name: "Jayb Yabut", zone: "Calulut", slim: 2, round: 0, total: 60, status: "Picked-up" },
-    { id: "ORD-1026", name: "Kenneth Peralta", zone: "Montana", slim: 0, round: 3, total: 135, status: "Refilled" },
-    { id: "ORD-1027", name: "Errol Kabigting", zone: "Lakeshore", slim: 1, round: 1, total: 90, status: "Delivered" },
-  ]);
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const result = await getAllOrders();
+        
+        if (result && !('error' in result)) {
+          // It's a valid array of orders
+          const fetchedOrders = result as FetchedOrder[];
+          
+          const mappedOrders: DisplayOrder[] = fetchedOrders.map((order) => {
+            let slim = 0;
+            let round = 0;
+
+            order.order_items.forEach((item) => {
+              const product = Array.isArray(item.products) ? item.products[0] : item.products;
+              const productName = product?.product_name?.toLowerCase() || "";
+              
+              if (productName.includes("slim")) {
+                slim += item.quantity;
+              } else if (productName.includes("round")) {
+                round += item.quantity;
+              }
+            });
+
+            const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
+
+            let curr_status = "Pending";
+            if (order.current_status === "pending"){
+              curr_status = "Pending";
+            }
+
+            return {
+              id: `ORD-${order.order_id}`,
+              name: order.name,
+              zone: location?.location_name || "Unknown",
+              slim,
+              round,
+              total: order.total_amount,
+              status: curr_status || "Pending",
+            };
+          });
+
+          setOrders(mappedOrders);
+        } else {
+          console.error("Error fetching orders:", result.error);
+        }
+      } catch (error) {
+        console.error("Unexpected error fetching orders:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
@@ -94,7 +179,11 @@ export default function OrderStatus() {
             </div>
 
             <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 pb-2 custom-scrollbar">
-              {filteredOrders.length === 0 ? (
+              {loading ? (
+                 <div className="text-center py-10 text-gray-400 font-medium">
+                   Loading orders...
+                 </div>
+              ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-medium">
                   No orders found for "{activeFilter}".
                 </div>
