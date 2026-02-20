@@ -17,9 +17,6 @@ export default function ProtectedLayout({
       <div className="w-full">
         <Footer />
       </div>
-      
-      <Footer />
-
-      </main>
-    );
-  }
+    </main>
+  );
+}
