@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Upload } from "lucide-react"; // Tinanggal na yung CheckCircle2
+import { ChevronLeft, Upload } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// [IMPORT TODO]: Siguraduhing tama ang path ng iyong reusable modal
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
 
 export default function CustomerPlaceOrder() {
@@ -14,17 +13,22 @@ export default function CustomerPlaceOrder() {
   const [roundCount, setRoundCount] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "E-Bank">("COD");
   
-  // Binago mula sa 'showConfirm' para maging 'isModalOpen' (para consistent)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
 
   /**
-   * [BACKEND TODO]: 
-   * 1. I-fetch ang 'zone' ng logged-in user mula sa 'profiles' table sa Supabase.
-   * 2. I-set ang zone na iyon dito sa state.
+   * [GET] User Zone Fetching: 
+   * 1. Gamitin ang supabase.auth.getUser() para makuha ang ID ng logged-in user.
+   * 2. I-fetch ang 'zone' (o zone_id) mula sa 'profiles' table.
+   * 3. I-update ang state na ito base sa result.
    */
-  const userZone = "Bulaon"; // Mock data: Dito papasok yung fetched zone
+  const userZone = "Bulaon"; 
 
+  /**
+   * [GET] Centralized Pricing:
+   * Mas mainam na i-fetch ang listahang ito mula sa 'locations' o 'zones' table 
+   * sa database para kapag nag-update ang Admin ng presyo, mag-re-reflect agad dito.
+   */
   const zonePrices: Record<string, number> = {
     "Bulaon": 30, "Calulut": 30, "Hauslands": 30, "Royal Residences": 30, "Malpitic": 30,
     "Maimpis": 35, "Mexico": 35, "Golden Haven": 35,
@@ -40,12 +44,17 @@ export default function CustomerPlaceOrder() {
     }
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     /**
-     * [BACKEND TODO]: 
-     * 1. I-insert ang order details (slim, round, total, payment_method, zone) sa 'orders' table.
-     * 2. Kung 'E-Bank', i-upload ang 'receipt' file sa Supabase Storage at i-save ang URL sa order record.
-     * 3. Mag-generate ng success notification.
+     * [POST] Create Order Record: 
+     * 1. Mag-insert sa 'orders' table. Columns: user_id, slim_count, round_count, 
+     * total_amount, payment_method, zone, status (default: 'Pending').
+     * * [STORAGE] Receipt Upload (Conditional):
+     * 2. Kung paymentMethod === 'E-Bank', i-upload ang 'receipt' file 
+     * sa supabase.storage.from('receipts').
+     * 3. Kunin ang public URL at i-update ang 'receipt_url' column sa order record.
+     * * [NOTIFICATION]:
+     * 4. Mag-trigger ng success toast o i-redirect ang user sa /home.
      */
     console.log("Order Placed!");
   };

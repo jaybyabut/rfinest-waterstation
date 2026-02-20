@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
 
 export default function CustomerEditOrder() {
-  // [BACKEND TODO]: I-fetch ang 'active order' details
+  /**
+   * [GET] Fetch Existing Order: 
+   * 1. I-fetch ang pinakabagong order ng user kung saan ang status ay 'Pending'.
+   * 2. Kung walang 'Pending' order, i-redirect ang user pabalik sa /home o magpakita ng empty state.
+   * 3. I-set ang initial states ng slimCount, roundCount, at previousAmount base sa data mula sa Supabase.
+   */
   const userZone = "Bulaon"; 
   const pricePerGallon = 40; 
   const previousAmount = 400; 
@@ -19,8 +24,14 @@ export default function CustomerEditOrder() {
 
   const newAmount = (slimCount + roundCount) * pricePerGallon;
 
-  const handleConfirmEdit = () => {
-    // [BACKEND TODO]: I-update ang order details sa database
+  const handleConfirmEdit = async () => {
+    /**
+     * [UPDATE] Update Order Details:
+     * 1. I-update ang record sa 'orders' table gamit ang bagong slim_count, round_count, at total_amount.
+     * 2. [VALIDATION]: Bago i-update, i-check muna sa server-side kung 'Pending' pa rin ang status.
+     * - Kapag ang status ay naging 'Picked Up' na habang ine-edit ito, dapat mag-error at hindi ituloy ang update.
+     * 3. Mag-trigger ng success notification pagkatapos ng successful update.
+     */
     console.log("Order Updated to ₱" + newAmount);
   };
 
@@ -54,6 +65,7 @@ export default function CustomerEditOrder() {
                   Price per gallon: <span className="text-[#43b0f1]">₱{pricePerGallon}</span>
                 </div>
                 <div className="text-xl font-bold text-[#1e3d58]">
+                  {/* [GET] I-display ang Payment Method na ginamit sa original order */}
                   Payment Method: <span className="text-[#43b0f1]">COD</span>
                 </div>
               </div>
