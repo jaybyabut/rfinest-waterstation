@@ -1,15 +1,11 @@
-import UpdatePasswordForm from "@/components/update-password-form";
-import Header from "@/components/Header"
-import Footer from "@/components/Footer"
+import { UpdatePasswordForm } from "@/components/update-password-form";
 
 export default function Page() {
   return (
-    <main className="min-h-screen flex flex-col bg-white">
-      <Header />
-      <div className="flex-1 flex flex-col items-center justify-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-sm">
         <UpdatePasswordForm />
       </div>
-      <Footer />
-    </main>
+    </div>
   );
 }

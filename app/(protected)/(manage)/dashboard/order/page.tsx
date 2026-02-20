@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 "use client";
 
 import { useState } from "react";
@@ -128,14 +127,6 @@ export default function AdminPlaceOrderPage() {
           </div>
         </div>
       </div>
-=======
-import PlaceOrderForm from "@/components/admin/order";
-
-export default function OrderPage() {
-  return (
-    <div className="flex-1 w-full flex flex-col items-center justify-center">
-      <PlaceOrderForm />
->>>>>>> 95f8ca87f23649e6f12b864762860517e6a46861
     </div>
   );
 }

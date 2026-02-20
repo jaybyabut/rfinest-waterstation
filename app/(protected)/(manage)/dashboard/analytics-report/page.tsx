@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 "use client";
 
 import { useState } from "react";
@@ -131,14 +130,4 @@ export default function AnalyticsReportPage() {
       </div>
     </div>
   );
-=======
-import AnalyticsAndReports from "@/components/admin/analytics-report"
-
-export default function AnalyticsReports(){
-    return(
-        <div className="flex-1 w-full flex flex-col items-center justify-center">
-            <AnalyticsAndReports />
-        </div>
-    );
->>>>>>> 95f8ca87f23649e6f12b864762860517e6a46861
 }

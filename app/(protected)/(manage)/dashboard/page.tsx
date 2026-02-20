@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -43,14 +42,6 @@ export default function AdminManagePage() {
           </div>
         </div>
       </div>
-=======
-import DashboardManage from "@/components/admin/dashboard-manage";
-
-export default function DashboardPage() {
-  return (
-    <div className="flex-1 w-full flex flex-col items-center justify-center">
-      <DashboardManage />
->>>>>>> 95f8ca87f23649e6f12b864762860517e6a46861
     </div>
   );
 }
