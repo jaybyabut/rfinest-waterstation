@@ -1,41 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, Upload } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getCustomerAddy } from "@/app/actions/getCustomerAddy";
+import { createOnlineOrder } from "@/app/actions/createOnlineOrder";
 
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
 
 export default function CustomerPlaceOrder() {
-  const [slimCount, setSlimCount] = useState(5);
-  const [roundCount, setRoundCount] = useState(5);
+  const [slimCount, setSlimCount] = useState(0);
+  const [roundCount, setRoundCount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "E-Bank">("COD");
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
 
-  /**
-   * [GET] User Zone Fetching: 
-   * 1. Gamitin ang supabase.auth.getUser() para makuha ang ID ng logged-in user.
-   * 2. I-fetch ang 'zone' (o zone_id) mula sa 'profiles' table.
-   * 3. I-update ang state na ito base sa result.
-   */
-  const userZone = "Bulaon"; 
+  const [userZone, setUserZone] = useState<string>("Loading...");
+  const [pricePerGallon, setPricePerGallon] = useState<number>(0);
 
-  /**
-   * [GET] Centralized Pricing:
-   * Mas mainam na i-fetch ang listahang ito mula sa 'locations' o 'zones' table 
-   * sa database para kapag nag-update ang Admin ng presyo, mag-re-reflect agad dito.
-   */
-  const zonePrices: Record<string, number> = {
-    "Bulaon": 30, "Calulut": 30, "Hauslands": 30, "Royal Residences": 30, "Malpitic": 30,
-    "Maimpis": 35, "Mexico": 35, "Golden Haven": 35,
-    "Montana": 45, "Lakeshore": 45
-  };
+  useEffect(() => {
+    const fetchZone = async () => {
+      try {
+        const data = await getCustomerAddy();
+        if (data && !('error' in data)) {
+          const pricingInfo = Array.isArray(data.location_pricing) 
+            ? data.location_pricing[0] 
+            : data.location_pricing;
+          
+          if (pricingInfo) {
+            setUserZone(pricingInfo.location_name || "Unknown Zone");
+            setPricePerGallon(pricingInfo.location_price || 0);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch zone", error);
+      }
+    };
+    
+    fetchZone();
+  }, []);
 
-  const pricePerGallon = zonePrices[userZone] || 30; 
   const totalAmount = (slimCount + roundCount) * pricePerGallon;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,18 +52,24 @@ export default function CustomerPlaceOrder() {
   };
 
   const handlePlaceOrder = async () => {
-    /**
-     * [POST] Create Order Record: 
-     * 1. Mag-insert sa 'orders' table. Columns: user_id, slim_count, round_count, 
-     * total_amount, payment_method, zone, status (default: 'Pending').
-     * * [STORAGE] Receipt Upload (Conditional):
-     * 2. Kung paymentMethod === 'E-Bank', i-upload ang 'receipt' file 
-     * sa supabase.storage.from('receipts').
-     * 3. Kunin ang public URL at i-update ang 'receipt_url' column sa order record.
-     * * [NOTIFICATION]:
-     * 4. Mag-trigger ng success toast o i-redirect ang user sa /home.
-     */
-    console.log("Order Placed!");
+    if (paymentMethod === 'COD'){
+      const data = await createOnlineOrder({
+        slimCount,
+        roundCount,
+        paymentMethod,
+        userZone,
+        pricePerGallon,
+        totalAmount,
+        transaction_type: "online"
+      });
+
+      if (data.success === true){
+        // success order placement confirmation
+        window.location.href = '/home';
+      }
+    } else {
+      console.log('online order E-BANK');
+    }
   };
 
   return (
