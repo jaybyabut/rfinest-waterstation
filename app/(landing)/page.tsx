@@ -56,3 +56,9 @@ export default function Home() {
     </main>
   );
 }
+
+/*import LandingPage from "@/components/landing";
+
+export default function Home() {
+  return <LandingPage />;
+} */
