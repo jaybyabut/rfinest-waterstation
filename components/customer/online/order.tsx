@@ -65,7 +65,8 @@ export default function CustomerPlaceOrder() {
 
       if (data.success === true){
         // success order placement confirmation
-        window.location.href = '/home';
+        alert(data.data);
+        //window.location.href = '/home';
       }
     } else {
       console.log('online order E-BANK');

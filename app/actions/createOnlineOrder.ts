@@ -95,8 +95,8 @@ export async function createOnlineOrder(orderInfo: any) {
         return { error: error.message };
     }
 
-
     return { success: true, data: rpcData };
+
 }
 
 /* 
