@@ -74,10 +74,6 @@ export default function OrderStatus() {
 
             const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
 
-            let curr_status = "Pending";
-            if (order.current_status === "pending"){
-              curr_status = "Pending";
-            }
 
             return {
               id: `ORD-${order.order_id}`,
@@ -86,7 +82,7 @@ export default function OrderStatus() {
               slim,
               round,
               total: order.total_amount,
-              status: curr_status || "Pending",
+              status: order.current_status || "Pending",
             };
           });
 
