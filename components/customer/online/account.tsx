@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
 
 export default function CustomerAccount() {
+  const router = useRouter();
   const [view, setView] = useState<"menu" | "name" | "location" | "number" | "password">("menu");
 
   const zones = [
@@ -15,12 +16,6 @@ export default function CustomerAccount() {
     "Lakeshore", "Golden Haven", "Hauslands", "Royal Residences", "Malpitic",
   ];
 
-  /**
-   * [GET] Profile Fetching:
-   * 1. Gamitin ang supabase.auth.getUser() para makuha ang ID ng kasalukuyang user.
-   * 2. I-fetch ang mga detalye mula sa 'profiles' table gamit ang ID na iyon.
-   * 3. I-populate ang states sa ibaba base sa data mula sa database.
-   */
   const [firstName, setFirstName] = useState("Januard");
   const [lastName, setLastName] = useState("Esguerra");
   const [middleInitial, setMiddleInitial] = useState("D");
@@ -46,16 +41,9 @@ export default function CustomerAccount() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const handleSaveChanges = async () => {
-    /**
-     * [UPDATE] Profile Meta:
-     * 1. Para sa 'name', 'location', at 'number' views, i-update ang 'profiles' table.
-     * Hal: supabase.from('profiles').update({ first_name: tempFirstName }).eq('id', user.id).
-     * * [AUTH] Password Update:
-     * 2. Kung view === 'password', gamitin ang supabase.auth.updateUser({ password: newPassword }).
-     * Tandaan: Dapat mag-match muna ang newPassword at confirmPassword bago ituloy.
-     */
     if (view === "name") {
       setFirstName(tempFirstName);
       setLastName(tempLastName);
@@ -72,6 +60,14 @@ export default function CustomerAccount() {
     }
     
     setView("menu");
+    setIsModalOpen(false);
+  };
+
+  const handleLogout = async () => {
+    // Ilagay dito yung supabase.auth.signOut() niyo pag ready na yung backend
+    console.log("Logged out!");
+    setIsLogoutModalOpen(false);
+    router.push("/"); 
   };
 
   const resetTempStates = () => {
@@ -162,9 +158,28 @@ export default function CustomerAccount() {
                 <ChevronRight size={24} className="text-gray-400 shrink-0" />
               </button>
 
+              <button onClick={() => setIsLogoutModalOpen(true)} className="w-full flex items-center justify-between p-4 rounded-3xl bg-red-50 hover:bg-red-100 transition-colors border-2 border-transparent hover:border-red-200 shadow-sm gap-3 mt-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-red-500 shadow-sm shrink-0"><LogOut size={24} /></div>
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="text-lg font-black text-red-600 truncate">Log Out</p>
+                  </div>
+                </div>
+                <ChevronRight size={24} className="text-red-400 shrink-0" />
+              </button>
+
             </div>
           </div>
         </div>
+
+        <ConfirmationModal 
+          isOpen={isLogoutModalOpen}
+          onClose={() => setIsLogoutModalOpen(false)}
+          onConfirm={handleLogout}
+          title="Log Out"
+          message="Are you sure you want to log out of your account?"
+          confirmText="Yes, Log Out"
+        />
       </div>
     );
   }
