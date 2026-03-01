@@ -53,9 +53,28 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
-    // no user, potentially respond by redirecting the user to the login page
+
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
+    return NextResponse.redirect(url);
+  }
+
+
+  if (
+    user &&
+    (request.nextUrl.pathname === "/" ||
+      request.nextUrl.pathname.startsWith("/login") ||
+      request.nextUrl.pathname.startsWith("/auth"))
+  ) {
+    const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+    const role = supabaseUser?.app_metadata?.role;
+
+    const url = request.nextUrl.clone();
+    if (role === "employee") {
+      url.pathname = "/dashboard";
+    } else {
+      url.pathname = "/home";
+    }
     return NextResponse.redirect(url);
   }
 
