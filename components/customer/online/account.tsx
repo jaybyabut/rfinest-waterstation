@@ -1,28 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
+import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
+import { updateCustomerName } from "@/app/actions/updateCustomerName";
+import { updateCustomerLocation } from "@/app/actions/updateCustomerLocation";
+import { updateCustomerPassword } from "@/app/actions/updateCustomerPassword";
+import { getLocations } from "@/app/actions/locations";
 
 export default function CustomerAccount() {
   const router = useRouter();
+  const userData = useUser();
   const [view, setView] = useState<"menu" | "name" | "location" | "number" | "password">("menu");
 
-  const zones = [
-    "Bulaon", "Calulut", "Maimpis", "Mexico", "Montana",
-    "Lakeshore", "Golden Haven", "Hauslands", "Royal Residences", "Malpitic",
-  ];
+  const [locations, setLocations] = useState<any[]>([]);
 
-  const [firstName, setFirstName] = useState("Januard");
-  const [lastName, setLastName] = useState("Esguerra");
-  const [middleInitial, setMiddleInitial] = useState("D");
+  useEffect(() => {
+    getLocations().then((res) => {
+      if (Array.isArray(res)) setLocations(res);
+    });
+  }, []);
+
+  const [firstName, setFirstName] = useState(userData?.first_name || "");
+  const [lastName, setLastName] = useState(userData?.last_name || "");
+  const [middleInitial, setMiddleInitial] = useState(userData?.middle_initial || "");
   
-  const [houseNo, setHouseNo] = useState("Blk 1 Lot 2");
-  const [streetName, setStreetName] = useState("Kalye Syete");
-  const [zone, setZone] = useState("Bulaon");
+  const defaultAddress = userData?.address || "";
+  const addressParts = defaultAddress.split(",").map(str => str.trim());
+  const defaultHouseNo = addressParts[0] || "";
+  const defaultStreetName = addressParts.slice(1).join(", ") || "";
+
+  const defaultZoneId = userData?.location_id || "";
+  const defaultZoneName = Array.isArray(userData?.location_pricing) 
+    ? userData?.location_pricing[0]?.location_name 
+    : userData?.location_pricing?.location_name || "";
+
+  const [houseNo, setHouseNo] = useState(defaultHouseNo);
+  const [streetName, setStreetName] = useState(defaultStreetName);
+  const [zoneId, setZoneId] = useState(defaultZoneId);
+  const [zoneName, setZoneName] = useState(defaultZoneName);
   
   const [mobileNo, setMobileNo] = useState("09610123193");
 
@@ -32,7 +52,7 @@ export default function CustomerAccount() {
   
   const [tempHouseNo, setTempHouseNo] = useState(houseNo);
   const [tempStreetName, setTempStreetName] = useState(streetName);
-  const [tempZone, setTempZone] = useState(zone);
+  const [tempZoneId, setTempZoneId] = useState(zoneId);
   
   const [tempMobileNo, setTempMobileNo] = useState(mobileNo);
   
@@ -42,25 +62,66 @@ export default function CustomerAccount() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveChanges = async () => {
-    if (view === "name") {
-      setFirstName(tempFirstName);
-      setLastName(tempLastName);
-      setMiddleInitial(tempMI);
+    setIsSaving(true);
+
+    try {
+      if (view === "name") {
+        const res = await updateCustomerName(tempFirstName, tempMI, tempLastName);
+        if (res.success) {
+          setFirstName(tempFirstName);
+          setLastName(tempLastName);
+          setMiddleInitial(tempMI);
+          router.refresh(); 
+        } else {
+          alert(res.error || "Failed to update name");
+        }
+      }
+      if (view === "location") {
+        const fullAddress = `${tempHouseNo}, ${tempStreetName}`;
+        const res = await updateCustomerLocation(fullAddress, tempZoneId);
+        if (res.success) {
+          setHouseNo(tempHouseNo);
+          setStreetName(tempStreetName);
+          setZoneId(tempZoneId);
+          const chosenLoc = locations.find(l => l.location_id === tempZoneId);
+          if (chosenLoc) setZoneName(chosenLoc.location_name);
+          router.refresh(); 
+        } else {
+          alert(res.error || "Failed to update location");
+        }
+      }
+      if (view === "number") setMobileNo(tempMobileNo);
+      if (view === "password") {
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            alert("Please fill in all password fields.");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            alert("New passwords do not match.");
+            return;
+        }
+
+        const res = await updateCustomerPassword(oldPassword, newPassword);
+        if (res.success) {
+            alert(res.message || "Password updated successfully!");
+            setOldPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+        } else {
+            alert(res.error || "Failed to update password");
+            return;
+        }
+      }
+      
+      setView("menu");
+    } finally {
+      setIsSaving(false);
+      setIsModalOpen(false);
     }
-    if (view === "location") {
-      setHouseNo(tempHouseNo);
-      setStreetName(tempStreetName);
-      setZone(tempZone);
-    }
-    if (view === "number") setMobileNo(tempMobileNo);
-    if (view === "password") {
-      console.log("Password updated!");
-    }
-    
-    setView("menu");
-    setIsModalOpen(false);
   };
 
   const handleLogout = async () => {
@@ -76,7 +137,7 @@ export default function CustomerAccount() {
     setTempMI(middleInitial);
     setTempHouseNo(houseNo);
     setTempStreetName(streetName);
-    setTempZone(zone);
+    setTempZoneId(zoneId);
     setTempMobileNo(mobileNo);
     setOldPassword("");
     setNewPassword("");
@@ -88,8 +149,8 @@ export default function CustomerAccount() {
     setView("menu");
   };
 
-  const fullName = `${firstName} ${middleInitial ? middleInitial + '.' : ''} ${lastName}`;
-  const fullAddress = `${houseNo}, ${streetName}, ${zone}`;
+  const fullName = [firstName, middleInitial ? middleInitial + '.' : '', lastName].filter(Boolean).join(" ");
+  const fullAddress = [houseNo, streetName, zoneName].filter(Boolean).join(", ");
 
   if (view === "menu") {
     return (
@@ -261,12 +322,13 @@ export default function CustomerAccount() {
                   <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">Zone:</label>
                   <div className="relative">
                     <select
-                      value={tempZone}
-                      onChange={(e) => setTempZone(e.target.value)}
+                      value={tempZoneId}
+                      onChange={(e) => setTempZoneId(e.target.value)}
                       className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer"
                     >
-                      {zones.map((z) => (
-                        <option key={z} value={z}>{z}</option>
+                      <option value="" disabled>Select a valid zone</option>
+                      {locations.map((loc) => (
+                        <option key={loc.location_id} value={loc.location_id}>{loc.location_name}</option>
                       ))}
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center px-6 pointer-events-none">
@@ -336,11 +398,11 @@ export default function CustomerAccount() {
 
       <ConfirmationModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => !isSaving && setIsModalOpen(false)}
         onConfirm={handleSaveChanges}
         title={`Update ${view === 'number' ? 'mobile number' : view}?`}
-        message={`Are you sure you want to save your new ${view === 'number' ? 'mobile number' : view}?`}
-        confirmText="Yes, Save"
+        message={isSaving ? "Saving changes..." : `Are you sure you want to save your new ${view === 'number' ? 'mobile number' : view}?`}
+        confirmText={isSaving ? "Saving..." : "Yes, Save"}
       />
 
     </div>

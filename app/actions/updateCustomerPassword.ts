@@ -1,0 +1,32 @@
+'use server'
+import { createClient } from "@/lib/supabase/server"
+
+export async function updateCustomerPassword(oldPassword: string, newPassword: string) {
+    const supabase = await createClient();
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user?.email) {
+        return { success: false, error: "Unauthorized or missing email address." };
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: oldPassword,
+    });
+
+    if (signInError) {
+        return { success: false, error: "Incorrect current password." };
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+    });
+
+    if (updateError) {
+        console.error("Error updating user password:", updateError);
+        return { success: false, error: "Failed to update password: " + updateError.message };
+    }
+
+    return { success: true, message: "Password updated successfully!" };
+}

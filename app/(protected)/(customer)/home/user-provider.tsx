@@ -4,6 +4,8 @@ import { createContext, useContext } from "react";
 
 export type UserData = {
   first_name?: string;
+  middle_initial?: string;
+  last_name?: string;
   address?: string;
   location_id?: string;
   location_pricing?: any;

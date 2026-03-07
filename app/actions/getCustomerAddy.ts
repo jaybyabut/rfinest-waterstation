@@ -14,6 +14,8 @@ export async function getCustomerAddy() {
         .from('users')
         .select(`
                 first_name,
+                middle_initial,
+                last_name,
                 address,
                 location_id,
                 location_pricing(
