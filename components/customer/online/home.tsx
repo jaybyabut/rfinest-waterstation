@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
+
 export default function CustomerHome({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const userData = useUser();
   
   /**
    * [GET] Active Order Check: 
@@ -28,7 +31,7 @@ export default function CustomerHome({
             
             <h2 className="text-4xl font-extrabold mb-2 text-[#1e3d58]">
                 {/* [GET] User Profile: I-fetch ang 'first_name' mula sa 'profiles' table gamit ang ID mula sa supabase.auth.getUser() */}
-                Hello, user!
+                Hello, {userData?.first_name || 'user'}!
             </h2>
             
             <p className="text-gray-600 font-medium mb-8 px-2 leading-relaxed text-sm">

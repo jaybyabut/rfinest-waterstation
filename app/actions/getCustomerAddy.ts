@@ -13,6 +13,7 @@ export async function getCustomerAddy() {
     const { data: userDetails, error: userError } = await supabase
         .from('users')
         .select(`
+                first_name,
                 address,
                 location_id,
                 location_pricing(

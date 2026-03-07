@@ -5,12 +5,13 @@ import Link from "next/link";
 import { ChevronLeft, Upload } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getCustomerAddy } from "@/app/actions/getCustomerAddy";
 import { createOnlineOrder } from "@/app/actions/createOnlineOrder";
+import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
 
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
 
 export default function CustomerPlaceOrder() {
+  const userData = useUser();
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "E-Bank">("COD");
@@ -22,26 +23,17 @@ export default function CustomerPlaceOrder() {
   const [pricePerGallon, setPricePerGallon] = useState<number>(0);
 
   useEffect(() => {
-    const fetchZone = async () => {
-      try {
-        const data = await getCustomerAddy();
-        if (data && !('error' in data)) {
-          const pricingInfo = Array.isArray(data.location_pricing) 
-            ? data.location_pricing[0] 
-            : data.location_pricing;
-          
-          if (pricingInfo) {
-            setUserZone(pricingInfo.location_name || "Unknown Zone");
-            setPricePerGallon(pricingInfo.location_price || 0);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch zone", error);
+    if (userData) {
+      const pricingInfo = Array.isArray(userData.location_pricing) 
+        ? userData.location_pricing[0] 
+        : userData.location_pricing;
+      
+      if (pricingInfo) {
+        setUserZone(pricingInfo.location_name || "Unknown Zone");
+        setPricePerGallon(pricingInfo.location_price || 0);
       }
-    };
-    
-    fetchZone();
-  }, []);
+    }
+  }, [userData]);
 
   const totalAmount = (slimCount + roundCount) * pricePerGallon;
 
