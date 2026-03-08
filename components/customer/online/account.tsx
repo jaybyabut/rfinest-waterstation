@@ -12,12 +12,16 @@ import { updateCustomerLocation } from "@/app/actions/updateCustomerLocation";
 import { updateCustomerPassword } from "@/app/actions/updateCustomerPassword";
 import { getLocations } from "@/app/actions/locations";
 
+// TODO: BACKEND - Setup Supabase client here if needed for logout
+// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'; 
+
 export default function CustomerAccount() {
   const router = useRouter();
   const userData = useUser();
   const [view, setView] = useState<"menu" | "name" | "location" | "number" | "password">("menu");
 
   const [locations, setLocations] = useState<any[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     getLocations().then((res) => {
@@ -64,8 +68,55 @@ export default function CustomerAccount() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const validateForm = () => {
+    let newErrors: Record<string, string> = {};
+
+    if (view === "name") {
+      const nameRegex = /^[A-Za-z\s]+$/;
+      
+      if (!tempFirstName.trim()) newErrors.firstName = "First name is required.";
+      else if (!nameRegex.test(tempFirstName)) newErrors.firstName = "Letters and spaces only.";
+
+      if (!tempLastName.trim()) newErrors.lastName = "Last name is required.";
+      else if (!nameRegex.test(tempLastName)) newErrors.lastName = "Letters and spaces only.";
+
+      if (tempMI && !/^[A-Za-z\s]*$/.test(tempMI)) newErrors.mi = "Letters only.";
+    }
+
+    if (view === "location") {
+      const locRegex = /^[A-Za-z0-9\s,\.-]*$/;
+
+      if (!tempHouseNo.trim()) newErrors.houseNo = "House number is required.";
+      else if (!locRegex.test(tempHouseNo)) newErrors.houseNo = "Invalid symbols used.";
+
+      if (!tempStreetName.trim()) newErrors.streetName = "Street name is required.";
+      else if (!locRegex.test(tempStreetName)) newErrors.streetName = "Invalid symbols used.";
+
+      if (!tempZoneId) newErrors.zoneId = "Please select a zone.";
+    }
+
+    if (view === "number") {
+      const phoneRegex = /^(09)\d{9}$/;
+      if (!tempMobileNo.trim()) newErrors.mobileNo = "Mobile number is required.";
+      else if (!phoneRegex.test(tempMobileNo)) newErrors.mobileNo = "Must be an 11-digit number starting with 09.";
+    }
+
+    if (view === "password") {
+      if (!oldPassword) newErrors.oldPassword = "Old password is required.";
+      
+      if (!newPassword) newErrors.newPassword = "New password is required.";
+      else if (newPassword.length < 8) newErrors.newPassword = "Must be at least 8 characters.";
+      
+      if (newPassword !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSaveChanges = async () => {
     setIsSaving(true);
+    setErrors({}); 
 
     try {
       if (view === "name") {
@@ -75,10 +126,12 @@ export default function CustomerAccount() {
           setLastName(tempLastName);
           setMiddleInitial(tempMI);
           router.refresh(); 
+          setView("menu");
         } else {
-          alert(res.error || "Failed to update name");
+          setErrors({ submit: res.error || "Failed to update name" });
         }
       }
+      
       if (view === "location") {
         const fullAddress = `${tempHouseNo}, ${tempStreetName}`;
         const res = await updateCustomerLocation(fullAddress, tempZoneId);
@@ -89,35 +142,29 @@ export default function CustomerAccount() {
           const chosenLoc = locations.find(l => l.location_id === tempZoneId);
           if (chosenLoc) setZoneName(chosenLoc.location_name);
           router.refresh(); 
+          setView("menu");
         } else {
-          alert(res.error || "Failed to update location");
-        }
-      }
-      if (view === "number") setMobileNo(tempMobileNo);
-      if (view === "password") {
-        if (!oldPassword || !newPassword || !confirmPassword) {
-            alert("Please fill in all password fields.");
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            alert("New passwords do not match.");
-            return;
-        }
-
-        const res = await updateCustomerPassword(oldPassword, newPassword);
-        if (res.success) {
-            alert(res.message || "Password updated successfully!");
-            setOldPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-        } else {
-            alert(res.error || "Failed to update password");
-            return;
+          setErrors({ submit: res.error || "Failed to update location" });
         }
       }
       
-      setView("menu");
+      if (view === "number") {
+        setMobileNo(tempMobileNo);
+        setView("menu");
+      }
+      
+      if (view === "password") {
+        const res = await updateCustomerPassword(oldPassword, newPassword);
+        if (res.success) {
+          setOldPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setView("menu");
+        } else {
+          setErrors({ submit: res.error || "Failed to update password" });
+        }
+      }
+      
     } finally {
       setIsSaving(false);
       setIsModalOpen(false);
@@ -125,7 +172,10 @@ export default function CustomerAccount() {
   };
 
   const handleLogout = async () => {
-    // Ilagay dito yung supabase.auth.signOut() niyo pag ready na yung backend
+    // TODO: BACKEND - I-trigger ang Supabase SignOut dito
+    // Example: const supabase = createClientComponentClient();
+    // await supabase.auth.signOut();
+    
     console.log("Logged out!");
     setIsLogoutModalOpen(false);
     router.push("/"); 
@@ -142,6 +192,7 @@ export default function CustomerAccount() {
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
+    setErrors({});
   };
 
   const handleBack = () => {
@@ -261,6 +312,12 @@ export default function CustomerAccount() {
 
           <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left space-y-5">
             
+            {errors.submit && (
+              <div className="bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm">
+                {errors.submit}
+              </div>
+            )}
+
             {view === "name" && (
               <div className="space-y-4">
                 <div className="flex gap-3">
@@ -268,30 +325,36 @@ export default function CustomerAccount() {
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">First Name:</label>
                     <input
                       type="text"
+                      placeholder="e.g. Juan"
                       value={tempFirstName}
                       onChange={(e) => setTempFirstName(e.target.value)}
-                      className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.firstName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
+                    {errors.firstName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.firstName}</p>}
                   </div>
                   <div className="w-24">
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">M.I.:</label>
                     <input
                       type="text"
                       maxLength={1}
+                      placeholder="A"
                       value={tempMI}
                       onChange={(e) => setTempMI(e.target.value)}
-                      className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                      className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.mi ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
+                    {errors.mi && <p className="text-red-500 text-xs font-bold mt-1 text-center">{errors.mi}</p>}
                   </div>
                 </div>
                 <div>
                   <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">Last Name:</label>
                   <input
                     type="text"
+                    placeholder="e.g. Dela Cruz"
                     value={tempLastName}
                     onChange={(e) => setTempLastName(e.target.value)}
-                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.lastName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
+                  {errors.lastName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.lastName}</p>}
                 </div>
               </div>
             )}
@@ -303,19 +366,23 @@ export default function CustomerAccount() {
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">House No.:</label>
                     <input
                       type="text"
+                      placeholder="e.g. Blk 1 Lot 8"
                       value={tempHouseNo}
                       onChange={(e) => setTempHouseNo(e.target.value)}
-                      className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.houseNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
+                    {errors.houseNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.houseNo}</p>}
                   </div>
                   <div className="flex-1">
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">Street Name:</label>
                     <input
                       type="text"
+                      placeholder="e.g. San Juan St."
                       value={tempStreetName}
                       onChange={(e) => setTempStreetName(e.target.value)}
-                      className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.streetName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
+                    {errors.streetName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.streetName}</p>}
                   </div>
                 </div>
                 <div>
@@ -324,7 +391,7 @@ export default function CustomerAccount() {
                     <select
                       value={tempZoneId}
                       onChange={(e) => setTempZoneId(e.target.value)}
-                      className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer"
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer ${errors.zoneId ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     >
                       <option value="" disabled>Select a valid zone</option>
                       {locations.map((loc) => (
@@ -335,6 +402,7 @@ export default function CustomerAccount() {
                       <svg className="w-6 h-6 text-[#1e3d58]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
+                  {errors.zoneId && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.zoneId}</p>}
                 </div>
               </div>
             )}
@@ -344,10 +412,12 @@ export default function CustomerAccount() {
                 <label className="block text-lg font-bold mb-2 ml-2 text-[#1e3d58]">Mobile Number:</label>
                 <input
                   type="tel"
+                  placeholder="09XXXXXXXXX"
                   value={tempMobileNo}
                   onChange={(e) => setTempMobileNo(e.target.value)}
-                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
                 />
+                {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.mobileNo}</p>}
               </div>
             )}
 
@@ -357,35 +427,45 @@ export default function CustomerAccount() {
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Old Password:</label>
                   <input
                     type="password"
+                    placeholder="Enter current password"
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.oldPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
+                  {errors.oldPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.oldPassword}</p>}
                 </div>
                 <div>
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">New Password:</label>
                   <input
                     type="password"
+                    placeholder="Min. 8 characters"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.newPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
+                  {errors.newPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.newPassword}</p>}
                 </div>
                 <div>
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Confirm Password:</label>
                   <input
                     type="password"
+                    placeholder="Re-enter new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.confirmPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
+                  {errors.confirmPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.confirmPassword}</p>}
                 </div>
               </div>
             )}
 
             <div className="pt-6">
               <Button 
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => {
+                  if (validateForm()) {
+                    setIsModalOpen(true);
+                  }
+                }}
                 className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 shadow-lg"
               >
                 Save
