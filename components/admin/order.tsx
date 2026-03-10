@@ -23,6 +23,7 @@ export default function PlaceOrderForm() {
   const [roundCount, setRoundCount] = useState(0);
   const [note, setNote] = useState("");
   
+  const [orderType, setOrderType] = useState<"Call" | "Walk-in">("Call");
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -56,7 +57,7 @@ export default function PlaceOrderForm() {
       return;
     }
 
-    if (!name || !location) {
+    if (orderType === "Call" && (!name || !location)) {
       alert("Please fill in Name and Location/Address.");
       return;
     }
@@ -68,15 +69,17 @@ export default function PlaceOrderForm() {
 
     try {
       const result = await createOrder({
-        name,
-        mobileNumber,
-        location: location, 
+        name: orderType === "Walk-in" ? "Walk-in" : name,
+        mobileNumber: orderType === "Walk-in" ? "0000" : mobileNumber,
+        location: orderType === "Walk-in" ? "Station (Walk-in)" : location, 
         locationId: selectedLocation?.location_id,
         selectedZone,
         slimCount,
         roundCount,
         pricePerUnit,
-        note // [BACKEND TODO]: Ensure 'note' is saved in the database
+        note, // [BACKEND TODO]: Ensure 'note' is saved in the database
+        transaction_type: orderType,
+        payment_mode: "Cash"
       });
 
       if (result?.error) {
@@ -109,15 +112,42 @@ export default function PlaceOrderForm() {
 
           <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left">
             <div className="space-y-5">
-              <div>
-                <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
-                />
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setOrderType("Call")}
+                  className={`flex-1 h-14 rounded-full font-bold text-lg border-2 transition-all ${
+                    orderType === "Call"
+                      ? "bg-[#43b0f1] text-white border-[#43b0f1]"
+                      : "bg-[#e8eef1] text-[#1e3d58] border-[#1e3d58] hover:bg-[#d0dde5]"
+                  }`}
+                >
+                  Call / Delivery
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrderType("Walk-in")}
+                  className={`flex-1 h-14 rounded-full font-bold text-lg border-2 transition-all ${
+                    orderType === "Walk-in"
+                      ? "bg-[#43b0f1] text-white border-[#43b0f1]"
+                      : "bg-[#e8eef1] text-[#1e3d58] border-[#1e3d58] hover:bg-[#d0dde5]"
+                  }`}
+                >
+                  Walk-in
+                </button>
               </div>
+
+              {orderType === "Call" && (
+                <div>
+                  <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
@@ -139,24 +169,28 @@ export default function PlaceOrderForm() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
-                <textarea
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none"
-                />
-              </div>
+              {orderType === "Call" && (
+                <>
+                  <div>
+                    <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
+                    <textarea
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-xl font-bold mb-1 ml-2">Mobile Number:</label>
-                <input
-                  type="text"
-                  value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value)}
-                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xl font-bold mb-1 ml-2">Mobile Number:</label>
+                    <input
+                      type="text"
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value)}
+                      className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                    />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Note: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
@@ -216,7 +250,7 @@ export default function PlaceOrderForm() {
         onClose={() => setIsModalOpen(false)}
         onConfirm={confirmAndProcessOrder}
         title="Confirm Order"
-        message={`Are you sure you want to place this order for ${name}? Total amount is ₱${totalAmount}.`}
+        message={`Are you sure you want to place this order for ${orderType === "Walk-in" ? "Walk-in" : name}? Total amount is ₱${totalAmount}.`}
         confirmText="Yes, Place Order"
       />
 
