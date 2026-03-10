@@ -52,7 +52,7 @@ export default function CustomerPlaceOrder() {
         userZone,
         pricePerGallon,
         totalAmount,
-        transaction_type: "online"
+        transaction_type: "Online"
       });
 
       if (data.success === true){

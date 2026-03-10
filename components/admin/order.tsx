@@ -43,12 +43,19 @@ export default function PlaceOrderForm() {
   }, []);
 
   const selectedLocation = locations.find((l) => l.location_name === selectedZone);
-  const pricePerUnit = selectedLocation ? selectedLocation.location_price : 0;
+  const walkInLocation = locations.find((l) => l.location_id === 1);
+  const activeLocation = orderType === "Walk-in" ? walkInLocation : selectedLocation;
+  const pricePerUnit = activeLocation ? activeLocation.location_price : 0;
   const totalAmount = (slimCount + roundCount) * pricePerUnit;
 
   const handlePlaceOrderClick = () => {
-    if (!selectedLocation) {
+    if (orderType === "Call" && !selectedLocation) {
       alert("Please select a location/zone.");
+      return;
+    }
+
+    if (orderType === "Walk-in" && !walkInLocation) {
+      alert("Walk-in location (ID 1) not found in system.");
       return;
     }
 
@@ -70,10 +77,10 @@ export default function PlaceOrderForm() {
     try {
       const result = await createOrder({
         name: orderType === "Walk-in" ? "Walk-in" : name,
-        mobileNumber: orderType === "Walk-in" ? "0000" : mobileNumber,
-        location: orderType === "Walk-in" ? "Station (Walk-in)" : location, 
-        locationId: selectedLocation?.location_id,
-        selectedZone,
+        mobileNumber: orderType === "Walk-in" ? "N/A" : mobileNumber,
+        location: orderType === "Walk-in" ? "Bulaon" : location, 
+        locationId: orderType === "Walk-in" ? 1 : selectedLocation?.location_id,
+        selectedZone: orderType === "Walk-in" ? "Bulaon" : selectedZone,
         slimCount,
         roundCount,
         pricePerUnit,
@@ -149,25 +156,27 @@ export default function PlaceOrderForm() {
                 </div>
               )}
 
-              <div>
-                <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
-                <select
-                  value={selectedZone}
-                  onChange={(e) => { setSelectedZone(e.target.value); console.log(e.target.value); }}
-                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer"
-                  disabled={locations.length === 0}
-                >
-                  {locations.length === 0 ? (
-                    <option>Loading locations...</option>
-                  ) : (
-                    locations.map((loc) => (
-                      <option key={loc.location_id} value={loc.location_name}>
-                        {loc.location_name} (₱{loc.location_price}/pc)
-                      </option>
-                    ))
-                  )}
-                </select>
-              </div>
+              {orderType === "Call" && (
+                <div>
+                  <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
+                  <select
+                    value={selectedZone}
+                    onChange={(e) => { setSelectedZone(e.target.value); console.log(e.target.value); }}
+                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer"
+                    disabled={locations.length === 0}
+                  >
+                    {locations.length === 0 ? (
+                      <option>Loading locations...</option>
+                    ) : (
+                      locations.map((loc) => (
+                        <option key={loc.location_id} value={loc.location_name}>
+                          {loc.location_name} (₱{loc.location_price}/pc)
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              )}
 
               {orderType === "Call" && (
                 <>

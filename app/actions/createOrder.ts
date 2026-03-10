@@ -76,19 +76,37 @@ export async function createOrder(orderInfo: any) {
     if (items.length === 0) {
         return { error: "No items to order" };
     }
+    let rpcData, error;
 
-
-    const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-        p_user_id: null,
-        p_name: orderInfo.name,
-        p_address: orderInfo.location,
-        p_number: orderInfo.mobileNumber,
-        p_location_id: locationId,
-        p_items: items,
-
-        p_transaction_type: orderInfo.transaction_type,
-        p_payment_mode: orderInfo.payment_mode
-    });
+    if (orderInfo.transaction_type === 'Walk-in') {
+        const { data, error: rpcError } = await supabase.rpc('create_complete_order', {
+            p_user_id: null,
+            p_name: orderInfo.name,
+            p_address: orderInfo.location,
+            p_number: orderInfo.mobileNumber,
+            p_location_id: Number(locationId),
+            p_items: items,
+            p_transaction_type: orderInfo.transaction_type,
+            p_payment_mode: orderInfo.payment_mode,
+            p_note: orderInfo.note,
+        });
+        rpcData = data;
+        error = rpcError;
+    } else {
+        const { data, error: rpcError } = await supabase.rpc('create_complete_order', {
+            p_user_id: null,
+            p_name: orderInfo.name,
+            p_address: orderInfo.location,
+            p_number: orderInfo.mobileNumber,
+            p_location_id: Number(locationId),
+            p_items: items,
+            p_transaction_type: orderInfo.transaction_type,
+            p_payment_mode: orderInfo.payment_mode,
+            p_note: orderInfo.note,
+        });
+        rpcData = data;
+        error = rpcError;
+    }
 
     if (error) {
         console.error("RPC Error:", error);
