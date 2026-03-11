@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
-import { Select as SelectPrimitive } from "radix-ui"
+// TODO: BACKEND - Ensure @radix-ui/react-select is installed and listed in package.json
+import * as SelectPrimitive from "@radix-ui/react-select"
 
 import { cn } from "@/lib/utils"
 

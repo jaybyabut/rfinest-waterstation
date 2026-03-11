@@ -9,10 +9,7 @@ export default function AnalyticsAndReports() {
   const [loading, setLoading] = useState(true);
   const [globalError, setGlobalError] = useState<string | null>(null);
   
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [selectedMonth, setSelectedMonth] = useState("");
 
   // TODO: BACKEND - Fetch daily stats from database (orders table)
   const [gallons, setGallons] = useState({
@@ -32,12 +29,18 @@ export default function AnalyticsAndReports() {
 
   // TODO: BACKEND - Fetch monthly aggregation based on selectedMonth
   const [monthlyStats, setMonthlyStats] = useState({
-    month: "February 2026",
-    days: 28,
+    month: "Loading...",
+    days: 0,
     earnings: 0,
   });
 
   useEffect(() => {
+    if (!selectedMonth) {
+      const now = new Date();
+      setSelectedMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+      return;
+    }
+
     const fetchAnalytics = async () => {
       setLoading(true);
       setGlobalError(null);
