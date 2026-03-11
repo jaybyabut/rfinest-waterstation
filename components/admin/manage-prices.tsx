@@ -4,11 +4,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ChevronLeft, SquarePen, Plus, Search } from "lucide-react";
-import ConfirmationModal from "@/components/ui/confirmation-modal"; // IMPORT THE MODAL
+import ConfirmationModal from "@/components/ui/confirmation-modal"; 
+
+type PriceItem = {
+  id: number;
+  name: string;
+  price: number | "";
+};
 
 export default function ManagePricesPage() {
-  // [BACKEND TODO]: Fetch this initial data from the 'zones' table in the database
-  const [prices, setPrices] = useState([
+  // TODO: BACKEND - Fetch this initial data from the 'zones' table in the database
+  const [prices, setPrices] = useState<PriceItem[]>([
     { id: 1, name: "Bulaon", price: 30 },
     { id: 2, name: "Calulut", price: 30 },
     { id: 3, name: "Maimpis", price: 35 },
@@ -24,19 +30,43 @@ export default function ManagePricesPage() {
   const [increaseAmount, setIncreaseAmount] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
- 
+  
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const applyGlobalIncrease = () => {
+    setGlobalError(null);
+    setSuccessMessage(null);
+    
     const amount = parseInt(increaseAmount);
-    if (!isNaN(amount) && amount !== 0) {
-      setPrices(prices.map((p) => ({ ...p, price: p.price + amount })));
-      setIncreaseAmount("");
+    
+    if (isNaN(amount) || amount === 0) {
+      setGlobalError("Please enter a valid amount to increase or decrease.");
+      return;
     }
+
+    const wouldBeInvalid = prices.some((p) => {
+      const currentPrice = typeof p.price === "number" ? p.price : 0;
+      return currentPrice + amount <= 0;
+    });
+
+    if (wouldBeInvalid) {
+      setGlobalError("Bulk update cannot result in a price of ₱0 or below.");
+      return;
+    }
+
+    setPrices(prices.map((p) => ({ 
+      ...p, 
+      price: typeof p.price === "number" ? p.price + amount : amount 
+    })));
+    setIncreaseAmount("");
   };
 
   const updatePrice = (id: number, newPrice: string) => {
-    const amount = parseInt(newPrice) || 0;
+    // Allows clearing the input to type a new number
+    const amount = newPrice === "" ? "" : parseInt(newPrice);
     setPrices(prices.map((p) => (p.id === id ? { ...p, price: amount } : p)));
   };
 
@@ -47,9 +77,44 @@ export default function ManagePricesPage() {
     }, 10);
   };
 
-  const handleSave = () => {
-    // [BACKEND TODO]: Implement API call (POST/PUT) to batch update these prices in the database
-    console.log("Ready to send to backend:", prices);
+  const validateForm = () => {
+    const invalidPrices = prices.filter(p => p.price === "" || p.price <= 0);
+    
+    if (invalidPrices.length > 0) {
+      setGlobalError("All locations must have a valid price greater than ₱0. Please check the highlighted fields.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSaveClick = () => {
+    setGlobalError(null);
+    setSuccessMessage(null);
+
+    if (validateForm()) {
+      setIsModalOpen(true);
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    setGlobalError(null);
+
+    try {
+      // TODO: BACKEND - Implement API call (POST/PUT) to batch update these prices in the database
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSuccessMessage("Prices updated successfully!");
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (e) {
+      console.error(e);
+      setGlobalError("An unexpected error occurred while saving prices.");
+    } finally {
+      setLoading(false);
+      setIsModalOpen(false);
+    }
   };
 
   const filteredPrices = prices.filter((p) =>
@@ -69,6 +134,19 @@ export default function ManagePricesPage() {
             </h1>
           </div>
           <div className="bg-white rounded-[40px] p-5 sm:p-6 shadow-inner border border-gray-100 text-left">
+            
+            {globalError && (
+                <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200">
+                    ⚠️ {globalError}
+                </div>
+            )}
+            
+            {successMessage && (
+                <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200">
+                    ✅ {successMessage}
+                </div>
+            )}
+
             <div className="bg-[#eef2f5] rounded-[20px] p-3 mb-4 border border-[#1e3d58]/10 flex flex-col sm:flex-row items-center justify-between gap-3">
               <label className="text-xs sm:text-sm font-bold text-[#1e3d58] uppercase tracking-widest whitespace-nowrap pl-1">
                 Bulk Increase:
@@ -86,7 +164,7 @@ export default function ManagePricesPage() {
                 </div>
                 <Button 
                   onClick={applyGlobalIncrease}
-                  className="h-10 w-10 rounded-lg bg-[#43b0f1] text-white hover:bg-[#1e3d58] p-0 flex items-center justify-center transition-colors"
+                  className="h-10 w-10 rounded-lg bg-[#43b0f1] text-white hover:bg-[#1e3d58] p-0 flex items-center justify-center transition-colors shadow-sm"
                 >
                   <Plus size={20} strokeWidth={4} />
                 </Button>
@@ -112,44 +190,59 @@ export default function ManagePricesPage() {
                   No locations found.
                 </div>
               ) : (
-                filteredPrices.map((location) => (
-                  <div key={location.id} className="flex justify-between items-center p-4 border border-black rounded-[20px] bg-white">
-                    <span className="text-xl sm:text-2xl font-medium text-[#1e3d58]">{location.name}</span>
-                    <div className="flex items-center gap-1">
-                      <span className={`text-xl sm:text-2xl font-medium ${editingId === location.id ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
-                        ₱
+                filteredPrices.map((location) => {
+                  const isInvalid = location.price === "" || location.price <= 0;
+
+                  return (
+                    <div key={location.id} className={`flex justify-between items-center p-4 border-2 rounded-[20px] bg-white transition-colors ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
+                      <span className={`text-xl sm:text-2xl font-medium ${isInvalid ? 'text-red-600 font-bold' : 'text-[#1e3d58]'}`}>
+                        {location.name}
                       </span>
-                      <input
-                        id={`price-input-${location.id}`}
-                        type="number"
-                        value={location.price || ""}
-                        onChange={(e) => updatePrice(location.id, e.target.value)}
-                        readOnly={editingId !== location.id}
-                        onBlur={() => setEditingId(null)}
-                        className={`w-12 text-xl sm:text-2xl font-medium text-right bg-transparent focus:outline-none transition-colors ${
-                          editingId === location.id ? "text-[#43b0f1] border-b-2 border-[#43b0f1]" : "text-[#1e3d58]"
-                        }`}
-                      />
-                      <SquarePen 
-                        onClick={() => handleEditClick(location.id)}
-                        size={24} 
-                        strokeWidth={1.5} 
-                        className={`ml-2 cursor-pointer transition-all ${
-                          editingId === location.id ? "text-[#43b0f1] scale-110" : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
-                        }`} 
-                      />
+                      <div className="flex items-center gap-1">
+                        <span className={`text-xl sm:text-2xl font-medium ${isInvalid ? 'text-red-500' : editingId === location.id ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
+                          ₱
+                        </span>
+                        <input
+                          id={`price-input-${location.id}`}
+                          type="number"
+                          value={location.price}
+                          onChange={(e) => updatePrice(location.id, e.target.value)}
+                          readOnly={editingId !== location.id}
+                          onBlur={() => setEditingId(null)}
+                          className={`w-12 text-xl sm:text-2xl font-medium text-right bg-transparent focus:outline-none transition-colors ${
+                            isInvalid 
+                              ? "text-red-600 border-b-2 border-red-500" 
+                              : editingId === location.id 
+                                ? "text-[#43b0f1] border-b-2 border-[#43b0f1]" 
+                                : "text-[#1e3d58]"
+                          }`}
+                        />
+                        <SquarePen 
+                          onClick={() => handleEditClick(location.id)}
+                          size={24} 
+                          strokeWidth={1.5} 
+                          className={`ml-2 cursor-pointer transition-all ${
+                            isInvalid 
+                              ? "text-red-400 hover:text-red-600" 
+                              : editingId === location.id 
+                                ? "text-[#43b0f1] scale-110" 
+                                : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
+                          }`} 
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
             <div className="pt-6 flex justify-center">
               <Button 
-                onClick={() => setIsModalOpen(true)} 
-                className="w-3/4 h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] transition-all active:scale-95 shadow-md"
+                onClick={handleSaveClick}
+                disabled={loading}
+                className="w-3/4 h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
-                Save Changes
+                {loading ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </div>
@@ -158,11 +251,11 @@ export default function ManagePricesPage() {
 
       <ConfirmationModal 
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => !loading && setIsModalOpen(false)}
         onConfirm={handleSave}
         title="Save Price Updates?"
         message="Are you sure you want to apply these new prices? This will reflect on all future orders."
-        confirmText="Save Prices"
+        confirmText={loading ? "Saving..." : "Save Prices"}
       />
 
     </div>
