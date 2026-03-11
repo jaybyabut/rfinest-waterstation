@@ -1,4 +1,4 @@
-import EmployeeTablet from "@/components/station/employeeTablet/employeeTablet";
+import EmployeeTablet from "@/components/employee/employeeTablet";
 
 export default function EmployeeTabletPage() {
   return (

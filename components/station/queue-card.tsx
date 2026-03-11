@@ -13,20 +13,19 @@ export default function QueueCard({ order }: { order: any }) {
   let mainInstruction = "";
 
   // TODO: BACKEND - Siguraduhing tumutugma ang string values sa baba
-  // (e.g., "PICKUP", "REFILL") sa kung ano man ang naka-save sa database niyo.
   switch (order.status) {
     case "PICKUP":
       borderColor = "border-l-orange-500";
       textColor = "text-orange-600";
-      icon = <Bike size={56} strokeWidth={2.5} />;
+      icon = <Bike className="w-[5vh] h-[5vh]" strokeWidth={2.5} />;
       statusLabel = "PICKUP";
       mainInstruction = order.location;
       break;
 
-    case "REFILL":
+    case "REFILL": {
       borderColor = "border-l-blue-500";
       textColor = "text-blue-600";
-      icon = <Droplets size={56} strokeWidth={2.5} />;
+      icon = <Droplets className="w-[5vh] h-[5vh]" strokeWidth={2.5} />;
       statusLabel = "REFILL";
       
       // TODO: BACKEND - I-map ito nang tama kung naka-hiwalay sa 'ORDER_ITEMS' table.
@@ -36,47 +35,44 @@ export default function QueueCard({ order }: { order: any }) {
       ].filter(Boolean).join(" & ");
       mainInstruction = items;
       break;
+    }
 
     case "DELIVER":
       borderColor = "border-l-green-500";
       textColor = "text-green-600";
-      icon = <MapPin size={56} strokeWidth={2.5} />;
+      icon = <MapPin className="w-[5vh] h-[5vh]" strokeWidth={2.5} />;
       statusLabel = "DELIVER";
       mainInstruction = order.location;
       break;
   }
 
   return (
-    <div className={`flex items-center w-full p-6 mb-4 bg-white rounded-2xl border border-slate-200 border-l-[16px] shadow-sm transition-all hover:shadow-md ${borderColor}`}>
+
+    <div className={`flex items-center w-full p-[2vh] bg-white rounded-2xl border border-slate-200 border-l-[1.2vh] shadow-sm transition-all h-full ${borderColor}`}>
       
-      {/* 1. Status & Icon (Left) */}
-      <div className={`flex flex-col items-center justify-center w-48 border-r-2 border-slate-100 pr-6 mr-6 ${textColor}`}>
+      <div className={`flex flex-col items-center justify-center w-[15vw] max-w-[200px] border-r-2 border-slate-100 pr-[2vw] mr-[2vw] ${textColor}`}>
         {icon}
-        <span className="font-bold text-2xl uppercase tracking-widest mt-2">{statusLabel}</span>
+        <span className="font-bold text-[1.8vh] uppercase tracking-widest mt-[1vh]">{statusLabel}</span>
       </div>
 
-      {/* 2. Main Instruction (Center - Pinakamalaki) */}
-      <div className="flex-1">
-        <p className="text-6xl font-black text-slate-800 tracking-tight uppercase">
+      <div className="flex-1 flex flex-col justify-center">
+        <p className="text-[4vh] font-black text-slate-800 tracking-tight uppercase leading-none">
           {mainInstruction}
         </p>
-        
-        {/* CONDITIONAL RENDERING: Lilitaw lang kung Deliver ang status AT may notes */}
-        {/* TODO: BACKEND - I-connect sa 'Customer_Notes' column niyo */}
+   
         {order.status === "DELIVER" && order.notes && (
-          <p className="text-3xl font-bold text-slate-500 italic mt-3 flex items-center gap-3">
-            <span className="bg-slate-100 px-4 py-1 rounded-md not-italic text-xl">NOTE</span> 
+          <p className="text-[2.2vh] font-bold text-slate-500 italic mt-[1vh] flex items-center gap-[1vw]">
+            <span className="bg-slate-100 px-[1vw] py-[0.5vh] rounded-md not-italic text-[1.8vh]">NOTE</span> 
             "{order.notes}"
           </p>
         )}
       </div>
 
-      {/* 3. Order ID (Right - Pinalaki at inalis ang name) */}
-      <div className="w-64 text-right pl-6 border-l-2 border-slate-100 flex flex-col justify-center">
-        <span className="text-2xl font-bold text-slate-400 uppercase tracking-widest mb-1">Order No.</span>
+      <div className="w-[15vw] max-w-[220px] text-right pl-[2vw] border-l-2 border-slate-100 flex flex-col justify-center">
+        <span className="text-[1.5vh] font-bold text-slate-400 uppercase tracking-widest mb-[0.5vh]">Order No.</span>
         
         {/* TODO: BACKEND - Palitan ng actual 'Order_ID' galing database */}
-        <span className="text-7xl font-black text-slate-900 tracking-tighter">#{order.id}</span>
+        <span className="text-[6vh] font-black text-slate-900 tracking-tighter leading-none">#{order.id}</span>
       </div>
 
     </div>
