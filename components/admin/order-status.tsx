@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Copy, Check } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { getAllOrders } from "@/app/actions/getAllOrders";
 
@@ -47,9 +47,9 @@ export default function OrderStatus() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [orders, setOrders] = useState<DisplayOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // NEW: State for API fetch errors
   const [globalError, setGlobalError] = useState<string | null>(null);
+  
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -106,8 +106,6 @@ export default function OrderStatus() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
-  
-  // NEW: Loading state just for the cancellation process
   const [isCancelling, setIsCancelling] = useState(false);
 
   const filteredOrders = activeFilter === "All" ? orders : orders.filter((order) => order.status === activeFilter);
@@ -129,6 +127,12 @@ export default function OrderStatus() {
     }
   };
 
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const handleCancelClick = (id: string) => {
     setOrderToCancel(id);
     setIsModalOpen(true);
@@ -141,9 +145,6 @@ export default function OrderStatus() {
 
     try {
       // TODO: BACKEND - Add API call to update order status to "Cancelled" in the database
-      // await cancelOrderAPI(orderToCancel);
-      
-      // Simulate backend delay for demonstration
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       setOrders(
@@ -153,7 +154,7 @@ export default function OrderStatus() {
       );
     } catch (error) {
        console.error("Failed to cancel order:", error);
-       alert("Failed to cancel order. Please try again."); // Fallback error
+       alert("Failed to cancel order. Please try again."); 
     } finally {
       setIsCancelling(false);
       setIsModalOpen(false);
@@ -177,7 +178,6 @@ export default function OrderStatus() {
 
           <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left">
             
-            {/* NEW: Global Error Banner for Fetching */}
             {globalError && (
               <div className="mb-4 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200">
                 ⚠️ {globalError}
@@ -218,7 +218,16 @@ export default function OrderStatus() {
                   <div key={order.id} className="border-2 border-[#1e3d58] rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="text-lg font-black text-[#1e3d58]">{order.id}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-black text-[#1e3d58]">{order.id}</h3>
+                          <button 
+                            onClick={() => handleCopyId(order.id)}
+                            className="text-gray-400 hover:text-[#43b0f1] transition-colors focus:outline-none"
+                            title="Copy Order ID"
+                          >
+                            {copiedId === order.id ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                          </button>
+                        </div>
                         <p className="text-sm font-bold text-gray-500">
                           {order.name} • {order.zone}
                         </p>
@@ -270,4 +279,3 @@ export default function OrderStatus() {
     </div>
   );
 }
-
