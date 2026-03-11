@@ -47,14 +47,17 @@ export default function OrderStatus() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [orders, setOrders] = useState<DisplayOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // NEW: State for API fetch errors
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        setGlobalError(null);
         const result = await getAllOrders();
         
         if (result && !('error' in result)) {
-          // It's a valid array of orders
           const fetchedOrders = result as FetchedOrder[];
           
           const mappedOrders: DisplayOrder[] = fetchedOrders.map((order) => {
@@ -74,7 +77,6 @@ export default function OrderStatus() {
 
             const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
 
-
             return {
               id: `ORD-${order.order_id}`,
               name: order.name,
@@ -88,9 +90,11 @@ export default function OrderStatus() {
 
           setOrders(mappedOrders);
         } else {
-          console.error("Error fetching orders:", result.error);
+          setGlobalError("Failed to load orders. Please try refreshing the page.");
+          console.error("Error fetching orders:", result?.error);
         }
       } catch (error) {
+        setGlobalError("An unexpected error occurred while connecting to the server.");
         console.error("Unexpected error fetching orders:", error);
       } finally {
         setLoading(false);
@@ -102,6 +106,9 @@ export default function OrderStatus() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+  
+  // NEW: Loading state just for the cancellation process
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const filteredOrders = activeFilter === "All" ? orders : orders.filter((order) => order.status === activeFilter);
 
@@ -127,14 +134,29 @@ export default function OrderStatus() {
     setIsModalOpen(true);
   };
 
-  const confirmCancellation = () => {
-    if (orderToCancel) {
-      // [BACKEND TODO]: Add API call to update order status to "Cancelled" in the database
+  const confirmCancellation = async () => {
+    if (!orderToCancel) return;
+
+    setIsCancelling(true);
+
+    try {
+      // TODO: BACKEND - Add API call to update order status to "Cancelled" in the database
+      // await cancelOrderAPI(orderToCancel);
+      
+      // Simulate backend delay for demonstration
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       setOrders(
         orders.map((order) =>
           order.id === orderToCancel ? { ...order, status: "Cancelled" } : order
         )
       );
+    } catch (error) {
+       console.error("Failed to cancel order:", error);
+       alert("Failed to cancel order. Please try again."); // Fallback error
+    } finally {
+      setIsCancelling(false);
+      setIsModalOpen(false);
       setOrderToCancel(null);
     }
   };
@@ -154,7 +176,15 @@ export default function OrderStatus() {
           </div>
 
           <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left">
-           <div className="grid grid-cols-2 gap-2 pb-4 mb-2">
+            
+            {/* NEW: Global Error Banner for Fetching */}
+            {globalError && (
+              <div className="mb-4 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200">
+                ⚠️ {globalError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 pb-4 mb-2">
               {FILTERS.map((filter) => (
                 <button
                   key={filter}
@@ -181,7 +211,7 @@ export default function OrderStatus() {
                  </div>
               ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-medium">
-                  No orders found for "{activeFilter}".
+                  {globalError ? "Cannot load data." : `No orders found for "${activeFilter}".`}
                 </div>
               ) : (
                 filteredOrders.map((order) => (
@@ -227,13 +257,15 @@ export default function OrderStatus() {
       <ConfirmationModal
         isOpen={isModalOpen}
         onClose={() => {
-          setIsModalOpen(false);
-          setOrderToCancel(null);
+          if (!isCancelling) {
+             setIsModalOpen(false);
+             setOrderToCancel(null);
+          }
         }}
         onConfirm={confirmCancellation}
         title="Cancel Order?"
         message={`Are you sure you want to cancel ${orderToCancel}? This action cannot be undone.`}
-        confirmText="Yes, Cancel Order"
+        confirmText={isCancelling ? "Cancelling..." : "Yes, Cancel Order"}
       />
     </div>
   );
