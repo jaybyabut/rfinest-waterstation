@@ -28,7 +28,7 @@ export default function EditOrderForm() {
     const newTotal = (slimCount + roundCount) * pricePerUnit;
 
     const validateForm = () => {
-        let newErrors: Record<string, string> = {};
+        const newErrors: Record<string, string> = {}; // FIXED: Changed let to const
 
         if (!orderId.trim()) {
             newErrors.orderId = "Order ID is required.";
@@ -76,35 +76,21 @@ export default function EditOrderForm() {
 
     return (
         <div className="w-full max-w-md mx-auto mb-24 animate-in fade-in zoom-in duration-500 relative">
-
             <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl mt-6">
-                
                 <div className="flex items-center mb-8 relative px-2">
-                    <Link
-                        href="/dashboard"
-                        className="absolute left-2 text-[#1e3d58] transition-transform hover:scale-110"
-                    >
+                    <Link href="/dashboard" className="absolute left-2 text-[#1e3d58] transition-transform hover:scale-110">
                         <ChevronLeft size={44} strokeWidth={3} />
                     </Link>
-                    <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center ml-4">
-                        Edit Order
-                    </h1>
+                    <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center ml-4">Edit Order</h1>
                 </div>
 
                 <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left">
-                    
                     {globalError && (
-                        <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200">
-                            ⚠️ {globalError}
-                        </div>
+                        <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200">⚠️ {globalError}</div>
                     )}
-                    
                     {successMessage && (
-                        <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200">
-                            ✅ {successMessage}
-                        </div>
+                        <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200">✅ {successMessage}</div>
                     )}
-                    
                     <div className="mb-6">
                         <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Order ID:</label>
                         <div className="relative">
@@ -123,28 +109,15 @@ export default function EditOrderForm() {
                     </div>
 
                     <div className="space-y-5">
-                        
                         <div className="grid grid-cols-1 gap-4 opacity-80">
                             <div>
                                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Name:</label>
-                                <input 
-                                    type="text" 
-                                    value={customerName} 
-                                    readOnly 
-                                    className="w-full h-14 px-6 rounded-full border-2 border-gray-400 bg-gray-100 text-gray-500 font-bold text-lg cursor-not-allowed focus:outline-none" 
-                                />
+                                <input type="text" value={customerName} readOnly className="w-full h-14 px-6 rounded-full border-2 border-gray-400 bg-gray-100 text-gray-500 font-bold text-lg cursor-not-allowed focus:outline-none" />
                             </div>
-
                             <div>
                                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Contact:</label>
-                                <input 
-                                    type="text" 
-                                    value={contactNumber} 
-                                    readOnly 
-                                    className="w-full h-14 px-6 rounded-full border-2 border-gray-400 bg-gray-100 text-gray-500 font-bold text-lg cursor-not-allowed focus:outline-none" 
-                                />
+                                <input type="text" value={contactNumber} readOnly className="w-full h-14 px-6 rounded-full border-2 border-gray-400 bg-gray-100 text-gray-500 font-bold text-lg cursor-not-allowed focus:outline-none" />
                             </div>
-
                             <div className="grid grid-cols-2 gap-3">
                                  <div>
                                     <label className="block text-sm font-bold mb-1 ml-2 text-[#1e3d58]">Zone:</label>
@@ -164,54 +137,20 @@ export default function EditOrderForm() {
                         <div className="pt-2">
                             <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
                             <div className={`w-full p-4 rounded-[30px] border-2 bg-white space-y-4 ${errors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
-                                
                                 <div className="flex justify-between items-center text-xl font-bold text-[#1e3d58]">
                                     <span>Slim Gallon:</span>
                                     <div className="flex items-center gap-5">
-                                        <button 
-                                            onClick={() => {
-                                                setSlimCount(Math.max(0, slimCount - 1));
-                                                if (errors.items) setErrors(prev => ({...prev, items: ""}));
-                                            }} 
-                                            className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center"
-                                        >
-                                            <Minus size={28} strokeWidth={3} />
-                                        </button>
+                                        <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center"><Minus size={28} strokeWidth={3} /></button>
                                         <span className="w-8 text-center text-2xl">{slimCount}</span>
-                                        <button 
-                                            onClick={() => {
-                                                setSlimCount(slimCount + 1);
-                                                if (errors.items) setErrors(prev => ({...prev, items: ""}));
-                                            }} 
-                                            className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center"
-                                        >
-                                            <Plus size={28} strokeWidth={3} />
-                                        </button>
+                                        <button onClick={() => setSlimCount(slimCount + 1)} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center"><Plus size={28} strokeWidth={3} /></button>
                                     </div>
                                 </div>
-
                                 <div className="flex justify-between items-center text-xl font-bold text-[#1e3d58] border-t border-gray-100 pt-3">
                                     <span>Round Gallon:</span>
                                     <div className="flex items-center gap-5">
-                                        <button 
-                                            onClick={() => {
-                                                setRoundCount(Math.max(0, roundCount - 1));
-                                                if (errors.items) setErrors(prev => ({...prev, items: ""}));
-                                            }} 
-                                            className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center"
-                                        >
-                                            <Minus size={28} strokeWidth={3} />
-                                        </button>
+                                        <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center"><Minus size={28} strokeWidth={3} /></button>
                                         <span className="w-8 text-center text-2xl">{roundCount}</span>
-                                        <button 
-                                            onClick={() => {
-                                                setRoundCount(roundCount + 1);
-                                                if (errors.items) setErrors(prev => ({...prev, items: ""}));
-                                            }} 
-                                            className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center"
-                                        >
-                                            <Plus size={28} strokeWidth={3} />
-                                        </button>
+                                        <button onClick={() => setRoundCount(roundCount + 1)} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center"><Plus size={28} strokeWidth={3} /></button>
                                     </div>
                                 </div>
                             </div>
@@ -226,28 +165,19 @@ export default function EditOrderForm() {
                         </div>
 
                         <div className="pt-4 flex justify-center">
-                            <Button 
-                                onClick={handleConfirmClick}
-                                disabled={loading}
-                                className="w-full h-14 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                            >
+                            <Button onClick={handleConfirmClick} disabled={loading} className="w-full h-14 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 shadow-md">
                                 {loading ? "Saving..." : "Confirm Edit"}
                             </Button>
                         </div>
-
                     </div>
                 </div>
             </div>
 
             <ConfirmationModal 
-                isOpen={isModalOpen}
-                onClose={() => !loading && setIsModalOpen(false)}
-                onConfirm={handleSave}
-                title="Update Order Details"
-                message={`Are you sure you want to update ${orderId} for ${customerName}? The new total amount will be ₱${newTotal}.`}
+                isOpen={isModalOpen} onClose={() => !loading && setIsModalOpen(false)} onConfirm={handleSave} title="Update Order Details"
+                message={`Are you sure you want to update ${orderId}? The new total amount will be ₱${newTotal}.`}
                 confirmText={loading ? "Saving..." : "Save Changes"}
             />
-
         </div>
     );
-}   
+}
