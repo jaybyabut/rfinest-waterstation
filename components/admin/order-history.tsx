@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, Calendar } from "lucide-react";
 
@@ -11,12 +11,45 @@ export default function OrderHistory() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // [BACKEND TODO]: Replace this dummy data with database fetch based on the selected date filter
-  const [orders] = useState([
+  const [loading, setLoading] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
+
+  // TODO: BACKEND - Replace this dummy data with database fetch based on the selected date filter
+  const [orders, setOrders] = useState([
     { id: "ORD-1020", name: "Januard Esguerra", zone: "Bulaon", slim: 5, round: 6, total: 330, status: "Completed", date: "2026-02-17" },
     { id: "ORD-1021", name: "Jayb Yabut", zone: "Calulut", slim: 2, round: 0, total: 60, status: "Completed", date: "2026-02-16" },
     { id: "ORD-1022", name: "Kenneth Peralta", zone: "Montana", slim: 0, round: 3, total: 135, status: "Cancelled", date: "2026-02-10" },
   ]);
+
+  useEffect(() => {
+    setGlobalError(null);
+
+    if (activeFilter === "Custom") {
+      if (startDate && endDate) {
+        if (new Date(startDate) > new Date(endDate)) {
+          setGlobalError("Start date cannot be later than end date.");
+          return; 
+        }
+      } else {
+        return; 
+      }
+    }
+
+    const fetchHistory = async () => {
+      setLoading(true);
+      try {
+        // TODO: BACKEND - Implement actual API call here passing activeFilter, startDate, and endDate
+        await new Promise(resolve => setTimeout(resolve, 800)); 
+      } catch (error) {
+        console.error(error);
+        setGlobalError("Failed to load order history. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [activeFilter, startDate, endDate]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -45,11 +78,23 @@ export default function OrderHistory() {
 
           <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left">
             
+            {globalError && (
+              <div className="mb-4 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200">
+                ⚠️ {globalError}
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-2 pb-4">
               {FILTERS.map((filter) => (
                 <button
                   key={filter}
-                  onClick={() => setActiveFilter(filter)}
+                  onClick={() => {
+                    setActiveFilter(filter);
+                    if (filter !== "Custom") {
+                      setStartDate("");
+                      setEndDate("");
+                    }
+                  }}
                   className={`w-full px-2 py-2.5 rounded-full text-sm sm:text-base font-bold border-2 transition-all ${
                     activeFilter === filter
                       ? "bg-[#1e3d58] text-white border-[#1e3d58]"
@@ -62,7 +107,7 @@ export default function OrderHistory() {
             </div>
 
             {activeFilter === "Custom" && (
-              <div className="flex items-center justify-between gap-2 mb-4 bg-gray-50 p-3 rounded-2xl border border-gray-200">
+              <div className={`flex items-center justify-between gap-2 mb-4 bg-gray-50 p-3 rounded-2xl border-2 transition-colors ${globalError ? 'border-red-400' : 'border-gray-200'}`}>
                 <Calendar size={20} className="text-[#1e3d58] shrink-0" />
                 <input 
                   type="date" 
@@ -70,7 +115,7 @@ export default function OrderHistory() {
                   onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()}
                   onKeyDown={(e) => e.preventDefault()}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full bg-transparent text-center text-sm font-bold text-[#1e3d58] focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
+                  className={`w-full bg-transparent text-center text-sm font-bold focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden ${globalError ? 'text-red-600' : 'text-[#1e3d58]'}`}
                 />
                 <span className="font-bold text-gray-400 shrink-0">-</span>
                 <input 
@@ -79,15 +124,19 @@ export default function OrderHistory() {
                   onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()}
                   onKeyDown={(e) => e.preventDefault()}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full bg-transparent text-center text-sm font-bold text-[#1e3d58] focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
+                  className={`w-full bg-transparent text-center text-sm font-bold focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden ${globalError ? 'text-red-600' : 'text-[#1e3d58]'}`}
                 />
               </div>
             )}
 
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 pb-2 custom-scrollbar">
-              {orders.length === 0 ? (
+              {loading ? (
+                 <div className="text-center py-10 text-gray-400 font-medium">
+                   Loading history...
+                 </div>
+              ) : orders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-medium">
-                  No orders found for this date range.
+                  {globalError ? "Invalid date range." : "No orders found for this date range."}
                 </div>
               ) : (
                 orders.map((order) => (
