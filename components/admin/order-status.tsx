@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, Copy, Check } from "lucide-react";
+import { ChevronLeft, Copy, Check, X } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
+import { Button } from "@/components/ui/button";
 import { getAllOrders } from "@/app/actions/getAllOrders";
+import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
 
-const status_options = ["Pending", "Picked-up", "Refilled", "Delivered", "Cancelled"];
+const status_options = ["Pending", "Processing", "Refilled", "Out for Delivery", "Cancelled"];
 const FILTERS = ["All", ...status_options];
 
 interface OrderItem {
@@ -35,12 +37,15 @@ interface FetchedOrder {
 
 interface DisplayOrder {
   id: string;
+  rawId: number;
   name: string;
   zone: string;
   slim: number;
   round: number;
   total: number;
   status: string;
+  date: string;
+  transactionType: string;
 }
 
 export default function OrderStatus() {
@@ -77,14 +82,21 @@ export default function OrderStatus() {
 
             const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
 
+            let statusString = order.current_status || "Pending";
+            if (statusString === "Picked-up") statusString = "Processing";
+            if (statusString === "Delivered") statusString = "Out for Delivery";
+
             return {
               id: `ORD-${order.order_id}`,
+              rawId: order.order_id,
               name: order.name,
               zone: location?.location_name || "Unknown",
               slim,
               round,
               total: order.total_amount,
-              status: order.current_status || "Pending",
+              status: statusString,
+              date: new Date(order.order_dt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+              transactionType: order.transaction_type || "N/A",
             };
           });
 
@@ -108,17 +120,59 @@ export default function OrderStatus() {
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
+  // Modals for details and status updates
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState<DisplayOrder | null>(null);
+  const [statusChangeOrder, setStatusChangeOrder] = useState<DisplayOrder | null>(null);
+  const [newStatus, setNewStatus] = useState<string>("");
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const handleCardClick = (order: DisplayOrder) => {
+    setSelectedOrderDetails(order);
+  };
+
+  const handleStatusClick = (e: React.MouseEvent, order: DisplayOrder) => {
+    e.stopPropagation();
+    setStatusChangeOrder(order);
+    setNewStatus(order.status);
+  };
+
+  const confirmStatusChange = async () => {
+    if (!statusChangeOrder || !newStatus || statusChangeOrder.status === newStatus) {
+      setStatusChangeOrder(null);
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      const result = await updateOrderStatus(statusChangeOrder.rawId, newStatus);
+      if (result && !('error' in result)) {
+        setOrders(orders.map(o => o.id === statusChangeOrder.id ? { ...o, status: newStatus } : o));
+        if (selectedOrderDetails?.id === statusChangeOrder.id) {
+          setSelectedOrderDetails({ ...selectedOrderDetails, status: newStatus });
+        }
+      } else {
+        alert(result?.error || "Failed to update status.");
+      }
+    } catch (e) {
+      console.error("Error updating status:", e);
+      alert("Error updating status.");
+    } finally {
+      setIsUpdatingStatus(false);
+      setStatusChangeOrder(null);
+    }
+  };
+
   const filteredOrders = activeFilter === "All" ? orders : orders.filter((order) => order.status === activeFilter);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Pending":
         return "bg-gray-200 text-gray-700 border-gray-400";
-      case "Picked-up":
+      case "Processing":
         return "bg-orange-100 text-orange-700 border-orange-400";
       case "Refilled":
         return "bg-blue-100 text-[#43b0f1] border-[#43b0f1]";
-      case "Delivered":
+      case "Out for Delivery":
         return "bg-green-100 text-green-700 border-green-500";
       case "Cancelled":
         return "bg-red-100 text-red-700 border-red-500";
@@ -215,13 +269,17 @@ export default function OrderStatus() {
                 </div>
               ) : (
                 filteredOrders.map((order) => (
-                  <div key={order.id} className="border-2 border-[#1e3d58] rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3">
+                  <div 
+                    key={order.id} 
+                    onClick={() => handleCardClick(order)}
+                    className="border-2 border-[#1e3d58] rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3 cursor-pointer hover:border-[#43b0f1] transition-colors"
+                  >
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-black text-[#1e3d58]">{order.id}</h3>
                           <button 
-                            onClick={() => handleCopyId(order.id)}
+                            onClick={(e) => { e.stopPropagation(); handleCopyId(order.id); }}
                             className="text-gray-400 hover:text-[#43b0f1] transition-colors focus:outline-none"
                             title="Copy Order ID"
                           >
@@ -232,9 +290,12 @@ export default function OrderStatus() {
                           {order.name} • {order.zone}
                         </p>
                       </div>
-                      <div className={`px-3 py-1 rounded-full border text-xs font-bold ${getStatusColor(order.status)}`}>
+                      <button 
+                        onClick={(e) => handleStatusClick(e, order)}
+                        className={`px-3 py-1 rounded-full border text-xs font-bold hover:opacity-80 transition-opacity ${getStatusColor(order.status)}`}
+                      >
                         {order.status}
-                      </div>
+                      </button>
                     </div>
 
                     <div className="flex justify-between items-center bg-[#e8eef1] p-3 rounded-[15px]">
@@ -248,7 +309,7 @@ export default function OrderStatus() {
                     {order.status === "Pending" && (
                       <div className="flex justify-end mt-1">
                         <button
-                          onClick={() => handleCancelClick(order.id)}
+                          onClick={(e) => { e.stopPropagation(); handleCancelClick(order.id); }}
                           className="text-red-500 hover:text-red-700 text-sm font-bold transition-colors"
                         >
                           Cancel Order
@@ -276,6 +337,104 @@ export default function OrderStatus() {
         message={`Are you sure you want to cancel ${orderToCancel}? This action cannot be undone.`}
         confirmText={isCancelling ? "Cancelling..." : "Yes, Cancel Order"}
       />
+
+      {/* Details Modal */}
+      {selectedOrderDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200" onClick={() => setSelectedOrderDetails(null)}>
+          <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-[30px] p-6 relative border border-gray-100">
+              <button onClick={() => setSelectedOrderDetails(null)} className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition-colors">
+                <X size={24} />
+              </button>
+              
+              <h2 className="text-2xl font-black text-[#1e3d58] mb-6 pr-8">Order Details</h2>
+              
+              <div className="space-y-4 text-sm sm:text-base">
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 font-bold">Order ID</span>
+                  <span className="text-[#1e3d58] font-black">{selectedOrderDetails.id}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 font-bold">Name</span>
+                  <span className="text-[#1e3d58] font-bold text-right">{selectedOrderDetails.name}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 font-bold">Date</span>
+                  <span className="text-[#1e3d58] font-bold text-right">{selectedOrderDetails.date}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 font-bold">Zone</span>
+                  <span className="text-[#1e3d58] font-bold">{selectedOrderDetails.zone}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 font-bold">Type</span>
+                  <span className="text-[#1e3d58] font-bold">{selectedOrderDetails.transactionType}</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 font-bold">Items</span>
+                  <span className="text-[#43b0f1] font-black">{selectedOrderDetails.slim} Slim • {selectedOrderDetails.round} Round</span>
+                </div>
+                <div className="flex justify-between border-b border-gray-100 pb-2">
+                  <span className="text-gray-500 font-bold">Total</span>
+                  <span className="text-[#43b0f1] font-black text-lg">₱{selectedOrderDetails.total}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <span className="text-gray-500 font-bold">Status</span>
+                  <button 
+                    onClick={(e) => handleStatusClick(e, selectedOrderDetails)}
+                    className={`px-4 py-1.5 rounded-full border text-xs font-black shadow-sm hover:opacity-80 transition-opacity ${getStatusColor(selectedOrderDetails.status)}`}
+                  >
+                    {selectedOrderDetails.status}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Change Modal */}
+      {statusChangeOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+          <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-[30px] p-6 text-center border border-gray-100">
+              <h2 className="text-2xl font-black text-[#1e3d58] mb-2 tracking-tight">Update Status</h2>
+              <p className="mb-6 text-gray-500 font-medium text-sm">Change status for <span className="text-[#43b0f1] font-black">{statusChangeOrder.id}</span></p>
+              
+              <div className="relative">
+                <select 
+                  className="w-full p-4 mb-8 border-2 border-gray-200 rounded-2xl font-bold text-[#1e3d58] outline-none focus:border-[#43b0f1] appearance-none bg-gray-50/50"
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  {status_options.map(opt => (
+                    <option key={opt} value={opt} className="font-bold">{opt}</option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-4 pointer-events-none text-gray-400">
+                  <ChevronLeft size={24} className="-rotate-90" />
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row gap-3">
+                <Button 
+                  onClick={() => setStatusChangeOrder(null)} 
+                  variant="outline" 
+                  className="flex-1 h-12 text-lg font-bold rounded-full border-2 border-[#1e3d58] bg-white text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all shadow-md"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={confirmStatusChange} 
+                  className="flex-1 h-12 text-lg font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md"
+                >
+                  {isUpdatingStatus ? "Updating..." : "Update"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
