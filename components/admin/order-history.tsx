@@ -3,8 +3,43 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, Calendar } from "lucide-react";
+import { getOrderHistory } from "@/app/actions/getOrderHistory";
 
 const FILTERS = ["Today", "Yesterday", "Last Week", "Custom"];
+
+interface OrderItem {
+  quantity: number;
+  products: {
+    product_name: string;
+  } | {
+    product_name: string;
+  }[] | null;
+}
+
+interface FetchedOrder {
+  order_id: number;
+  order_dt: string; 
+  name: string;
+  total_amount: number;
+  current_status: string;
+  location_pricing: {
+    location_name: string;
+  } | {
+    location_name: string;
+  }[] | null;
+  order_items: OrderItem[];
+}
+
+interface DisplayOrder {
+  id: string;
+  name: string;
+  zone: string;
+  slim: number;
+  round: number;
+  total: number;
+  status: string;
+  date: string;
+}
 
 export default function OrderHistory() {
   const [activeFilter, setActiveFilter] = useState("Today");
@@ -14,12 +49,7 @@ export default function OrderHistory() {
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  // TODO: BACKEND - Replace this dummy data with database fetch based on the selected date filter
-  const [orders] = useState([ // FIXED: Removed setOrders because it's unused
-    { id: "ORD-1020", name: "Januard Esguerra", zone: "Bulaon", slim: 5, round: 6, total: 330, status: "Completed", date: "2026-02-17" },
-    { id: "ORD-1021", name: "Jayb Yabut", zone: "Calulut", slim: 2, round: 0, total: 60, status: "Completed", date: "2026-02-16" },
-    { id: "ORD-1022", name: "Kenneth Peralta", zone: "Montana", slim: 0, round: 3, total: 135, status: "Cancelled", date: "2026-02-10" },
-  ]);
+  const [orders, setOrders] = useState<DisplayOrder[]>([]);
 
   useEffect(() => {
     setGlobalError(null);
@@ -38,8 +68,41 @@ export default function OrderHistory() {
     const fetchHistory = async () => {
       setLoading(true);
       try {
-        // TODO: BACKEND - Implement actual API call here passing activeFilter, startDate, and endDate
-        await new Promise(resolve => setTimeout(resolve, 800)); 
+        const result = await getOrderHistory(activeFilter, startDate, endDate);
+        if (result && !('error' in result)) {
+          const fetchedOrders = result as FetchedOrder[];
+          
+          const mappedOrders: DisplayOrder[] = fetchedOrders.map((order) => {
+            let slim = 0;
+            let round = 0;
+
+            order.order_items.forEach((item) => {
+              const product = Array.isArray(item.products) ? item.products[0] : item.products;
+              const productName = product?.product_name?.toLowerCase() || "";
+              
+              if (productName.includes("slim")) slim += item.quantity;
+              else if (productName.includes("round")) round += item.quantity;
+            });
+
+            const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
+
+            return {
+              id: `ORD-${order.order_id}`,
+              name: order.name,
+              zone: location?.location_name || "Unknown",
+              slim,
+              round,
+              total: order.total_amount,
+              status: order.current_status || "Pending",
+              date: new Date(order.order_dt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            };
+          });
+
+          setOrders(mappedOrders);
+        } else {
+          setGlobalError("Failed to load order history.");
+          console.error("Error fetching order history:", result?.error);
+        }
       } catch (error) {
         console.error(error);
         setGlobalError("Failed to load order history. Please try again.");

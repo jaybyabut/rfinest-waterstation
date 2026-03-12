@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { getAllOrders } from "@/app/actions/getAllOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
 
-const status_options = ["Pending", "Processing", "Refilled", "Out for Delivery", "Cancelled"];
+const status_options = ["Pending", "Processing", "Refilled", "Out for Delivery", "Delivered", "Cancelled"];
 const FILTERS = ["All", ...status_options];
 
 interface OrderItem {
@@ -84,7 +84,6 @@ export default function OrderStatus() {
 
             let statusString = order.current_status || "Pending";
             if (statusString === "Picked-up") statusString = "Processing";
-            if (statusString === "Delivered") statusString = "Out for Delivery";
 
             return {
               id: `ORD-${order.order_id}`,
@@ -120,7 +119,7 @@ export default function OrderStatus() {
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
-  // Modals for details and status updates
+  // modals for details and status updates
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<DisplayOrder | null>(null);
   const [statusChangeOrder, setStatusChangeOrder] = useState<DisplayOrder | null>(null);
   const [newStatus, setNewStatus] = useState<string>("");
@@ -132,8 +131,9 @@ export default function OrderStatus() {
 
   const handleStatusClick = (e: React.MouseEvent, order: DisplayOrder) => {
     e.stopPropagation();
+    if (order.status === "Cancelled") return;
     setStatusChangeOrder(order);
-    setNewStatus(order.status);
+    setNewStatus(order.status === "Pending" ? "Processing" : order.status);
   };
 
   const confirmStatusChange = async () => {
@@ -173,6 +173,8 @@ export default function OrderStatus() {
       case "Refilled":
         return "bg-blue-100 text-[#43b0f1] border-[#43b0f1]";
       case "Out for Delivery":
+        return "bg-teal-100 text-teal-700 border-teal-400";
+      case "Delivered":
         return "bg-green-100 text-green-700 border-green-500";
       case "Cancelled":
         return "bg-red-100 text-red-700 border-red-500";
@@ -245,7 +247,6 @@ export default function OrderStatus() {
                   onClick={() => setActiveFilter(filter)}
                   className={`px-2 py-2.5 rounded-full text-sm sm:text-base font-bold border-2 transition-all ${
                     filter === "All" ? "col-span-2 w-full" : 
-                    filter === "Cancelled" ? "col-span-2 w-[calc(50%-0.25rem)] mx-auto" : 
                     "w-full"
                   } ${
                     activeFilter === filter
@@ -292,7 +293,12 @@ export default function OrderStatus() {
                       </div>
                       <button 
                         onClick={(e) => handleStatusClick(e, order)}
-                        className={`px-3 py-1 rounded-full border text-xs font-bold hover:opacity-80 transition-opacity ${getStatusColor(order.status)}`}
+                        disabled={order.status === "Cancelled"}
+                        className={`px-3 py-1 rounded-full border text-xs font-bold transition-all ${
+                          order.status === "Cancelled" 
+                            ? "opacity-50 cursor-not-allowed" 
+                            : "hover:opacity-80 cursor-pointer"
+                        } ${getStatusColor(order.status)}`}
                       >
                         {order.status}
                       </button>
@@ -382,7 +388,12 @@ export default function OrderStatus() {
                   <span className="text-gray-500 font-bold">Status</span>
                   <button 
                     onClick={(e) => handleStatusClick(e, selectedOrderDetails)}
-                    className={`px-4 py-1.5 rounded-full border text-xs font-black shadow-sm hover:opacity-80 transition-opacity ${getStatusColor(selectedOrderDetails.status)}`}
+                    disabled={selectedOrderDetails.status === "Cancelled"}
+                    className={`px-4 py-1.5 rounded-full border text-xs font-black shadow-sm transition-all ${
+                      selectedOrderDetails.status === "Cancelled"
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:opacity-80 cursor-pointer"
+                    } ${getStatusColor(selectedOrderDetails.status)}`}
                   >
                     {selectedOrderDetails.status}
                   </button>
@@ -407,7 +418,7 @@ export default function OrderStatus() {
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
                 >
-                  {status_options.map(opt => (
+                  {status_options.filter(opt => opt !== "Pending").map(opt => (
                     <option key={opt} value={opt} className="font-bold">{opt}</option>
                   ))}
                 </select>
