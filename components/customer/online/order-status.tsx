@@ -1,51 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, CheckCircle2, Package, Droplets, MapPin, ReceiptText, CalendarClock } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Clock, Package, Droplets, MapPin, Truck, ReceiptText, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// TODO: BACKEND - Tanggalin itong dummy data kapag nakakabit na sa Supabase
-const DUMMY_ORDERS = [
-  {
-    id: "ORD-2026-003",
-    date: "Mar 08, 2026",
-    totalAmount: 300,
-    items: "2 Slim • 5 Round • COD",
-    currentStep: 1, // 0 = Picked Up, 1 = Refilled, 2 = Delivered
-    statusText: "Refilled",
-  },
-  {
-    id: "ORD-2026-002",
-    date: "Mar 05, 2026",
-    totalAmount: 150,
-    items: "1 Slim • 2 Round • GCash",
-    currentStep: 2,
-    statusText: "Delivered",
-  },
-  {
-    id: "ORD-2026-001",
-    date: "Mar 01, 2026",
-    totalAmount: 450,
-    items: "5 Slim • 5 Round • COD",
-    currentStep: 2,
-    statusText: "Delivered",
-  },
-];
+import { getCustomerOrders } from "@/app/actions/getCustomerOrders";
+
+export interface Order {
+  id: string;
+  date: string;
+  totalAmount: number;
+  items: string;
+  currentStep: number;
+  statusText: string;
+}
 
 const STATUSES = [
-  { title: "Picked Up", desc: "Your empty containers have been collected.", icon: Package },
+  { title: "Pending", desc: "Your order has been received and is waiting to be processed.", icon: Clock },
+  { title: "Processing", desc: "We are currently processing your containers.", icon: Package },
   { title: "Refilled", desc: "Your containers are freshly refilled and sealed.", icon: Droplets },
-  { title: "Delivered", desc: "Your order has been safely delivered.", icon: MapPin },
+  { title: "Out for Delivery", desc: "Your order is on its way to you.", icon: Truck },
 ];
 
 export default function CustomerOrderStatus() {
-  // BAGONG STATE: Para mag-toggle between listahan at tracking UI
   const [view, setView] = useState<"list" | "detail">("list");
-  const [selectedOrder, setSelectedOrder] = useState<typeof DUMMY_ORDERS[0] | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const handleOrderClick = (order: typeof DUMMY_ORDERS[0]) => {
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const result = await getCustomerOrders();
+      if (result && !('error' in result)) {
+        const formattedOrders = result.map((order: any) => {
+          let slim = 0;
+          let round = 0;
+          order.order_items.forEach((item: any) => {
+            const product = Array.isArray(item.products) ? item.products[0] : item.products;
+            const productName = product?.product_name?.toLowerCase() || "";
+            if (productName.includes("slim")) slim += item.quantity;
+            else if (productName.includes("round")) round += item.quantity;
+          });
+
+          let currentStep = -1;
+          if (order.current_status === "Pending") currentStep = 0;
+          else if (order.current_status === "Picked-up" || order.current_status === "Processing") currentStep = 1;
+          else if (order.current_status === "Refilled") currentStep = 2;
+          else if (order.current_status === "Delivered" || order.current_status === "Out for Delivery") currentStep = 3;
+
+          let itemsStr = [];
+          if (slim > 0) itemsStr.push(`${slim} Slim`);
+          if (round > 0) itemsStr.push(`${round} Round`);
+          itemsStr.push(order.payment_mode || "COD");
+
+          return {
+            id: `ORD-${order.order_id}`,
+            date: new Date(order.order_dt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+            totalAmount: order.total_amount,
+            items: itemsStr.join(" • "),
+            currentStep,
+            statusText: order.current_status || "Pending",
+          };
+        });
+        setOrders(formattedOrders);
+      }
+      setLoading(false);
+    };
+
+    fetchOrders();
+  }, []);
+
+  const handleOrderClick = (order: Order) => {
     setSelectedOrder(order);
     setView("detail");
   };
@@ -54,12 +81,6 @@ export default function CustomerOrderStatus() {
     setSelectedOrder(null);
     setView("list");
   };
-
-  /**
-   * TODO: BACKEND - [GET] Fetch Active & Past Order Details
-   * I-fetch ang lahat ng order records kung saan auth.uid() == user_id.
-   * I-map ang data papunta sa structure ng DUMMY_ORDERS sa itaas.
-   */
 
   if (view === "list") {
     return (
@@ -78,9 +99,12 @@ export default function CustomerOrderStatus() {
 
             <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left space-y-4">
               <h2 className="text-[#1e3d58] font-black text-2xl tracking-tight ml-2 mb-2">Recent Orders</h2>
-              
               <div className="space-y-3">
-                {DUMMY_ORDERS.map((order) => (
+                {loading ? (
+                  <div className="text-center py-4 text-gray-500 font-bold">Loading orders...</div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500 font-bold">No orders found.</div>
+                ) : orders.map((order) => (
                   <button 
                     key={order.id}
                     onClick={() => handleOrderClick(order)} 
