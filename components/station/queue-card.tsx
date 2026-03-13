@@ -63,7 +63,7 @@ export default function QueueCard({ order }: { order: any }) {
         {order.status === "DELIVER" && order.notes && (
           <p className="text-[2.2vh] font-bold text-slate-500 italic mt-[1vh] flex items-center gap-[1vw]">
             <span className="bg-slate-100 px-[1vw] py-[0.5vh] rounded-md not-italic text-[1.8vh]">NOTE</span> 
-            "{order.notes}"
+            `{order.notes}`
           </p>
         )}
       </div>
