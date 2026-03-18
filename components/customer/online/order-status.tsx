@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, CheckCircle2, Clock, Package, Droplets, MapPin, Truck, ReceiptText, CalendarClock } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Clock, Package, Droplets, Truck, ReceiptText, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +24,24 @@ const STATUSES = [
   { title: "Out for Delivery", desc: "Your order is on its way to you.", icon: Truck },
 ];
 
+interface BackendOrderItem {
+  quantity: number;
+  products: {
+    product_name: string;
+  } | {
+    product_name: string;
+  }[] | null;
+}
+
+interface BackendOrder {
+  order_id: number;
+  order_dt: string;
+  total_amount: number;
+  current_status: string;
+  payment_mode: string;
+  order_items: BackendOrderItem[];
+}
+
 export default function CustomerOrderStatus() {
   const [view, setView] = useState<"list" | "detail">("list");
   const [orders, setOrders] = useState<Order[]>([]);
@@ -34,10 +52,13 @@ export default function CustomerOrderStatus() {
     const fetchOrders = async () => {
       const result = await getCustomerOrders();
       if (result && !('error' in result)) {
-        const formattedOrders = result.map((order: any) => {
+        const fetchedOrders = result as BackendOrder[];
+        
+        const formattedOrders = fetchedOrders.map((order) => {
           let slim = 0;
           let round = 0;
-          order.order_items.forEach((item: any) => {
+          
+          order.order_items.forEach((item) => {
             const product = Array.isArray(item.products) ? item.products[0] : item.products;
             const productName = product?.product_name?.toLowerCase() || "";
             if (productName.includes("slim")) slim += item.quantity;
@@ -50,7 +71,7 @@ export default function CustomerOrderStatus() {
           else if (order.current_status === "Refilled") currentStep = 2;
           else if (order.current_status === "Delivered" || order.current_status === "Out for Delivery") currentStep = 3;
 
-          let itemsStr = [];
+          const itemsStr: string[] = [];
           if (slim > 0) itemsStr.push(`${slim} Slim`);
           if (round > 0) itemsStr.push(`${round} Round`);
           itemsStr.push(order.payment_mode || "COD");
