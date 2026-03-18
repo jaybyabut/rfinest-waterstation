@@ -25,7 +25,7 @@ export default function CustomerHome({
 
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-white/50 shadow-xl">
           
-          <h1 className="text-6xl font-black mb-8 text-black tracking-tighter">Home</h1>
+          <h1 className="text-6xl font-black mb-8 text-black tracking-tighter w-full text-center px-12">Home</h1>
           
           <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100">
             

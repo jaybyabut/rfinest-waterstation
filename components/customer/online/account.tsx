@@ -213,8 +213,8 @@ export default function CustomerAccount() {
               <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
                 <ChevronLeft size={44} strokeWidth={3} />
               </Link>
-              <h1 className="text-5xl font-black text-black tracking-tighter text-center">
-                Account
+              <h1 className="text-5xl font-black text-black tracking-tighter w-full text-center px-12">
+              Account
               </h1>
             </div>
 

@@ -92,9 +92,9 @@ export default function CustomerOrderStatus() {
               <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
                 <ChevronLeft size={44} strokeWidth={3} />
               </Link>
-              <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter text-center px-10 leading-none">
-                Check Orders
-              </h1>
+             <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-12 leading-none">
+              Check Orders
+            </h1>
             </div>
 
             <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left space-y-4">

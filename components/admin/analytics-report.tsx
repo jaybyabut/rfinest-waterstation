@@ -79,8 +79,8 @@ export default function AnalyticsAndReports() {
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center ml-6">
-              Analytics & Report
+            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center px-12">
+            Analytics & Report
             </h1>
           </div>
 
