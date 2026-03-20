@@ -20,12 +20,13 @@ export default function CustomerAccount() {
   const userData = useUser();
   const [view, setView] = useState<"menu" | "name" | "location" | "number" | "password">("menu");
 
-  const [locations, setLocations] = useState<any[]>([]);
+  interface LocationItem { location_id: string; location_name: string; }
+  const [locations, setLocations] = useState<LocationItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     getLocations().then((res) => {
-      if (Array.isArray(res)) setLocations(res);
+      if (Array.isArray(res)) setLocations(res as LocationItem[]);
     });
   }, []);
 
@@ -69,7 +70,7 @@ export default function CustomerAccount() {
   const [isSaving, setIsSaving] = useState(false);
 
   const validateForm = () => {
-    let newErrors: Record<string, string> = {};
+  const newErrors: Record<string, string> = {};
 
     if (view === "name") {
       const nameRegex = /^[A-Za-z\s]+$/;
@@ -213,8 +214,8 @@ export default function CustomerAccount() {
               <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
                 <ChevronLeft size={44} strokeWidth={3} />
               </Link>
-              <h1 className="text-5xl font-black text-black tracking-tighter text-center">
-                Account
+              <h1 className="text-5xl font-black text-black tracking-tighter w-full text-center px-12">
+              Account
               </h1>
             </div>
 

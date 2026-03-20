@@ -12,6 +12,7 @@ export default function AnalyticsAndReports() {
   const [selectedMonth, setSelectedMonth] = useState("");
 
   // TODO: BACKEND - Fetch daily stats from database (orders table)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [gallons, setGallons] = useState({
     slim: 0,
     round: 0,
@@ -19,6 +20,7 @@ export default function AnalyticsAndReports() {
   });
 
   // TODO: BACKEND - Fetch earnings breakdown
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [earnings, setEarnings] = useState({
     walkIn: 0,
     online: 0,
@@ -79,8 +81,8 @@ export default function AnalyticsAndReports() {
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center ml-6">
-              Analytics & Report
+            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center px-12">
+            Analytics & Report
             </h1>
           </div>
 
@@ -99,7 +101,7 @@ export default function AnalyticsAndReports() {
             )}
 
             <div className="bg-[#e8eef1] rounded-[30px] p-5 border border-gray-200 shadow-sm">
-              <h2 className="text-3xl font-black text-[#1e3d58] text-center mb-6 tracking-tight">Today's Summary</h2>
+              <h2 className="text-3xl font-black text-[#1e3d58] text-center mb-6 tracking-tight">Today&apos;s Summary</h2>
              
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-[#1e3d58] text-center mb-3">Gallons Processed:</h3>

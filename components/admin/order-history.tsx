@@ -130,7 +130,9 @@ export default function OrderHistory() {
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center ml-4">Order History</h1>
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-12">
+            Order History
+            </h1>
           </div>
 
           <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left">
