@@ -27,6 +27,16 @@ export default function PlaceOrderForm() {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Error handling states
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: boolean;
+    location?: boolean;
+    zone?: boolean;
+    items?: boolean;
+  }>({});
+
   useEffect(() => {
     const fetchLocations = async () => {
       const data = await getLocations();
@@ -48,31 +58,55 @@ export default function PlaceOrderForm() {
   const pricePerUnit = activeLocation ? activeLocation.location_price : 0;
   const totalAmount = (slimCount + roundCount) * pricePerUnit;
 
+  // Validation function
   const handlePlaceOrderClick = () => {
-    if (orderType === "Call" && !selectedLocation) {
-      alert("Please select a location/zone.");
+    setGlobalError(null);
+    setSuccessMessage(null);
+    
+    let hasError = false;
+    const newErrors: typeof fieldErrors = {};
+
+    if (orderType === "Walk-in" && !walkInLocation) {
+      setGlobalError("Walk-in location (ID 1) not found in system.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    if (orderType === "Walk-in" && !walkInLocation) {
-      alert("Walk-in location (ID 1) not found in system.");
-      return;
+    if (orderType === "Call") {
+      if (!selectedLocation) {
+        newErrors.zone = true;
+        hasError = true;
+      }
+      if (!name.trim()) {
+        newErrors.name = true;
+        hasError = true;
+      }
+      if (!location.trim()) {
+        newErrors.location = true;
+        hasError = true;
+      }
     }
 
     if (slimCount === 0 && roundCount === 0) {
-      alert("Please select at least one item (Slim or Round gallon).");
+      newErrors.items = true;
+      hasError = true;
+    }
+
+    if (hasError) {
+      setFieldErrors(newErrors);
+      setGlobalError("Please fill in all required fields highlighted in red.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
-    if (orderType === "Call" && (!name || !location)) {
-      alert("Please fill in Name and Location/Address.");
-      return;
-    }
+    // If no errors, clear field errors and open modal
+    setFieldErrors({});
     setIsModalOpen(true);
   };
 
   const confirmAndProcessOrder = async () => {
     setLoading(true);
+    setGlobalError(null);
 
     try {
       const result = await createOrder({
@@ -84,27 +118,36 @@ export default function PlaceOrderForm() {
         slimCount,
         roundCount,
         pricePerUnit,
-        note, // [BACKEND TODO]: Ensure 'note' is saved in the database
+        note, 
         transaction_type: orderType,
         payment_mode: "Cash"
       });
 
       if (result?.error) {
-        alert("Error creating order: " + result.error);
+        setGlobalError("Error creating order: " + result.error);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        alert("Order placed successfully!");
+        setSuccessMessage("Order placed successfully!");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        
+        // Reset form
         setName("");
         setMobileNumber("");
         setLocation("");
         setSlimCount(0);
         setRoundCount(0);
         setNote(""); 
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccessMessage(null), 5000);
       }
     } catch (e) {
       console.error(e);
-      alert("An unexpected error occurred.");
+      setGlobalError("An unexpected error occurred while placing the order.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setLoading(false);
+      setIsModalOpen(false);
     }
   };
 
@@ -118,11 +161,28 @@ export default function PlaceOrderForm() {
           <h1 className="text-5xl font-black mb-10 text-black tracking-tighter">Place Order</h1>
 
           <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left">
+            
+            {globalError && (
+              <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200">
+                ⚠️ {globalError}
+              </div>
+            )}
+            
+            {successMessage && (
+              <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200">
+                ✅ {successMessage}
+              </div>
+            )}
+
             <div className="space-y-5">
+              
               <div className="flex gap-4">
                 <button
                   type="button"
-                  onClick={() => setOrderType("Call")}
+                  onClick={() => {
+                    setOrderType("Call");
+                    setFieldErrors({});
+                  }}
                   className={`flex-1 h-14 rounded-full font-bold text-lg border-2 transition-all ${
                     orderType === "Call"
                       ? "bg-[#43b0f1] text-white border-[#43b0f1]"
@@ -133,7 +193,10 @@ export default function PlaceOrderForm() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setOrderType("Walk-in")}
+                  onClick={() => {
+                    setOrderType("Walk-in");
+                    setFieldErrors({});
+                  }}
                   className={`flex-1 h-14 rounded-full font-bold text-lg border-2 transition-all ${
                     orderType === "Walk-in"
                       ? "bg-[#43b0f1] text-white border-[#43b0f1]"
@@ -145,61 +208,128 @@ export default function PlaceOrderForm() {
               </div>
 
               {orderType === "Call" && (
-                <div>
-                  <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
-                  />
-                </div>
-              )}
-
-              {orderType === "Call" && (
-                <div>
-                  <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
-                  <select
-                    value={selectedZone}
-                    onChange={(e) => { setSelectedZone(e.target.value); console.log(e.target.value); }}
-                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer"
-                    disabled={locations.length === 0}
-                  >
-                    {locations.length === 0 ? (
-                      <option>Loading locations...</option>
-                    ) : (
-                      locations.map((loc) => (
-                        <option key={loc.location_id} value={loc.location_name}>
-                          {loc.location_name} (₱{loc.location_price}/pc)
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-              )}
-
-              {orderType === "Call" && (
                 <>
+                  <div>
+                    <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        // FIX: Only allow letters and spaces (pati ñ/Ñ)
+                        if (/^[a-zA-ZñÑ\s]*$/.test(val)) {
+                          setName(val);
+                          if (val) setFieldErrors(prev => ({ ...prev, name: false }));
+                        }
+                      }}
+                      placeholder="e.g. Juan Dela Cruz"
+                      className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${
+                        fieldErrors.name 
+                          ? "border-red-400 bg-red-50 text-red-700" 
+                          : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
+                    <select
+                      value={selectedZone}
+                      onChange={(e) => {
+                        setSelectedZone(e.target.value);
+                        if (e.target.value) setFieldErrors(prev => ({ ...prev, zone: false }));
+                      }}
+                      className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer transition-colors ${
+                        fieldErrors.zone 
+                          ? "border-red-400 bg-red-50 text-red-700" 
+                          : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                      }`}
+                      disabled={locations.length === 0}
+                    >
+                      {locations.length === 0 ? (
+                        <option>Loading locations...</option>
+                      ) : (
+                        locations.map((loc) => (
+                          <option key={loc.location_id} value={loc.location_name}>
+                            {loc.location_name} (₱{loc.location_price}/pc)
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
                     <textarea
                       value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="w-full h-28 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none"
+                      onChange={(e) => {
+                        setLocation(e.target.value);
+                        if (e.target.value) setFieldErrors(prev => ({ ...prev, location: false }));
+                      }}
+                      placeholder="Block, Lot, Street, etc."
+                      className={`w-full h-28 p-4 px-6 rounded-[30px] border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none transition-colors ${
+                        fieldErrors.location 
+                          ? "border-red-400 bg-red-50 text-red-700" 
+                          : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                      }`}
                     />
                   </div>
 
                   <div>
                     <label className="block text-xl font-bold mb-1 ml-2">Mobile Number:</label>
                     <input
-                      type="text"
+                      type="tel"
                       value={mobileNumber}
-                      onChange={(e) => setMobileNumber(e.target.value)}
+                      maxLength={11} // Limits to 11 digits
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        // FIX: Only allow numbers
+                        if (/^[0-9]*$/.test(val)) {
+                          setMobileNumber(val);
+                        }
+                      }}
+                      placeholder="09..."
                       className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
                     />
                   </div>
                 </>
               )}
+
+              <div>
+                <label className="block text-xl font-bold mb-1 ml-2">Details:</label>
+                <div className={`w-full p-4 rounded-[30px] border-2 space-y-4 transition-colors ${
+                  fieldErrors.items 
+                    ? "border-red-400 bg-red-50" 
+                    : "border-[#1e3d58] bg-white"
+                }`}>
+                  <div className={`flex justify-between items-center text-xl font-bold ${fieldErrors.items ? 'text-red-700' : 'text-black'}`}>
+                    <span>Slim Gallon:</span>
+                    <div className="flex items-center gap-5">
+                      <button onClick={() => {
+                        setSlimCount(Math.max(0, slimCount - 1));
+                      }} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">-</button>
+                      <span className="w-8 text-center text-2xl">{slimCount}</span>
+                      <button onClick={() => {
+                        setSlimCount(slimCount + 1);
+                        setFieldErrors(prev => ({ ...prev, items: false }));
+                      }} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">+</button>
+                    </div>
+                  </div>
+                  <div className={`flex justify-between items-center text-xl font-bold border-t ${fieldErrors.items ? 'border-red-200 text-red-700' : 'border-gray-100 text-black'} pt-3`}>
+                    <span>Round Gallon:</span>
+                    <div className="flex items-center gap-5">
+                      <button onClick={() => {
+                        setRoundCount(Math.max(0, roundCount - 1));
+                      }} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">-</button>
+                      <span className="w-8 text-center text-2xl">{roundCount}</span>
+                      <button onClick={() => {
+                        setRoundCount(roundCount + 1);
+                        setFieldErrors(prev => ({ ...prev, items: false }));
+                      }} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Note: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
@@ -208,28 +338,6 @@ export default function PlaceOrderForm() {
                   onChange={(e) => setNote(e.target.value)}
                   className="w-full h-24 p-4 px-6 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-medium text-base focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none placeholder:text-gray-400"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xl font-bold mb-1 ml-2">Details:</label>
-                <div className="w-full p-4 rounded-[30px] border-2 border-[#1e3d58] bg-white space-y-4">
-                  <div className="flex justify-between items-center text-xl font-bold">
-                    <span>Slim Gallon:</span>
-                    <div className="flex items-center gap-5">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">-</button>
-                      <span className="w-8 text-center text-2xl">{slimCount}</span>
-                      <button onClick={() => setSlimCount(slimCount + 1)} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">+</button>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-xl font-bold border-t border-gray-100 pt-3">
-                    <span>Round Gallon:</span>
-                    <div className="flex items-center gap-5">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">-</button>
-                      <span className="w-8 text-center text-2xl">{roundCount}</span>
-                      <button onClick={() => setRoundCount(roundCount + 1)} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors">+</button>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="flex justify-between items-center pt-4 px-2">
@@ -260,7 +368,7 @@ export default function PlaceOrderForm() {
         onConfirm={confirmAndProcessOrder}
         title="Confirm Order"
         message={`Are you sure you want to place this order for ${orderType === "Walk-in" ? "Walk-in" : name}? Total amount is ₱${totalAmount}.`}
-        confirmText="Yes, Place Order"
+        confirmText={loading ? "Processing..." : "Yes, Place Order"}
       />
 
     </div >
