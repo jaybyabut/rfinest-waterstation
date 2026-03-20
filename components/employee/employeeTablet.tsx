@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Package, X, Bike, ShoppingBag, Droplets, CheckCircle2, Maximize, Minimize } from 'lucide-react';
+import { LayoutGrid, Package, X, Bike, ShoppingBag, Droplets, CheckCircle2, Maximize, Minimize, History, Clock } from 'lucide-react';
 
 type OrderItem = { type: string; quantity: number };
 type WalkInOrder = { id: string; items: OrderItem[] };
@@ -15,10 +15,22 @@ type OnlineOrder = {
   notes?: string;
 };
 
+interface EmployeeLog {
+  id: string;
+  timestamp: string;
+  action: string;
+  details: string;
+}
+
 export default function SeniorFriendlyTablet() {
   const [activeTab, setActiveTab] = useState<'walkin' | 'online'>('walkin');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [logs, setLogs] = useState<EmployeeLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
 
   // TODO: BACKEND - Fetch actual walk-in orders
   const [walkInOrders, setWalkInOrders] = useState<WalkInOrder[]>([
@@ -71,20 +83,53 @@ export default function SeniorFriendlyTablet() {
     setConfirmingId(null);
   };
 
+  const fetchMyLogs = async () => {
+    setLoadingLogs(true);
+    setLogError(null);
+    try {
+      // TODO: BACKEND - Fetch logs specifically for this tablet for TODAY
+      await new Promise((resolve) => setTimeout(resolve, 800)); 
+      const dummyLogs: EmployeeLog[] = [
+        { id: "LOG-1", timestamp: new Date().toISOString(), action: "Marked as Delivered", details: "Order ORD-9918 has been delivered to customer." },
+        { id: "LOG-2", timestamp: new Date(Date.now() - 1800000).toISOString(), action: "Updated Status", details: "Order ORD-9919 marked as 'Out for Delivery'." },
+        { id: "LOG-3", timestamp: new Date(Date.now() - 3600000).toISOString(), action: "Order Refilled", details: "Completed refill for 5 Round Containers (ORD-9920)." },
+      ];
+      setLogs(dummyLogs);
+    } catch (error) {
+      console.error(error);
+      setLogError("Failed to load your history.");
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isHistoryOpen) {
+      fetchMyLogs();
+    }
+  }, [isHistoryOpen]);
+
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans relative">
-      <button
-        onClick={toggleFullscreen}
-        className={`absolute top-8 right-8 z-50 p-3 rounded-full transition-all duration-300 shadow-md ${
-          isFullscreen 
-            ? "opacity-0 hover:opacity-100 bg-black/50 text-white" 
-            : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"
-        }`}
-      >
-        {isFullscreen ? <Minimize size={28} strokeWidth={2.5} /> : <Maximize size={28} strokeWidth={2.5} />}
-      </button>
+      
+      <div className="absolute top-6 right-6 md:top-8 md:right-8 z-50 flex gap-3 md:gap-4">
+        <button
+          onClick={() => setIsHistoryOpen(true)}
+          className="p-3 md:p-4 rounded-full transition-all duration-300 shadow-md opacity-100 bg-[#43b0f1] hover:bg-[#1e3d58] text-white"
+        >
+          <History size={28} strokeWidth={2.5} />
+        </button>
+        <button
+          onClick={toggleFullscreen}
+          className={`p-3 md:p-4 rounded-full transition-all duration-300 shadow-md ${
+            isFullscreen ? "opacity-0 hover:opacity-100 bg-black/50 text-white" : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"
+          }`}
+        >
+          {isFullscreen ? <Minimize size={28} strokeWidth={2.5} /> : <Maximize size={28} strokeWidth={2.5} />}
+        </button>
+      </div>
 
-      <div className="flex w-full bg-white border-b-4 border-slate-200 h-24 md:h-32 flex-none shadow-sm pr-24">
+      <div className="flex w-full bg-white border-b-4 border-slate-200 h-24 md:h-32 flex-none shadow-sm pr-32 md:pr-48">
         <button 
           onClick={() => { setActiveTab('walkin'); setConfirmingId(null); }}
           className={`flex-1 flex items-center justify-center gap-4 md:gap-6 text-3xl md:text-5xl font-black transition-all ${
@@ -198,7 +243,7 @@ export default function SeniorFriendlyTablet() {
                     {order.status === 'refilled' && order.notes && (
                       <p className="text-lg md:text-3xl font-bold text-slate-500 italic mt-2 md:mt-4 flex items-center gap-2 md:gap-4">
                         <span className="bg-slate-100 px-3 py-1 rounded-md not-italic text-xs md:text-xl">NOTE</span> 
-                        "{order.notes}"
+                        `{order.notes}`
                       </p>
                     )}
                   </>
@@ -244,6 +289,74 @@ export default function SeniorFriendlyTablet() {
           )
         )}
       </div>
+
+      {isHistoryOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] animate-in fade-in duration-300"
+          onClick={() => setIsHistoryOpen(false)}
+        />
+      )}
+
+      <div 
+        className={`fixed top-0 right-0 h-full w-full md:w-[450px] bg-[#e8eef1] shadow-2xl z-[70] transform transition-transform duration-500 flex flex-col ${
+          isHistoryOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between p-6 md:p-8 bg-white shadow-sm border-b border-gray-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <History className="text-[#43b0f1]" size={32} strokeWidth={3} />
+            <h2 className="text-3xl font-black text-[#1e3d58] uppercase tracking-tighter">My History</h2>
+          </div>
+          <button 
+            onClick={() => setIsHistoryOpen(false)} 
+            className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-500 text-slate-400 rounded-xl transition-colors"
+          >
+            <X size={32} strokeWidth={3} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar">
+          {logError && (
+            <div className="bg-red-100 text-red-700 p-4 rounded-2xl text-center font-bold">
+              ⚠️ {logError}
+            </div>
+          )}
+
+          {loadingLogs && !logError ? (
+            <div className="flex flex-col items-center justify-center h-40 gap-3">
+               <Clock className="text-[#43b0f1] animate-spin" size={32} />
+               <span className="text-[#1e3d58] font-black tracking-widest uppercase text-sm animate-pulse">Loading actions...</span>
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 opacity-30">
+              <History size={60} strokeWidth={2} className="mb-4 text-[#1e3d58]" />
+              <p className="font-black uppercase tracking-widest text-sm text-[#1e3d58]">No actions yet today.</p>
+            </div>
+          ) : (
+            logs.map((log) => (
+              <div key={log.id} className="bg-white rounded-3xl p-5 border-2 border-slate-100 shadow-sm relative overflow-hidden group hover:border-[#43b0f1]/50 transition-colors">
+                <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#43b0f1] opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                <div className="pl-3">
+                  <div className="text-xl font-black text-[#1e3d58] flex items-center gap-2 mb-2">
+                    <CheckCircle2 size={20} className="text-green-500 shrink-0" strokeWidth={3} />
+                    {log.action}
+                  </div>
+                  <div className="text-base font-bold text-gray-500 leading-snug mb-4">
+                    {log.details}
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-400 border-t border-gray-100 pt-3">
+                    <Clock size={16} strokeWidth={3} />
+                    <span className="text-xs font-black uppercase tracking-widest">
+                      {new Date(log.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

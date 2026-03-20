@@ -47,6 +47,10 @@ export default function DashboardManage({
               <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
                 <Link href="/dashboard/analytics-report">Analytics & Report</Link>
               </Button>
+
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
+                <Link href="/dashboard/activity-logs">Activity Logs</Link>
+              </Button>
             </div>
 
           </div>
