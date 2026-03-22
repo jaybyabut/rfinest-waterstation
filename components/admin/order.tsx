@@ -23,7 +23,7 @@ export default function PlaceOrderForm() {
   const [roundCount, setRoundCount] = useState(0);
   const [note, setNote] = useState("");
   
-  const [orderType, setOrderType] = useState<"Call" | "Walk-in">("Call");
+  // Removed orderType state as it's now exclusively Call/Delivery here
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -53,9 +53,7 @@ export default function PlaceOrderForm() {
   }, []);
 
   const selectedLocation = locations.find((l) => l.location_name === selectedZone);
-  const walkInLocation = locations.find((l) => l.location_id === 1);
-  const activeLocation = orderType === "Walk-in" ? walkInLocation : selectedLocation;
-  const pricePerUnit = activeLocation ? activeLocation.location_price : 0;
+  const pricePerUnit = selectedLocation ? selectedLocation.location_price : 0;
   const totalAmount = (slimCount + roundCount) * pricePerUnit;
 
   // Validation function
@@ -66,25 +64,17 @@ export default function PlaceOrderForm() {
     let hasError = false;
     const newErrors: typeof fieldErrors = {};
 
-    if (orderType === "Walk-in" && !walkInLocation) {
-      setGlobalError("Walk-in location (ID 1) not found in system.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+    if (!selectedLocation) {
+      newErrors.zone = true;
+      hasError = true;
     }
-
-    if (orderType === "Call") {
-      if (!selectedLocation) {
-        newErrors.zone = true;
-        hasError = true;
-      }
-      if (!name.trim()) {
-        newErrors.name = true;
-        hasError = true;
-      }
-      if (!location.trim()) {
-        newErrors.location = true;
-        hasError = true;
-      }
+    if (!name.trim()) {
+      newErrors.name = true;
+      hasError = true;
+    }
+    if (!location.trim()) {
+      newErrors.location = true;
+      hasError = true;
     }
 
     if (slimCount === 0 && roundCount === 0) {
@@ -110,16 +100,16 @@ export default function PlaceOrderForm() {
 
     try {
       const result = await createOrder({
-        name: orderType === "Walk-in" ? "Walk-in" : name,
-        mobileNumber: orderType === "Walk-in" ? "N/A" : mobileNumber,
-        location: orderType === "Walk-in" ? "Bulaon" : location, 
-        locationId: orderType === "Walk-in" ? 1 : selectedLocation?.location_id,
-        selectedZone: orderType === "Walk-in" ? "Bulaon" : selectedZone,
+        name: name,
+        mobileNumber: mobileNumber,
+        location: location, 
+        locationId: selectedLocation?.location_id,
+        selectedZone: selectedZone,
         slimCount,
         roundCount,
         pricePerUnit,
         note, 
-        transaction_type: orderType,
+        transaction_type: "Call",
         payment_mode: "Cash"
       });
 
@@ -176,124 +166,93 @@ export default function PlaceOrderForm() {
 
             <div className="space-y-5">
               
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOrderType("Call");
-                    setFieldErrors({});
-                  }}
-                  className={`flex-1 h-14 rounded-full font-bold text-lg border-2 transition-all ${
-                    orderType === "Call"
-                      ? "bg-[#43b0f1] text-white border-[#43b0f1]"
-                      : "bg-[#e8eef1] text-[#1e3d58] border-[#1e3d58] hover:bg-[#d0dde5]"
-                  }`}
-                >
-                  Call / Delivery
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOrderType("Walk-in");
-                    setFieldErrors({});
-                  }}
-                  className={`flex-1 h-14 rounded-full font-bold text-lg border-2 transition-all ${
-                    orderType === "Walk-in"
-                      ? "bg-[#43b0f1] text-white border-[#43b0f1]"
-                      : "bg-[#e8eef1] text-[#1e3d58] border-[#1e3d58] hover:bg-[#d0dde5]"
-                  }`}
-                >
-                  Walk-in
-                </button>
+              <div className="bg-[#43b0f1] text-white rounded-full h-14 flex items-center justify-center font-bold text-lg mb-6 shadow-sm">
+                Call / Delivery
               </div>
 
-              {orderType === "Call" && (
-                <>
-                  <div>
-                    <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        // FIX: Only allow letters and spaces (pati ñ/Ñ)
-                        if (/^[a-zA-ZñÑ\s]*$/.test(val)) {
-                          setName(val);
-                          if (val) setFieldErrors(prev => ({ ...prev, name: false }));
-                        }
-                      }}
-                      placeholder="e.g. Juan Dela Cruz"
-                      className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${
-                        fieldErrors.name 
-                          ? "border-red-400 bg-red-50 text-red-700" 
-                          : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
-                      }`}
-                    />
-                  </div>
+              <div>
+                <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // FIX: Only allow letters and spaces (pati ñ/Ñ)
+                    if (/^[a-zA-ZñÑ\s]*$/.test(val)) {
+                      setName(val);
+                      if (val) setFieldErrors(prev => ({ ...prev, name: false }));
+                    }
+                  }}
+                  placeholder="e.g. Juan Dela Cruz"
+                  className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${
+                    fieldErrors.name 
+                      ? "border-red-400 bg-red-50 text-red-700" 
+                      : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                  }`}
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
-                    <select
-                      value={selectedZone}
-                      onChange={(e) => {
-                        setSelectedZone(e.target.value);
-                        if (e.target.value) setFieldErrors(prev => ({ ...prev, zone: false }));
-                      }}
-                      className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer transition-colors ${
-                        fieldErrors.zone 
-                          ? "border-red-400 bg-red-50 text-red-700" 
-                          : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
-                      }`}
-                      disabled={locations.length === 0}
-                    >
-                      {locations.length === 0 ? (
-                        <option>Loading locations...</option>
-                      ) : (
-                        locations.map((loc) => (
-                          <option key={loc.location_id} value={loc.location_name}>
-                            {loc.location_name} (₱{loc.location_price}/pc)
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
+              <div>
+                <label className="block text-xl font-bold mb-1 ml-2">Zone:</label>
+                <select
+                  value={selectedZone}
+                  onChange={(e) => {
+                    setSelectedZone(e.target.value);
+                    if (e.target.value) setFieldErrors(prev => ({ ...prev, zone: false }));
+                  }}
+                  className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer transition-colors ${
+                    fieldErrors.zone 
+                      ? "border-red-400 bg-red-50 text-red-700" 
+                      : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                  }`}
+                  disabled={locations.length === 0}
+                >
+                  {locations.length === 0 ? (
+                    <option>Loading locations...</option>
+                  ) : (
+                    locations.map((loc) => (
+                      <option key={loc.location_id} value={loc.location_name}>
+                        {loc.location_name} (₱{loc.location_price}/pc)
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
 
-                  <div>
-                    <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
-                    <textarea
-                      value={location}
-                      onChange={(e) => {
-                        setLocation(e.target.value);
-                        if (e.target.value) setFieldErrors(prev => ({ ...prev, location: false }));
-                      }}
-                      placeholder="Block, Lot, Street, etc."
-                      className={`w-full h-28 p-4 px-6 rounded-[30px] border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none transition-colors ${
-                        fieldErrors.location 
-                          ? "border-red-400 bg-red-50 text-red-700" 
-                          : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
-                      }`}
-                    />
-                  </div>
+              <div>
+                <label className="block text-xl font-bold mb-1 ml-2">Location:</label>
+                <textarea
+                  value={location}
+                  onChange={(e) => {
+                    setLocation(e.target.value);
+                    if (e.target.value) setFieldErrors(prev => ({ ...prev, location: false }));
+                  }}
+                  placeholder="Block, Lot, Street, etc."
+                  className={`w-full h-28 p-4 px-6 rounded-[30px] border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none transition-colors ${
+                    fieldErrors.location 
+                      ? "border-red-400 bg-red-50 text-red-700" 
+                      : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                  }`}
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-xl font-bold mb-1 ml-2">Mobile Number:</label>
-                    <input
-                      type="tel"
-                      value={mobileNumber}
-                      maxLength={11} // Limits to 11 digits
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        // FIX: Only allow numbers
-                        if (/^[0-9]*$/.test(val)) {
-                          setMobileNumber(val);
-                        }
-                      }}
-                      placeholder="09..."
-                      className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
-                    />
-                  </div>
-                </>
-              )}
+              <div>
+                <label className="block text-xl font-bold mb-1 ml-2">Mobile Number:</label>
+                <input
+                  type="tel"
+                  value={mobileNumber}
+                  maxLength={11} // Limits to 11 digits
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    // FIX: Only allow numbers
+                    if (/^[0-9]*$/.test(val)) {
+                      setMobileNumber(val);
+                    }
+                  }}
+                  placeholder="09..."
+                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                />
+              </div>
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Details:</label>
@@ -367,7 +326,7 @@ export default function PlaceOrderForm() {
         onClose={() => setIsModalOpen(false)}
         onConfirm={confirmAndProcessOrder}
         title="Confirm Order"
-        message={`Are you sure you want to place this order for ${orderType === "Walk-in" ? "Walk-in" : name}? Total amount is ₱${totalAmount}.`}
+        message={`Are you sure you want to place this order for ${name}? Total amount is ₱${totalAmount}.`}
         confirmText={loading ? "Processing..." : "Yes, Place Order"}
       />
 

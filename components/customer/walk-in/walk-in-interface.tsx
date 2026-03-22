@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, CheckCircle2, QrCode, Wallet, CreditCard, RotateCcw, Maximize, Minimize, AlertCircle, X } from "lucide-react";
+import { createOrder } from "@/app/actions/createOrder";
 
 const PRICE_PER_GALLON = 30;
 
@@ -149,6 +150,7 @@ export default function WalkInInterface() {
   const [showOrderConfirmation, setShowOrderConfirmation] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const total = (roundGallons + slimGallons) * PRICE_PER_GALLON;
   const hasItems = total > 0;
@@ -178,10 +180,36 @@ export default function WalkInInterface() {
     setShowSuccessModal(false);
   };
 
-  const executeTransaction = () => {
-    // TODO: BACKEND - I-save ang order data sa Supabase DB. Wait for success bago ipakita ang modal.
-    setShowOrderConfirmation(false);
-    setShowSuccessModal(true);
+  const executeTransaction = async () => {
+    setLoading(true);
+    try {
+      const result = await createOrder({
+        name: "Walk-in",
+        mobileNumber: "N/A",
+        location: "Bulaon", // Default for walk-in/kiosk
+        locationId: 1, // Bulaon
+        selectedZone: "Bulaon",
+        slimCount: slimGallons,
+        roundCount: roundGallons,
+        pricePerUnit: PRICE_PER_GALLON,
+        transaction_type: "Walk-in",
+        payment_mode: paymentMethod === "CASH" ? "Cash" : "GCash",
+        note: "Ordered via Kiosk" 
+      });
+
+      if (result?.error) {
+        console.error("Error creating walk-in order:", result.error);
+        alert("Something went wrong. Please try again or call for assistance.");
+      } else {
+        setShowOrderConfirmation(false);
+        setShowSuccessModal(true);
+      }
+    } catch (err) {
+      console.error("Transaction failed:", err);
+      alert("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -236,10 +264,10 @@ export default function WalkInInterface() {
             )}
             <Button
               onClick={() => setShowOrderConfirmation(true)}
-              disabled={!hasItems}
+              disabled={!hasItems || loading}
               className={`flex-1 h-24 2xl:h-32 text-3xl 2xl:text-4xl font-black transition-all active:scale-95 uppercase tracking-widest rounded-2xl 2xl:rounded-3xl ${hasItems ? "bg-blue-500 shadow-xl" : "bg-slate-200 text-slate-400 cursor-not-allowed"}`}
             >
-              {hasItems ? "PLACE ORDER" : "ADD ITEMS"}
+              {loading ? "PLACING..." : hasItems ? "PLACE ORDER" : "ADD ITEMS"}
             </Button>
           </div>
         </div>
@@ -247,7 +275,7 @@ export default function WalkInInterface() {
 
       <WalkInConfirmation 
         isOpen={showOrderConfirmation} 
-        onClose={() => setShowOrderConfirmation(false)} 
+        onClose={() => !loading && setShowOrderConfirmation(false)} 
         onConfirm={executeTransaction} 
         total={total} 
         method={paymentMethod} 

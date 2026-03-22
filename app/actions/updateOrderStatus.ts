@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from "@/lib/supabase/server"
+import { logActivity } from "./logActivity";
 
 export async function updateOrderStatus(orderId: number, newStatus: string) {
     const supabase = await createClient();
@@ -13,6 +14,9 @@ export async function updateOrderStatus(orderId: number, newStatus: string) {
         console.error("Error updating order status:", error);
         return { error: "Failed to update order status" };
     }
+
+    // Log the activity
+    await logActivity(`Updated order #${orderId} status to ${newStatus}`);
 
     return { success: true };
 }

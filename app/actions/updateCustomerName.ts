@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from "@/lib/supabase/server"
+import { logActivity } from "./logActivity";
 
 export async function updateCustomerName(firstName: string, middleInitial: string, lastName: string) {
     const supabase = await createClient();
@@ -23,6 +24,9 @@ export async function updateCustomerName(firstName: string, middleInitial: strin
         console.error("Error updating user name:", error);
         return { success: false, error: "Failed to update user name" };
     }
+
+    // Log the activity
+    await logActivity(`Updated name to ${firstName} ${lastName}`);
 
     return { success: true, message: "Name updated successfully!" };
 }

@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from "@/lib/supabase/server"
+import { logActivity } from "./logActivity";
 
 
 
@@ -94,6 +95,9 @@ export async function createOnlineOrder(orderInfo: any) {
         console.error("RPC Error:", error);
         return { error: error.message };
     }
+
+    // Log the activity
+    await logActivity(`Placed an online order (${orderInfo.transaction_type})`);
 
     return { success: true, data: rpcData };
 

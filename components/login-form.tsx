@@ -35,7 +35,7 @@ export default function LoginForm({
       } else {
         router.push("/home");
       }
-    } catch (error: unknown) {
+    } catch (error: unknown) {  
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsLoading(false);

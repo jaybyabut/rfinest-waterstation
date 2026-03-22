@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from "@/lib/supabase/server"
+import { logActivity } from "./logActivity";
 
 export async function updateCustomerPassword(oldPassword: string, newPassword: string) {
     const supabase = await createClient();
@@ -27,6 +28,9 @@ export async function updateCustomerPassword(oldPassword: string, newPassword: s
         console.error("Error updating user password:", updateError);
         return { success: false, error: "Failed to update password: " + updateError.message };
     }
+
+    // Log the activity
+    await logActivity(`Updated account password`);
 
     return { success: true, message: "Password updated successfully!" };
 }

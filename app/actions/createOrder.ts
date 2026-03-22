@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from "@/lib/supabase/server"
+import { logActivity } from "./logActivity";
 
 export async function createOrder(orderInfo: any) {
     const supabase = await createClient();
@@ -113,40 +114,8 @@ export async function createOrder(orderInfo: any) {
         return { error: error.message };
     }
 
+    // Log the activity
+    await logActivity(`Created ${orderInfo.transaction_type} order for ${orderInfo.name}`);
+
     return { success: true, data: rpcData };
 }
-
-/* 
-
-ONLINE RPC CALL
-
-const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-    p_user_id: user?.id, // Use the real ID from the session
-    p_name: orderInfo.name,
-    p_address: orderInfo.location,
-    p_number: orderInfo.mobileNumber,
-    p_location_id: locationId,
-    p_items: items,
-    
-    // Updated for Online Flow
-    p_transaction_type: 'Online', 
-    p_payment_mode: 'GCash', // Or whatever your online payment method is
-});
-
-WALK-IN
-const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-    p_user_id: null, 
-    p_name: "Walk-in", 
-    p_address: "Walk-in", 
-    p_number: "0000", 
-    p_location_id: 1,
-    p_items: items,
-    
-    p_transaction_type: 'Walk-in',
-    p_payment_mode: 'Cash'
-});
-
-
-
-*/
-
