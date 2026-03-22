@@ -50,13 +50,13 @@ export default function QueueCard({ order }: { order: any }) {
 
     <div className={`flex items-center w-full p-[2vh] bg-white rounded-2xl border border-slate-200 border-l-[1.2vh] shadow-sm transition-all h-full ${borderColor}`}>
       
-      <div className={`flex flex-col items-center justify-center w-[15vw] max-w-[200px] border-r-2 border-slate-100 pr-[2vw] mr-[2vw] ${textColor}`}>
+      <div className={`flex flex-col items-center justify-center w-[20vw] max-w-[300px] border-r-4 border-slate-100 pr-[3vw] mr-[3vw] ${textColor}`}>
         {icon}
         <span className="font-bold text-[1.8vh] uppercase tracking-widest mt-[1vh]">{statusLabel}</span>
       </div>
 
-      <div className="flex-1 flex flex-col justify-center">
-        <p className="text-[4vh] font-black text-slate-800 tracking-tight uppercase leading-none">
+      <div className="flex-1 flex flex-col justify-center py-[1vh]">
+        <p className="text-[4.5vh] font-black text-slate-800 tracking-tight uppercase leading-none">
           {mainInstruction}
         </p>
    
@@ -68,11 +68,11 @@ export default function QueueCard({ order }: { order: any }) {
         )}
       </div>
 
-      <div className="w-[15vw] max-w-[220px] text-right pl-[2vw] border-l-2 border-slate-100 flex flex-col justify-center">
+      <div className="w-[20vw] max-w-[350px] text-right pl-[3vw] border-l-4 border-slate-100 flex flex-col justify-center">
         <span className="text-[1.5vh] font-bold text-slate-400 uppercase tracking-widest mb-[0.5vh]">Order No.</span>
         
         {/* TODO: BACKEND - Palitan ng actual 'Order_ID' galing database */}
-        <span className="text-[6vh] font-black text-slate-900 tracking-tighter leading-none">#{order.id}</span>
+        <span className="text-[7vh] font-black text-slate-900 tracking-tighter leading-none">#{order.id}</span>
       </div>
 
     </div>

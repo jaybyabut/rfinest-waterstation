@@ -3,18 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Maximize, Minimize } from "lucide-react";
 import QueueCard from "./queue-card";
-
-// TODO: BACKEND - Burahin itong mockOrders kapag connected na sa Supabase.
-const mockOrders = [
-  { id: "101", location: "Block 1 Lot 8 Bulaon", status: "PICKUP", qtyRound: 5, qtySlim: 7 },
-  { id: "102", location: "Walk-in", status: "REFILL", qtyRound: 5, qtySlim: 7 },
-  { id: "103", location: "Block 1 Lot 8 Mexico", status: "DELIVER", qtyRound: 3, qtySlim: 0, notes: "Paki-iwan sa gate perds." },
-  { id: "104", location: "Block 1 Lot 8 Calulut", status: "PICKUP", qtyRound: 0, qtySlim: 10 },
-  { id: "105", location: "Walk-in", status: "REFILL", qtyRound: 2, qtySlim: 0 },
-  { id: "106", location: "Golden Haven", status: "DELIVER", qtyRound: 8, qtySlim: 2 },
-  { id: "107", location: "Block 1 Lot 8 Montana", status: "PICKUP", qtyRound: 4, qtySlim: 0 },
-  { id: "108", location: "Walk-in", status: "REFILL", qtyRound: 1, qtySlim: 1 },
-];
+import { getQueueOrders } from "@/app/actions/getQueueOrders";
+import { createClient } from "@/lib/supabase/client";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -23,22 +13,55 @@ export default function LiveQueueDisplay() {
   const [time, setTime] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const totalPages = Math.ceil(mockOrders.length / ITEMS_PER_PAGE);
+  const fetchOrders = async () => {
+    const data = await getQueueOrders();
+    if (data && !('error' in data)) {
+      setOrders(data);
+    } else {
+      console.error("Failed to fetch orders:", data.error);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     setMounted(true);
     setTime(new Date()); 
     
+    fetchOrders();
+
     const timer = setInterval(() => {
       setTime(new Date());
     }, 1000);
 
-    return () => clearInterval(timer);
+    // Setup Realtime Subscription
+    const supabase = createClient();
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(timer);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
+  const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
+
   useEffect(() => {
-    if (totalPages <= 1) return; 
+    if (totalPages <= 1) {
+      setCurrentPage(0);
+      return;
+    }
     
     const pageTimer = setInterval(() => {
       setCurrentPage((prevPage) => (prevPage + 1) % totalPages);
@@ -68,10 +91,39 @@ export default function LiveQueueDisplay() {
     }
   };
 
-  const visibleOrders = mockOrders.slice(
+  const visibleOrdersData = orders.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
   );
+
+  // Map DB orders to QueueCard format
+  const mappedOrders = visibleOrdersData.map((order) => {
+    let qtySlim = 0;
+    let qtyRound = 0;
+
+    order.order_items?.forEach((item: any) => {
+      const productName = (item.products?.product_name || "").toLowerCase();
+      if (productName.includes("slim")) {
+        qtySlim += item.quantity;
+      } else if (productName.includes("round")) {
+        qtyRound += item.quantity;
+      }
+    });
+
+    const status = order.transaction_type === "Walk-in" ? "REFILL" : "DELIVER";
+    const locName = order.location_pricing?.location_name || order.transaction_type || "N/A";
+
+    const displayId = order.order_id?.toString().split('-')[0].toUpperCase();
+
+    return {
+      id: displayId,
+      status: status,
+      location: order.transaction_type === "Walk-in" ? "Walk-in" : locName,
+      qtySlim,
+      qtyRound,
+      notes: order.note || ""
+    };
+  });
 
   return (
     <div className="h-screen w-full bg-slate-50 p-8 max-h-[900px]:p-4 flex flex-col relative overflow-hidden">
@@ -88,7 +140,7 @@ export default function LiveQueueDisplay() {
         {isFullscreen ? <Minimize size={28} strokeWidth={2.5} /> : <Maximize size={28} strokeWidth={2.5} />}
       </button>
 
-      <div className="mb-6 max-h-[900px]:mb-3 flex justify-between items-end border-b-2 border-slate-200 pb-4 max-h-[900px]:pb-2 pr-20 shrink-0">
+      <div className="mb-6 max-h-[900px]:mb-3 flex justify-between items-end border-b-2 border-slate-200 pb-4 max-h-[900px]:pb-2 shrink-0">
         <div>
           {mounted && time ? (
             <>
@@ -113,16 +165,21 @@ export default function LiveQueueDisplay() {
         )}
       </div>
 
-      {/* FIX: Ginamitan na natin ng CSS Grid na may fixed 5 rows. Kahit ilan pa ang laman, naka-lock sa 5 slots! */}
-      <div className="flex-1 w-full max-w-7xl mx-auto grid grid-rows-5 gap-4 max-h-[900px]:gap-2 transition-all duration-500 pb-4">
-        {visibleOrders.map((order) => (
+      <div className="flex-1 w-full grid grid-rows-5 gap-6 max-h-[900px]:gap-2 transition-all duration-500 pb-4">
+        {mappedOrders.map((order) => (
           <QueueCard key={order.id} order={order} />
         ))}
 
-        {mockOrders.length === 0 && (
+        {!loading && orders.length === 0 && (
           <div className="row-span-5 flex flex-col items-center justify-center text-slate-300">
             <h1 className="text-6xl font-black uppercase">No Active Orders</h1>
             <p className="text-2xl font-bold mt-4">Waiting for new requests...</p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="row-span-5 flex flex-col items-center justify-center text-slate-300">
+             <span className="text-3xl animate-pulse uppercase font-black">Updating Queue...</span>
           </div>
         )}
       </div>
