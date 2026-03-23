@@ -2,24 +2,38 @@
 
 import React, { useState, useEffect } from "react";
 import { Maximize, Minimize } from "lucide-react";
-import QueueCard from "./queue-card";
+import QueueCard, { QueueOrder } from "./queue-card"; 
 import { getQueueOrders } from "@/app/actions/getQueueOrders";
 import { createClient } from "@/lib/supabase/client";
 
 const ITEMS_PER_PAGE = 5;
+
+interface OrderItemRecord {
+  quantity: number;
+  products?: { product_name: string } | null;
+}
+
+interface RawOrderRecord {
+  order_id: string;
+  transaction_type: string;
+  location_pricing?: { location_name: string } | null;
+  note?: string | null;
+  order_items?: OrderItemRecord[] | null;
+}
 
 export default function LiveQueueDisplay() {
   const [mounted, setMounted] = useState(false);
   const [time, setTime] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [orders, setOrders] = useState<any[]>([]);
+  
+  const [orders, setOrders] = useState<RawOrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = async () => {
     const data = await getQueueOrders();
     if (data && !('error' in data)) {
-      setOrders(data);
+      setOrders(data as unknown as RawOrderRecord[]);
     } else {
       console.error("Failed to fetch orders:", data.error);
     }
@@ -36,7 +50,6 @@ export default function LiveQueueDisplay() {
       setTime(new Date());
     }, 1000);
 
-    // Setup Realtime Subscription
     const supabase = createClient();
     const channel = supabase
       .channel('schema-db-changes')
@@ -96,12 +109,12 @@ export default function LiveQueueDisplay() {
     (currentPage + 1) * ITEMS_PER_PAGE
   );
 
-  // Map DB orders to QueueCard format
-  const mappedOrders = visibleOrdersData.map((order) => {
+  // Map DB orders to strictly typed QueueCard format
+  const mappedOrders: QueueOrder[] = visibleOrdersData.map((order) => {
     let qtySlim = 0;
     let qtyRound = 0;
 
-    order.order_items?.forEach((item: any) => {
+    order.order_items?.forEach((item) => {
       const productName = (item.products?.product_name || "").toLowerCase();
       if (productName.includes("slim")) {
         qtySlim += item.quantity;
@@ -113,7 +126,11 @@ export default function LiveQueueDisplay() {
     const status = order.transaction_type === "Walk-in" ? "REFILL" : "DELIVER";
     const locName = order.location_pricing?.location_name || order.transaction_type || "N/A";
 
-    const displayId = order.order_id?.toString().split('-')[0].toUpperCase();
+    const rawId = order.order_id?.toString() || "";
+    const idParts = rawId.split('-');
+    const displayId = idParts.length > 1 
+      ? idParts[1].substring(0, 8).toUpperCase() 
+      : rawId.substring(0, 8).toUpperCase();
 
     return {
       id: displayId,
