@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,27 @@ export default function DashboardManage({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   
+  const [currentDateTime, setCurrentDateTime] = useState<string>("");
+
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const formatted = now.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      setCurrentDateTime(formatted);
+    };
+
+    updateDateTime();
+    const timer = setInterval(updateDateTime, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className={cn("flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500", className)} {...props}>
       <div className="w-full max-w-md">
@@ -22,9 +44,8 @@ export default function DashboardManage({
           
           <div className="bg-white rounded-[40px] p-8 shadow-inner border border-gray-100">
             
-            {/* [BACKEND TODO]: Fetch and display current server date here */}
             <h2 className="text-3xl font-extrabold mb-10 text-[#1e3d58] min-h-[40px]">
-                February 17, 2026
+                {currentDateTime}
             </h2>
             
             <div className="flex flex-col gap-4">
