@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createOnlineOrder } from "@/app/actions/createOnlineOrder";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
-
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
 
 export default function CustomerPlaceOrder() {
@@ -21,6 +20,7 @@ export default function CustomerPlaceOrder() {
 
   const [userZone, setUserZone] = useState<string>("Loading...");
   const [pricePerGallon, setPricePerGallon] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (userData) {
@@ -44,24 +44,42 @@ export default function CustomerPlaceOrder() {
   };
 
   const handlePlaceOrder = async () => {
-    if (paymentMethod === 'COD'){
-      const data = await createOnlineOrder({
-        slimCount,
-        roundCount,
-        paymentMethod,
-        userZone,
-        pricePerGallon,
-        totalAmount,
-        transaction_type: "Online"
-      });
-
-      if (data.success === true){
-        // success order placement confirmation
-        alert(data.data);
-        //window.location.href = '/home';
+    setLoading(true);
+    setIsModalOpen(false);
+    try {
+      if (paymentMethod === 'E-Bank' && !receipt) {
+        alert("Please upload your receipt for E-Bank payment.");
+        setLoading(false);
+        return;
       }
-    } else {
-      console.log('online order E-BANK');
+
+      const formData = new FormData();
+      formData.append('slimCount', slimCount.toString());
+      formData.append('roundCount', roundCount.toString());
+      formData.append('paymentMethod', paymentMethod);
+      formData.append('userZone', userZone);
+      formData.append('pricePerGallon', pricePerGallon.toString());
+      formData.append('totalAmount', totalAmount.toString());
+      formData.append('transaction_type', "Online");
+      formData.append('payment_mode', paymentMethod);
+      
+      if (receipt) {
+        formData.append('receipt', receipt);
+      }
+
+      const data = await createOnlineOrder(formData);
+
+      if (data.success === true) {
+        alert(data.data || "Order placed successfully!");
+        window.location.href = '/home';
+      } else {
+        alert(data.error || "Failed to place order.");
+      }
+    } catch (error) {
+      console.error("Error placing order:", error);
+      alert("An unexpected error occurred.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -159,9 +177,10 @@ export default function CustomerPlaceOrder() {
               <div className="pt-4">
                 <Button 
                   onClick={() => setIsModalOpen(true)}
-                  className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 shadow-lg"
+                  disabled={loading || (slimCount === 0 && roundCount === 0)}
+                  className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 shadow-lg disabled:opacity-50"
                 >
-                  Place Order
+                  {loading ? "Placing Order..." : "Place Order"}
                 </Button>
               </div>
 
@@ -176,7 +195,7 @@ export default function CustomerPlaceOrder() {
         onConfirm={handlePlaceOrder}
         title="Confirm Order"
         message={`Are you sure you want to place this order for ${userZone}? The total amount is ₱${totalAmount}.`}
-        confirmText="Yes, Proceed"
+        confirmText={loading ? "Processing..." : "Yes, Proceed"}
       />
 
     </div>

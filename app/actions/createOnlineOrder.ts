@@ -2,14 +2,22 @@
 import { createClient } from "@/lib/supabase/server"
 import { logActivity } from "./logActivity";
 
-
-
-export async function createOnlineOrder(orderInfo: any) {
+export async function createOnlineOrder(formData: FormData) {
     const supabase = await createClient();
+    
+    // Extract order info from FormData
+    const slimCount = parseInt(formData.get('slimCount') as string) || 0;
+    const roundCount = parseInt(formData.get('roundCount') as string) || 0;
+    const paymentMethod = formData.get('paymentMethod') as string;
+    const transaction_type = formData.get('transaction_type') as string;
+    const payment_mode = formData.get('payment_mode') as string;
+    
+    // Get receipt file
+    const receipt = formData.get('receipt') as File | null;
+    let proof_payment_url = null;
+
     const user = await supabase.auth.getClaims();
     const userId = user.data?.claims.sub;
-
-
 
     const { data: userDetails, error: userError } = await supabase
         .from('users')
@@ -37,14 +45,30 @@ export async function createOnlineOrder(orderInfo: any) {
         : pricingData?.location_price;
     const locationId = userDetails?.location_id;
 
+    // Handle File Upload if E-Bank
+    if (paymentMethod === 'E-Bank' && receipt && receipt.size > 0) {
+        const fileExt = receipt.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `receipts/${fileName}`;
 
+        const { error: uploadError } = await supabase.storage
+            .from('proof_payment')
+            .upload(filePath, receipt);
+
+        if (uploadError) {
+            console.error("Upload error:", uploadError);
+            return { error: "Failed to upload receipt image." };
+        }
+        proof_payment_url = filePath;
+    } else if (paymentMethod === 'E-Bank' && (!receipt || receipt.size === 0)) {
+        return { error: "Receipt image is required for E-Bank payments." };
+    }
 
     // get product details
     const { data: products, error: productError } = await supabase
         .from('products')
         .select('product_id, product_name')
         .in('product_name', ['Slim Gallon', 'Round Gallon']);
-
 
     if (productError) {
         console.error("Error fetching products:", productError);
@@ -54,30 +78,27 @@ export async function createOnlineOrder(orderInfo: any) {
     const slimProduct = products?.find((p: any) => p.product_name === 'Slim Gallon');
     const roundProduct = products?.find((p: any) => p.product_name === 'Round Gallon');
 
-
     const items = [];
-    if (orderInfo.slimCount > 0) {
+    if (slimCount > 0) {
         if (!slimProduct) return { error: "Slim Gallon product not found in database" };
         items.push({
             product_id: slimProduct.product_id,
-            quantity: orderInfo.slimCount,
+            quantity: slimCount,
             unit_price: locationPrice
         });
     }
-    if (orderInfo.roundCount > 0) {
+    if (roundCount > 0) {
         if (!roundProduct) return { error: "Round Gallon product not found in database" };
         items.push({
             product_id: roundProduct.product_id,
-            quantity: orderInfo.roundCount,
+            quantity: roundCount,
             unit_price: locationPrice
         });
     }
 
     if (items.length === 0) {
         return { error: "No items to order" };
-
     }
-
 
     const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
         p_user_id: userId,
@@ -86,9 +107,9 @@ export async function createOnlineOrder(orderInfo: any) {
         p_number: userDetails.mobile_no,
         p_location_id: locationId,
         p_items: items,
-
-        p_transaction_type: orderInfo.transaction_type,
-        p_payment_mode: orderInfo.payment_mode,
+        p_transaction_type: transaction_type,
+        p_payment_mode: payment_mode,
+        p_proof_payment: proof_payment_url,
     });
 
     if (error) {
@@ -97,43 +118,7 @@ export async function createOnlineOrder(orderInfo: any) {
     }
 
     // Log the activity
-    await logActivity(`Placed an online order (${orderInfo.transaction_type})`);
+    await logActivity(`Placed an online order (${transaction_type})`);
 
     return { success: true, data: rpcData };
-
 }
-
-/* 
-
-ONLINE RPC CALL
-
-const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-    p_user_id: user?.id, // Use the real ID from the session
-    p_name: orderInfo.name,
-    p_address: orderInfo.location,
-    p_number: orderInfo.mobileNumber,
-    p_location_id: locationId,
-    p_items: items,
-    
-    // Updated for Online Flow
-    p_transaction_type: 'Online', 
-    p_payment_mode: 'GCash', // Or whatever your online payment method is
-});
-
-WALK-IN
-const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-    p_user_id: null, 
-    p_name: "Walk-in", 
-    p_address: "Walk-in", 
-    p_number: "0000", 
-    p_location_id: 1,
-    p_items: items,
-    
-    p_transaction_type: 'Walk-in',
-    p_payment_mode: 'Cash'
-});
-
-
-
-*/
-
