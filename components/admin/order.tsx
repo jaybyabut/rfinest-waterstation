@@ -154,21 +154,18 @@ export default function PlaceOrderForm() {
             
             {globalError && (
               <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200">
-                ⚠️ {globalError}
+                 {globalError}
               </div>
             )}
             
             {successMessage && (
               <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200">
-                ✅ {successMessage}
+                 {successMessage}
               </div>
             )}
 
             <div className="space-y-5">
               
-              <div className="bg-[#43b0f1] text-white rounded-full h-14 flex items-center justify-center font-bold text-lg mb-6 shadow-sm">
-                Call / Delivery
-              </div>
 
               <div>
                 <label className="block text-xl font-bold mb-1 ml-2">Name:</label>
