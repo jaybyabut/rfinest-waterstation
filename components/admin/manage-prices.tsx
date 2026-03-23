@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, SquarePen, Plus, Search } from "lucide-react";
+import { ChevronLeft, SquarePen, Plus, Search, RefreshCw } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
-
+import { getLocations, batchUpdatePrices } from "@/app/actions/locations";
 type PriceItem = {
   id: number;
   name: string;
@@ -13,19 +13,8 @@ type PriceItem = {
 };
 
 export default function ManagePricesPage() {
-  // TODO: BACKEND - Fetch this initial data from the 'zones' table in the database
-  const [prices, setPrices] = useState<PriceItem[]>([
-    { id: 1, name: "Bulaon", price: 30 },
-    { id: 2, name: "Calulut", price: 30 },
-    { id: 3, name: "Maimpis", price: 35 },
-    { id: 4, name: "Mexico", price: 35 },
-    { id: 5, name: "Montana", price: 45 },
-    { id: 6, name: "Lakeshore", price: 45 },
-    { id: 7, name: "Golden Haven", price: 35 },
-    { id: 8, name: "Hauslands", price: 30 },
-    { id: 9, name: "Royal Residences", price: 30 },
-    { id: 10, name: "Malpitic", price: 30 },
-  ]);
+  const [prices, setPrices] = useState<PriceItem[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const [increaseAmount, setIncreaseAmount] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,6 +24,31 @@ export default function ManagePricesPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const fetchPrices = async () => {
+    setInitialLoading(true);
+    try {
+      const data = await getLocations();
+      if (Array.isArray(data)) {
+        setPrices(data.map((l: any) => ({
+          id: l.location_id,
+          name: l.location_name,
+          price: l.location_price
+        })));
+      } else {
+        setGlobalError("Failed to fetch prices from database.");
+      }
+    } catch (err) {
+      console.error(err);
+      setGlobalError("An error occurred while fetching prices.");
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPrices();
+  }, []);
 
   const applyGlobalIncrease = () => {
     setGlobalError(null);
@@ -103,11 +117,17 @@ export default function ManagePricesPage() {
     setGlobalError(null);
 
     try {
-      // TODO: BACKEND - Implement API call (POST/PUT) to batch update these prices in the database
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await batchUpdatePrices(prices.map(p => ({
+        id: p.id,
+        price: Number(p.price)
+      })));
       
-      setSuccessMessage("Prices updated successfully!");
-      setTimeout(() => setSuccessMessage(null), 5000);
+      if (result.success) {
+        setSuccessMessage("Prices updated successfully!");
+        setTimeout(() => setSuccessMessage(null), 5000);
+      } else {
+        setGlobalError(result.error || "Failed to update prices.");
+      }
     } catch (e) {
       console.error(e);
       setGlobalError("An unexpected error occurred while saving prices.");
@@ -179,13 +199,25 @@ export default function ManagePricesPage() {
                 placeholder="Search location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-12 pr-4 rounded-full border-2 border-gray-200 bg-gray-50 text-[#1e3d58] font-bold focus:outline-none focus:border-[#43b0f1] focus:ring-1 focus:ring-[#43b0f1] transition-all"
+                className="w-full h-12 pl-12 pr-12 rounded-full border-2 border-gray-200 bg-gray-50 text-[#1e3d58] font-bold focus:outline-none focus:border-[#43b0f1] focus:ring-1 focus:ring-[#43b0f1] transition-all"
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} strokeWidth={3} />
+              <button 
+                onClick={fetchPrices}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#43b0f1] hover:text-[#1e3d58] transition-colors"
+                title="Refresh Prices"
+              >
+                <RefreshCw size={20} className={initialLoading ? "animate-spin" : ""} />
+              </button>
             </div>
 
             <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 pb-2 custom-scrollbar">
-              {filteredPrices.length === 0 ? (
+              {initialLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 opacity-50">
+                  <RefreshCw className="animate-spin text-[#1e3d58] mb-2" size={40} />
+                  <p className="font-bold text-[#1e3d58]">Fetching prices...</p>
+                </div>
+              ) : filteredPrices.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 font-bold italic">
                   No locations found.
                 </div>

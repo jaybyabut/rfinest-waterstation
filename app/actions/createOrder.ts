@@ -85,7 +85,7 @@ export async function createOrder(orderInfo: any) {
             p_name: orderInfo.name,
             p_address: orderInfo.location,
             p_number: orderInfo.mobileNumber,
-            p_location_id: Number(locationId),
+            p_location_id: locationId,
             p_items: items,
             p_transaction_type: orderInfo.transaction_type,
             p_payment_mode: orderInfo.payment_mode,
@@ -99,11 +99,12 @@ export async function createOrder(orderInfo: any) {
             p_name: orderInfo.name,
             p_address: orderInfo.location,
             p_number: orderInfo.mobileNumber,
-            p_location_id: Number(locationId),
+            p_location_id: locationId,
             p_items: items,
             p_transaction_type: orderInfo.transaction_type,
             p_payment_mode: orderInfo.payment_mode,
             p_note: orderInfo.note,
+
         });
         rpcData = data;
         error = rpcError;
