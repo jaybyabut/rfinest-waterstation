@@ -1,18 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Package, X, Bike, ShoppingBag, Droplets, CheckCircle2, Maximize, Minimize, History, Clock } from 'lucide-react';
+import { LayoutGrid, Package, X, Bike, ShoppingBag, Droplets, CheckCircle2, Maximize, Minimize, History, Clock, Image as ImageIcon } from 'lucide-react';
 
 type OrderItem = { type: string; quantity: number };
 type WalkInOrder = { id: string; items: OrderItem[] };
 
-// TODO: BACKEND - I-align ang status strings sa actual database values niyo, at idagdag ang location/notes
+// TODO: BACKEND - I-align ang status strings sa actual database values niyo, at siguraduhing nafe-fetch ang payment_method at receipt_url
 type OnlineOrder = { 
   id: string; 
   items: OrderItem[]; 
   status: 'pending' | 'picked-up' | 'refilled'; 
   location: string;
   notes?: string;
+  payment_method: 'cash' | 'ebank' | string;
+  receipt_url?: string;
 };
 
 interface EmployeeLog {
@@ -32,17 +34,19 @@ export default function SeniorFriendlyTablet() {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [logError, setLogError] = useState<string | null>(null);
 
-  // TODO: BACKEND - Fetch actual walk-in orders
+  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
+
+  // TODO: BACKEND - Fetch actual walk-in orders from Supabase
   const [walkInOrders, setWalkInOrders] = useState<WalkInOrder[]>([
     { id: '101', items: [{ type: 'SLIM', quantity: 1 }, { type: 'ROUND', quantity: 1 }] },
     { id: '102', items: [{ type: 'ROUND', quantity: 5 }] },
   ]);
 
-  // TODO: BACKEND - Fetch actual online orders
+  // TODO: BACKEND - Fetch actual online orders and their receipt_url from Supabase Storage
   const [onlineOrders, setOnlineOrders] = useState<OnlineOrder[]>([
-    { id: '201', status: 'pending', location: 'Block 1 Lot 8 Bulaon', items: [{ type: 'SLIM', quantity: 2 }, { type: 'ROUND', quantity: 3 }] },
-    { id: '202', status: 'picked-up', location: 'Walk-in Online', items: [{ type: 'SLIM', quantity: 4 }] },
-    { id: '203', status: 'refilled', location: 'Block 1 Lot 8 Mexico', notes: 'Paki-iwan sa gate perds.', items: [{ type: 'ROUND', quantity: 3 }] },
+    { id: '201', status: 'pending', location: 'Block 1 Lot 8 Bulaon', payment_method: 'ebank', receipt_url: 'https://placehold.co/600x800/e8eef1/1e3d58?text=Sample+Receipt', items: [{ type: 'SLIM', quantity: 2 }, { type: 'ROUND', quantity: 3 }] },
+    { id: '202', status: 'picked-up', location: 'Walk-in Online', payment_method: 'cash', items: [{ type: 'SLIM', quantity: 4 }] },
+    { id: '203', status: 'refilled', location: 'Block 1 Lot 8 Mexico', notes: 'Paki-iwan sa gate perds.', payment_method: 'ebank', receipt_url: 'https://placehold.co/600x800/e8eef1/1e3d58?text=GCash+Receipt', items: [{ type: 'ROUND', quantity: 3 }] },
   ]);
 
   useEffect(() => {
@@ -60,7 +64,7 @@ export default function SeniorFriendlyTablet() {
   };
 
   const handleRefill = (id: string) => {
-    // TODO: BACKEND - I-update ang status sa database bago tanggalin sa UI
+    // TODO: BACKEND - I-update ang status ng walk-in order sa Supabase bago tanggalin sa UI
     setWalkInOrders(prev => prev.filter(o => o.id !== id));
     setConfirmingId(null);
   };
@@ -69,7 +73,7 @@ export default function SeniorFriendlyTablet() {
     const currentOrder = onlineOrders.find(o => o.id === id);
     if (!currentOrder) return;
 
-    // TODO: BACKEND - I-update ang bagong status sa database
+    // TODO: BACKEND - I-update ang bagong status ng online order sa Supabase
     if (currentOrder.status === 'refilled') {
       setOnlineOrders(prev => prev.filter(o => o.id !== id));
     } else {
@@ -87,7 +91,7 @@ export default function SeniorFriendlyTablet() {
     setLoadingLogs(true);
     setLogError(null);
     try {
-      // TODO: BACKEND - Fetch logs specifically for this tablet for TODAY
+      // TODO: BACKEND - Fetch logs specifically for this tablet/employee for TODAY
       await new Promise((resolve) => setTimeout(resolve, 800)); 
       const dummyLogs: EmployeeLog[] = [
         { id: "LOG-1", timestamp: new Date().toISOString(), action: "Marked as Delivered", details: "Order ORD-9918 has been delivered to customer." },
@@ -112,6 +116,32 @@ export default function SeniorFriendlyTablet() {
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans relative">
       
+      {viewingReceipt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in duration-300 p-4 md:p-12">
+          <div className="relative w-full max-w-2xl bg-white rounded-[30px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-[#e8eef1]">
+              <h2 className="text-3xl font-black text-[#1e3d58] tracking-tight flex items-center gap-3">
+                <ImageIcon size={32} className="text-[#43b0f1]" /> PROOF OF PAYMENT
+              </h2>
+              <button 
+                onClick={() => setViewingReceipt(null)}
+                className="bg-red-500 text-white p-3 rounded-xl hover:bg-red-600 transition-colors active:scale-95 shadow-md"
+              >
+                <X size={28} strokeWidth={3} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-6 flex justify-center items-center bg-slate-50">
+               {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={viewingReceipt} 
+                alt="Payment Receipt" 
+                className="max-w-full max-h-[60vh] object-contain rounded-2xl shadow-sm border border-slate-200"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="absolute top-6 right-6 md:top-8 md:right-8 z-50 flex gap-3 md:gap-4">
         <button
           onClick={() => setIsHistoryOpen(true)}
@@ -256,29 +286,40 @@ export default function SeniorFriendlyTablet() {
                     <span className="text-4xl md:text-6xl font-black text-slate-900">#{order.id}</span>
                 </div>
 
-                {confirmingId === order.id ? (
-                  <div className="flex gap-2 md:gap-4 items-center bg-slate-50 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 border-slate-200">
-                    <button onClick={() => setConfirmingId(null)} className="bg-red-500 text-white w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg active:scale-90">
-                      <X className="w-8 h-8 md:w-12 md:h-12" strokeWidth={4} />
+                <div className="flex flex-col gap-3">
+                  {order.payment_method?.toLowerCase() === 'ebank' && order.receipt_url && (
+                    <button 
+                      onClick={() => setViewingReceipt(order.receipt_url || null)}
+                      className="flex items-center justify-center gap-2 bg-[#e8eef1] text-[#1e3d58] border-2 border-[#1e3d58]/20 hover:border-[#43b0f1] hover:text-[#43b0f1] px-4 py-3 rounded-2xl font-black text-lg md:text-xl shadow-sm transition-all active:scale-95"
+                    >
+                      <ImageIcon size={24} strokeWidth={2.5}/> VIEW RECEIPT
                     </button>
-                    <button onClick={() => cycleOnlineStatus(order.id)} className="bg-green-500 text-white px-4 md:px-10 py-3 md:py-6 rounded-xl md:rounded-2xl font-black text-xl md:text-4xl shadow-xl animate-pulse active:scale-95">
-                      SURE?
+                  )}
+
+                  {confirmingId === order.id ? (
+                    <div className="flex gap-2 md:gap-4 items-center bg-slate-50 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 border-slate-200">
+                      <button onClick={() => setConfirmingId(null)} className="bg-red-500 text-white w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg active:scale-90">
+                        <X className="w-8 h-8 md:w-12 md:h-12" strokeWidth={4} />
+                      </button>
+                      <button onClick={() => cycleOnlineStatus(order.id)} className="bg-green-500 text-white px-4 md:px-10 py-3 md:py-6 rounded-xl md:rounded-2xl font-black text-xl md:text-4xl shadow-xl animate-pulse active:scale-95">
+                        SURE?
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setConfirmingId(order.id)}
+                      className={`min-w-[150px] md:min-w-[350px] px-6 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-2xl shadow-lg transition-all text-white active:scale-95 text-center ${
+                        order.status === 'pending' ? 'bg-orange-500' : 
+                        order.status === 'picked-up' ? 'bg-blue-600' : 
+                        'bg-green-600'
+                      }`}
+                    >
+                      {order.status === 'pending' && "MARK PICKED-UP"}
+                      {order.status === 'picked-up' && "MARK REFILLED"}
+                      {order.status === 'refilled' && "MARK OUT FOR DELIVERY"}
                     </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => setConfirmingId(order.id)}
-                    className={`min-w-[150px] md:min-w-[350px] px-6 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-2xl shadow-lg transition-all text-white active:scale-95 text-center ${
-                      order.status === 'pending' ? 'bg-orange-500' : 
-                      order.status === 'picked-up' ? 'bg-blue-600' : 
-                      'bg-green-600'
-                    }`}
-                  >
-                    {order.status === 'pending' && "MARK PICKED-UP"}
-                    {order.status === 'picked-up' && "MARK REFILLED"}
-                    {order.status === 'refilled' && "MARK OUT FOR DELIVERY"}
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           )) : (
