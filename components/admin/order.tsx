@@ -104,7 +104,6 @@ export default function PlaceOrderForm() {
         mobileNumber: mobileNumber,
         location: location, 
         locationId: selectedLocation?.location_id,
-        selectedZone: selectedZone,
         slimCount,
         roundCount,
         pricePerUnit,
