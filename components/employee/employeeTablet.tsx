@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Package, X, Bike, ShoppingBag, Droplets, CheckCircle2, Maximize, Minimize, History, Clock, Image as ImageIcon } from 'lucide-react';
+import { LayoutGrid, Package, X, Bike, ShoppingBag, Droplets, CheckCircle2, Maximize, Minimize, History, Clock, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { getWalkInOrders } from "@/app/actions/getWalkInOrders";
+import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
 
 type OrderItem = { type: string; quantity: number };
-type WalkInOrder = { id: string; items: OrderItem[] };
+type WalkInOrder = { id: string; items: OrderItem[]; status: string };
 
 // TODO: BACKEND - I-align ang status strings sa actual database values niyo, at siguraduhing nafe-fetch ang payment_method at receipt_url
 type OnlineOrder = { 
@@ -36,11 +38,34 @@ export default function SeniorFriendlyTablet() {
 
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
 
-  // TODO: BACKEND - Fetch actual walk-in orders from Supabase
-  const [walkInOrders, setWalkInOrders] = useState<WalkInOrder[]>([
-    { id: '101', items: [{ type: 'SLIM', quantity: 1 }, { type: 'ROUND', quantity: 1 }] },
-    { id: '102', items: [{ type: 'ROUND', quantity: 5 }] },
-  ]);
+  const [walkInOrders, setWalkInOrders] = useState<WalkInOrder[]>([]);
+  const [loadingWalkIn, setLoadingWalkIn] = useState(true);
+
+  const fetchWalkIn = async () => {
+    try {
+      const data = await getWalkInOrders();
+      if (Array.isArray(data)) {
+        setWalkInOrders(data.map(o => ({
+          id: o.order_id.toString(),
+          status: o.current_status,
+          items: o.order_items.map((i: any) => ({
+            type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
+            quantity: i.quantity
+          }))
+        })));
+      }
+    } catch (error) {
+      console.error("Failed to fetch walk-in orders:", error);
+    } finally {
+      setLoadingWalkIn(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWalkIn();
+    const interval = setInterval(fetchWalkIn, 10000); // 10s refresh
+    return () => clearInterval(interval);
+  }, []);
 
   // TODO: BACKEND - Fetch actual online orders and their receipt_url from Supabase Storage
   const [onlineOrders, setOnlineOrders] = useState<OnlineOrder[]>([
@@ -63,10 +88,12 @@ export default function SeniorFriendlyTablet() {
     }
   };
 
-  const handleRefill = (id: string) => {
-    // TODO: BACKEND - I-update ang status ng walk-in order sa Supabase bago tanggalin sa UI
-    setWalkInOrders(prev => prev.filter(o => o.id !== id));
-    setConfirmingId(null);
+  const handleRefill = async (id: any) => {
+    const res = await updateOrderStatus(id, 'Delivered');
+    if (res.success) {
+      setWalkInOrders(prev => prev.filter(o => o.id !== id));
+      setConfirmingId(null);
+    }
   };
 
   const cycleOnlineStatus = (id: string) => {
@@ -180,54 +207,63 @@ export default function SeniorFriendlyTablet() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {activeTab === 'walkin' && (
-          walkInOrders.length > 0 ? walkInOrders.map((order) => (
-            <div key={order.id} className="flex items-center w-full p-4 md:p-8 bg-white rounded-2xl md:rounded-3xl border border-slate-200 border-l-[16px] md:border-l-[24px] border-l-[#1e3d58] shadow-sm hover:shadow-md transition-all">
-              <div className="flex flex-col items-center justify-center w-24 md:w-40 border-r-2 border-slate-100 pr-4 md:pr-8 mr-4 md:mr-8 text-slate-400">
-                <CheckCircle2 className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />
-                <span className="font-bold text-sm md:text-xl uppercase tracking-widest mt-2 text-center">WALK-IN</span>
-              </div>
-
-              <div className="flex-1 flex flex-col justify-center">
-                <div className="flex flex-wrap gap-6 md:gap-12">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 md:gap-4">
-                      <span className="text-5xl md:text-7xl font-black text-slate-800">{item.quantity}</span>
-                      <span className="text-2xl md:text-4xl font-bold text-slate-400 uppercase italic">{item.type}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col items-end md:flex-row md:items-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-2 border-slate-100">
-                <div className="text-right">
-                    <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
-                    <span className="text-4xl md:text-6xl font-black text-slate-900">#{order.id}</span>
-                </div>
-
-                {confirmingId === order.id ? (
-                  <div className="flex gap-2 md:gap-4 items-center bg-slate-50 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 border-[#43b0f1]">
-                    <button onClick={() => setConfirmingId(null)} className="bg-red-500 text-white w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg active:scale-90">
-                      <X className="w-8 h-8 md:w-12 md:h-12" strokeWidth={4} />
-                    </button>
-                    <button onClick={() => handleRefill(order.id)} className="bg-green-500 text-white px-4 md:px-10 py-3 md:py-6 rounded-xl md:rounded-2xl font-black text-xl md:text-4xl shadow-xl animate-pulse active:scale-95">
-                      SURE?
-                    </button>
+          loadingWalkIn ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
+              <Loader2 className="w-16 h-16 animate-spin text-[#43b0f1]" />
+              <span className="font-black text-2xl uppercase tracking-widest text-slate-400">Loading Walk-In Orders...</span>
+            </div>
+          ) : (
+            walkInOrders.length > 0 ? (
+              walkInOrders.map((order) => (
+                <div key={order.id} className="flex items-center w-full p-4 md:p-8 bg-white rounded-2xl md:rounded-3xl border border-slate-200 border-l-[16px] md:border-l-[24px] border-l-[#1e3d58] shadow-sm hover:shadow-md transition-all">
+                  <div className="flex flex-col items-center justify-center w-24 md:w-40 border-r-2 border-slate-100 pr-4 md:pr-8 mr-4 md:mr-8 text-slate-400">
+                    <CheckCircle2 className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />
+                    <span className="font-bold text-sm md:text-xl uppercase tracking-widest mt-2 text-center">WALK-IN</span>
                   </div>
-                ) : (
-                  <button 
-                    onClick={() => setConfirmingId(order.id)}
-                    className="bg-[#1e3d58] text-white px-6 md:px-12 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-xl md:text-3xl shadow-lg active:scale-95 transition-transform"
-                  >
-                    MARK REFILLED
-                  </button>
-                )}
+
+                  <div className="flex-1 flex flex-col justify-center">
+                    <div className="flex flex-wrap gap-6 md:gap-12">
+                      {order.items.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 md:gap-4">
+                          <span className="text-5xl md:text-7xl font-black text-slate-800">{item.quantity}</span>
+                          <span className="text-2xl md:text-4xl font-bold text-slate-400 uppercase italic">{item.type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end md:flex-row md:items-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-2 border-slate-100">
+                    <div className="text-right">
+                        <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
+                        <span className="text-4xl md:text-6xl font-black text-slate-900">ORD-{order.id.split('-')[0]}</span>
+                    </div>
+
+                    {confirmingId === order.id ? (
+                      <div className="flex gap-2 md:gap-4 items-center bg-slate-50 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 border-[#43b0f1]">
+                        <button onClick={() => setConfirmingId(null)} className="bg-red-500 text-white w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg active:scale-90">
+                          <X className="w-8 h-8 md:w-12 md:h-12" strokeWidth={4} />
+                        </button>
+                        <button onClick={() => handleRefill(order.id)} className="bg-green-500 text-white px-4 md:px-10 py-3 md:py-6 rounded-xl md:rounded-2xl font-black text-xl md:text-4xl shadow-xl animate-pulse active:scale-95">
+                          SURE?
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => setConfirmingId(order.id)}
+                        className="bg-[#1e3d58] text-white px-6 md:px-12 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-xl md:text-3xl shadow-lg active:scale-95 transition-transform"
+                      >
+                        MARK DELIVERED
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-32 flex flex-col items-center justify-center text-slate-300 h-full">
+                <h1 className="text-4xl md:text-6xl font-black uppercase text-center">No Walk-In Orders</h1>
+                <p className="text-lg md:text-2xl font-bold mt-4 text-center">Good job! Everything is cleared.</p>
               </div>
-            </div>
-          )) : (
-            <div className="py-32 flex flex-col items-center justify-center text-slate-300 h-full">
-              <h1 className="text-4xl md:text-6xl font-black uppercase text-center">No Walk-In Orders</h1>
-              <p className="text-lg md:text-2xl font-bold mt-4 text-center">Good job! Everything is cleared.</p>
-            </div>
+            )
           )
         )}
 
@@ -283,7 +319,7 @@ export default function SeniorFriendlyTablet() {
               <div className="flex flex-col items-end md:flex-row md:items-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-2 border-slate-100">
                 <div className="text-right">
                     <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
-                    <span className="text-4xl md:text-6xl font-black text-slate-900">#{order.id}</span>
+                    <span className="text-4xl md:text-6xl font-black text-slate-900">ORD-{order.id.split('-')[0]}</span>
                 </div>
 
                 <div className="flex flex-col gap-3">
