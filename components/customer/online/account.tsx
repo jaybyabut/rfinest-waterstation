@@ -206,20 +206,20 @@ export default function CustomerAccount() {
 
   if (view === "menu") {
     return (
-      <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-10">
-        <div className="w-full max-w-md">
-          <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
+      <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-10 relative overflow-x-hidden">
+        <div className="w-full max-w-md mx-auto">
+          <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
             
-            <div className="flex items-center justify-center mb-8 relative w-full">
+            <div className="flex items-center justify-center mb-8 relative w-full px-2">
               <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
                 <ChevronLeft size={44} strokeWidth={3} />
               </Link>
-              <h1 className="text-5xl font-black text-black tracking-tighter w-full text-center px-12">
+              <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 break-words leading-tight">
               Account
               </h1>
             </div>
 
-            <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left space-y-4">
+            <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left space-y-4 w-full overflow-hidden">
               
               <h2 className="text-[#1e3d58] font-black text-2xl tracking-tight ml-2 mb-2">Profile Details</h2>
               
@@ -298,42 +298,42 @@ export default function CustomerAccount() {
   }
 
   return (
-    <div className="flex flex-col items-center w-full px-4 py-6 animate-in slide-in-from-right-8 duration-300 mb-10">
-      <div className="w-full max-w-md">
-        <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
+    <div className="flex flex-col items-center w-full px-4 py-6 animate-in slide-in-from-right-8 duration-300 mb-10 relative overflow-x-hidden">
+      <div className="w-full max-w-md mx-auto">
+        <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
           
-          <div className="flex items-center justify-center mb-8 relative w-full">
+          <div className="flex items-center justify-center mb-8 relative w-full px-2">
             <button onClick={handleBack} className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
               <ChevronLeft size={44} strokeWidth={3} />
             </button>
-            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter text-center px-12 capitalize leading-none">
+            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter text-center px-10 capitalize leading-tight break-words w-full">
               Change {view === 'number' ? 'Number' : view}
             </h1>
           </div>
 
-          <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left space-y-5">
+          <div className="bg-white rounded-[40px] p-5 sm:p-8 shadow-inner border border-gray-100 text-left space-y-5 w-full overflow-hidden">
             
             {errors.submit && (
-              <div className="bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm">
+              <div className="bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm break-words">
                 {errors.submit}
               </div>
             )}
 
             {view === "name" && (
-              <div className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="flex-1">
+              <div className="space-y-4 w-full">
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <div className="flex-1 min-w-0">
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">First Name:</label>
                     <input
                       type="text"
                       placeholder="e.g. Juan"
                       value={tempFirstName}
                       onChange={(e) => setTempFirstName(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.firstName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.firstName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
-                    {errors.firstName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.firstName}</p>}
+                    {errors.firstName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.firstName}</p>}
                   </div>
-                  <div className="w-24">
+                  <div className="w-full sm:w-24 shrink-0">
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">M.I.:</label>
                     <input
                       type="text"
@@ -341,58 +341,58 @@ export default function CustomerAccount() {
                       placeholder="A"
                       value={tempMI}
                       onChange={(e) => setTempMI(e.target.value)}
-                      className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.mi ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mi ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
-                    {errors.mi && <p className="text-red-500 text-xs font-bold mt-1 text-center">{errors.mi}</p>}
+                    {errors.mi && <p className="text-red-500 text-xs font-bold mt-1 text-center break-words">{errors.mi}</p>}
                   </div>
                 </div>
-                <div>
+                <div className="w-full">
                   <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">Last Name:</label>
                   <input
                     type="text"
                     placeholder="e.g. Dela Cruz"
                     value={tempLastName}
                     onChange={(e) => setTempLastName(e.target.value)}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.lastName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.lastName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
-                  {errors.lastName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.lastName}</p>}
+                  {errors.lastName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.lastName}</p>}
                 </div>
               </div>
             )}
 
             {view === "location" && (
-              <div className="space-y-4">
-                <div className="flex gap-3">
-                  <div className="flex-1">
+              <div className="space-y-4 w-full">
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <div className="flex-1 min-w-0">
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">House No.:</label>
                     <input
                       type="text"
                       placeholder="e.g. Blk 1 Lot 8"
                       value={tempHouseNo}
                       onChange={(e) => setTempHouseNo(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.houseNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.houseNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
-                    {errors.houseNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.houseNo}</p>}
+                    {errors.houseNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.houseNo}</p>}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">Street Name:</label>
                     <input
                       type="text"
                       placeholder="e.g. San Juan St."
                       value={tempStreetName}
                       onChange={(e) => setTempStreetName(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.streetName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.streetName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
-                    {errors.streetName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.streetName}</p>}
+                    {errors.streetName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.streetName}</p>}
                   </div>
                 </div>
-                <div>
+                <div className="w-full">
                   <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">Zone:</label>
-                  <div className="relative">
+                  <div className="relative w-full">
                     <select
                       value={tempZoneId}
                       onChange={(e) => setTempZoneId(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer ${errors.zoneId ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer min-w-0 pr-10 ${errors.zoneId ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     >
                       <option value="" disabled>Select a valid zone</option>
                       {locations.map((loc) => (
@@ -403,64 +403,64 @@ export default function CustomerAccount() {
                       <svg className="w-6 h-6 text-[#1e3d58]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
-                  {errors.zoneId && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.zoneId}</p>}
+                  {errors.zoneId && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.zoneId}</p>}
                 </div>
               </div>
             )}
 
             {view === "number" && (
-              <div>
+              <div className="w-full">
                 <label className="block text-lg font-bold mb-2 ml-2 text-[#1e3d58]">Mobile Number:</label>
                 <input
                   type="tel"
                   placeholder="09XXXXXXXXX"
                   value={tempMobileNo}
                   onChange={(e) => setTempMobileNo(e.target.value)}
-                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
                 />
-                {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.mobileNo}</p>}
+                {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.mobileNo}</p>}
               </div>
             )}
 
             {view === "password" && (
-              <div className="space-y-4">
-                <div>
+              <div className="space-y-4 w-full">
+                <div className="w-full">
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Old Password:</label>
                   <input
                     type="password"
                     placeholder="Enter current password"
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.oldPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.oldPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
-                  {errors.oldPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.oldPassword}</p>}
+                  {errors.oldPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.oldPassword}</p>}
                 </div>
-                <div>
+                <div className="w-full">
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">New Password:</label>
                   <input
                     type="password"
                     placeholder="Min. 8 characters"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.newPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.newPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
-                  {errors.newPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.newPassword}</p>}
+                  {errors.newPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.newPassword}</p>}
                 </div>
-                <div>
+                <div className="w-full">
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Confirm Password:</label>
                   <input
                     type="password"
                     placeholder="Re-enter new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.confirmPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.confirmPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
-                  {errors.confirmPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.confirmPassword}</p>}
+                  {errors.confirmPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.confirmPassword}</p>}
                 </div>
               </div>
             )}
 
-            <div className="pt-6">
+            <div className="pt-6 w-full">
               <Button 
                 onClick={() => {
                   if (validateForm()) {
