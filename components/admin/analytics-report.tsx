@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { getAnalyticsData } from "@/app/actions/getReport";
 
 export default function AnalyticsAndReports() {
   const [loading, setLoading] = useState(true);
@@ -11,16 +12,12 @@ export default function AnalyticsAndReports() {
   
   const [selectedMonth, setSelectedMonth] = useState("");
 
-  // TODO: BACKEND - Fetch daily stats from database (orders table)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [gallons, setGallons] = useState({
     slim: 0,
     round: 0,
     total: 0,
   });
 
-  // TODO: BACKEND - Fetch earnings breakdown
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [earnings, setEarnings] = useState({
     walkIn: 0,
     online: 0,
@@ -29,7 +26,6 @@ export default function AnalyticsAndReports() {
     total: 0,
   });
 
-  // TODO: BACKEND - Fetch monthly aggregation based on selectedMonth
   const [monthlyStats, setMonthlyStats] = useState({
     month: "Loading...",
     days: 0,
@@ -48,18 +44,30 @@ export default function AnalyticsAndReports() {
       setGlobalError(null);
 
       try {
-        // TODO: BACKEND - Implement actual API call here passing selectedMonth
-        await new Promise((resolve) => setTimeout(resolve, 800)); 
+        const response = await getAnalyticsData(selectedMonth);
 
-        const dateObj = new Date(selectedMonth + "-01");
+        if (!response.success || !response.data) {
+             throw new Error(response.error || "Unknown error fetching data");
+        }
+
+        setGallons(response.data.today.gallons);
+        setEarnings(response.data.today.earnings);
+
+        const [yearStr, monthStr] = selectedMonth.split('-');
+        const year = parseInt(yearStr);
+        const monthIndex = parseInt(monthStr) - 1;
+
+        const dateObj = new Date(year, monthIndex, 1);
         const monthName = dateObj.toLocaleString("default", { month: "long", year: "numeric" });
-        const daysInMonth = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0).getDate();
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
         setMonthlyStats({
           month: monthName,
           days: daysInMonth,
-          earnings: Math.floor(Math.random() * 50000) + 10000, 
+          earnings: response.data.monthly.earnings, 
         });
+
+        console.log("Analytics data fetched successfully:", response.data);
 
       } catch (error) {
         console.error(error);
@@ -82,7 +90,7 @@ export default function AnalyticsAndReports() {
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
             <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center px-12">
-            Analytics & Report
+            Sales Report
             </h1>
           </div>
 
@@ -172,6 +180,7 @@ export default function AnalyticsAndReports() {
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
+                  disabled={loading}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
                 <Button className="absolute inset-0 w-3/4 mx-auto h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 pointer-events-none">
