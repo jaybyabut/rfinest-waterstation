@@ -1,9 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
+import { ArrowUp } from "lucide-react";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
 
 export default function CustomerHome({
@@ -11,6 +12,7 @@ export default function CustomerHome({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const userData = useUser();
+  const [showScrollTop, setShowScrollTop] = useState(false);
   
   /**
    * [GET] Active Order Check: 
@@ -19,8 +21,21 @@ export default function CustomerHome({
    */
   const hasActiveOrder = true; 
 
+  // Window scroll listener para sa floating button
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    window.addEventListener("scroll", handleWindowScroll);
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <div className={cn("flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500", className)} {...props}>
+    <div className={cn("flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative", className)} {...props}>
       <div className="w-full max-w-md">
 
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-white/50 shadow-xl">
@@ -34,7 +49,7 @@ export default function CustomerHome({
                 Hello, {userData?.first_name || 'user'}!
             </h2>
             
-            <p className="text-gray-600 font-medium mb-8 px-2 leading-relaxed text-sm">
+            <p className="text-gray-600 font-medium mb-8 px-2 leading-relaxed text-sm text-center">
               Stay hydrated! We are ready to deliver fresh water to your doorstep.
             </p>
 
@@ -63,15 +78,15 @@ export default function CustomerHome({
             )}
             
             <div className="flex flex-col gap-4">
-              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all active:scale-95">
                 <Link href="/home/order">Place Order</Link>
               </Button>
               
-              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all active:scale-95">
                 <Link href="/home/order-status">Check Orders</Link>
               </Button>
               
-              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all">
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all active:scale-95">
                 <Link href="/home/account">Account Settings</Link>
               </Button>
             </div>
@@ -79,6 +94,16 @@ export default function CustomerHome({
           </div>
         </div>
       </div>
+
+      {/* Floating Scroll to Top Button */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-24 right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
+          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+      >
+        <ArrowUp size={24} strokeWidth={3} />
+      </button>
     </div>
   );
 }
