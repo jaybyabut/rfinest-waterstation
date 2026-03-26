@@ -65,7 +65,7 @@ export default function ActivityLogs() {
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center px-12 leading-[0.9]">
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 leading-tight">
               Activity <br className="sm:hidden" /> Logs
             </h1>
           </div>
