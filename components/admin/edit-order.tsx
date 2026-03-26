@@ -224,7 +224,7 @@ export default function EditOrderForm() {
                             </button>
                         )}
 
-                        <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center px-10 leading-tight">
+                        <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 leading-tight">
                             {viewState === "selection" ? "Select Order" : "Edit Order"}
                         </h1>
                     </div>
