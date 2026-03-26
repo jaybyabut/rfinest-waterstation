@@ -2,36 +2,36 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, Upload, ArrowUp } from "lucide-react"; 
+import { ChevronLeft, Upload, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createOnlineOrder } from "@/app/actions/createOnlineOrder";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
-import ConfirmationModal from "@/components/ui/confirmation-modal"; 
+import ConfirmationModal from "@/components/ui/confirmation-modal";
 
 export default function CustomerPlaceOrder() {
   const userData = useUser();
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "E-Bank">("COD");
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
 
   const [userZone, setUserZone] = useState<string>("Loading...");
   const [pricePerGallon, setPricePerGallon] = useState<number>(0);
   const [loading, setLoading] = useState(false);
-  
+
   const [showScrollTop, setShowScrollTop] = useState(false);
   const lastKnownScrollPosition = useRef(0);
   const ticking = useRef(false);
 
   useEffect(() => {
     if (userData) {
-      const pricingInfo = Array.isArray(userData.location_pricing) 
-        ? userData.location_pricing[0] 
+      const pricingInfo = Array.isArray(userData.location_pricing)
+        ? userData.location_pricing[0]
         : userData.location_pricing;
-      
+
       if (pricingInfo) {
         setUserZone(pricingInfo.location_name || "Unknown Zone");
         setPricePerGallon(pricingInfo.location_price || 0);
@@ -88,7 +88,7 @@ export default function CustomerPlaceOrder() {
       formData.append('totalAmount', totalAmount.toString());
       formData.append('transaction_type', "Online");
       formData.append('payment_mode', paymentMethod);
-      
+
       if (receipt) {
         formData.append('receipt', receipt);
       }
@@ -112,9 +112,9 @@ export default function CustomerPlaceOrder() {
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative overflow-x-hidden">
       <div className="w-full max-w-md mx-auto">
-        
+
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative overflow-hidden">
-    
+
           <div className="flex items-center mb-8 relative px-2 w-full">
             <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
               <ChevronLeft size={44} strokeWidth={3} />
@@ -126,7 +126,7 @@ export default function CustomerPlaceOrder() {
 
           <div className="bg-white rounded-[40px] p-5 sm:p-8 shadow-inner border border-gray-100 text-left w-full overflow-hidden">
             <div className="space-y-5 w-full">
-   
+
               <div className="w-full">
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Deliver to:</label>
                 <div className="w-full p-4 rounded-3xl bg-[#e8eef1] border-2 border-transparent text-[#1e3d58] font-bold text-lg break-words leading-tight">
@@ -201,7 +201,7 @@ export default function CustomerPlaceOrder() {
               </div>
 
               <div className="pt-4 w-full">
-                <Button 
+                <Button
                   onClick={() => setIsModalOpen(true)}
                   disabled={loading || (slimCount === 0 && roundCount === 0)}
                   className="w-full h-16 text-xl sm:text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 shadow-lg disabled:opacity-50"
@@ -218,14 +218,13 @@ export default function CustomerPlaceOrder() {
       {/* Floating Scroll to Top Button */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
-          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
-        }`}
+        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
       >
         <ArrowUp size={24} strokeWidth={3} />
       </button>
 
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onConfirm={handlePlaceOrder}

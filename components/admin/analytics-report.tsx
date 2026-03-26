@@ -60,7 +60,7 @@ export default function AnalyticsAndReports() {
         const response = await getAnalyticsData(selectedMonth);
 
         if (!response.success || !response.data) {
-             throw new Error(response.error || "Unknown error fetching data");
+          throw new Error(response.error || "Unknown error fetching data");
         }
 
         setGallons(response.data.today.gallons);
@@ -77,7 +77,7 @@ export default function AnalyticsAndReports() {
         setMonthlyStats({
           month: monthName,
           days: daysInMonth,
-          earnings: response.data.monthly.earnings, 
+          earnings: response.data.monthly.earnings,
         });
 
         console.log("Analytics data fetched successfully:", response.data);
@@ -97,7 +97,7 @@ export default function AnalyticsAndReports() {
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative">
       <div className="w-full max-w-md">
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl">
-          
+
           <div className="flex items-center mb-8 relative px-2">
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
@@ -108,7 +108,7 @@ export default function AnalyticsAndReports() {
           </div>
 
           <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left space-y-6 relative min-h-[400px]">
-            
+
             {globalError && (
               <div className="mb-2 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200">
                 ⚠️ {globalError}
@@ -117,13 +117,13 @@ export default function AnalyticsAndReports() {
 
             {loading && !globalError && (
               <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-[40px]">
-                 <span className="text-[#1e3d58] font-black text-lg animate-pulse">Loading data...</span>
+                <span className="text-[#1e3d58] font-black text-lg animate-pulse">Loading data...</span>
               </div>
             )}
 
             <div className="bg-[#e8eef1] rounded-[30px] p-5 border border-gray-200 shadow-sm">
               <h2 className="text-3xl font-black text-[#1e3d58] text-center mb-6 tracking-tight">Today&apos;s Summary</h2>
-             
+
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-[#1e3d58] text-center mb-3">Gallons Processed:</h3>
                 <div className="border-2 border-[#1e3d58]/20 rounded-[20px] bg-white p-4 space-y-2 shadow-sm">
@@ -173,7 +173,7 @@ export default function AnalyticsAndReports() {
             <div className="bg-[#e8eef1] rounded-[30px] p-5 border border-gray-200 shadow-sm">
               <h2 className="text-3xl font-black text-[#1e3d58] text-center mb-2 tracking-tight">Monthly Earnings:</h2>
               <h3 className="text-2xl font-black text-[#43b0f1] text-center mb-6">{monthlyStats.month}</h3>
-              
+
               <div className="mb-4">
                 <p className="text-xl font-bold text-[#1e3d58] text-center mb-2">Number of days:</p>
                 <div className="border-2 border-[#1e3d58]/20 rounded-[20px] bg-white py-3 text-center shadow-sm">
@@ -209,9 +209,8 @@ export default function AnalyticsAndReports() {
       {/* Floating Scroll to Top Button */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-24 right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
-          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
-        }`}
+        className={`fixed bottom-24 right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
       >
         <ArrowUp size={24} strokeWidth={3} />
       </button>

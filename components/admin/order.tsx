@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
-import ConfirmationModal from "@/components/ui/confirmation-modal"; 
+import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { ArrowUp } from "lucide-react";
 
 interface Location {
@@ -23,7 +23,7 @@ export default function PlaceOrderForm() {
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
   const [note, setNote] = useState("");
-  
+
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -87,7 +87,7 @@ export default function PlaceOrderForm() {
   const handlePlaceOrderClick = () => {
     setGlobalError(null);
     setSuccessMessage(null);
-    
+
     let hasError = false;
     const newErrors: typeof fieldErrors = {};
 
@@ -129,12 +129,12 @@ export default function PlaceOrderForm() {
       const result = await createOrder({
         name: name,
         mobileNumber: mobileNumber,
-        location: location, 
+        location: location,
         locationId: selectedLocation?.location_id,
         slimCount,
         roundCount,
         pricePerUnit,
-        note, 
+        note,
         transaction_type: "Call",
         payment_mode: "Cash"
       });
@@ -145,14 +145,14 @@ export default function PlaceOrderForm() {
       } else {
         setSuccessMessage("Order placed successfully!");
         window.scrollTo({ top: 0, behavior: "smooth" });
-        
+
         setName("");
         setMobileNumber("");
         setLocation("");
         setSlimCount(0);
         setRoundCount(0);
-        setNote(""); 
-        
+        setNote("");
+
         setTimeout(() => setSuccessMessage(null), 5000);
       }
     } catch (e) {
@@ -175,21 +175,21 @@ export default function PlaceOrderForm() {
           <h1 className="text-5xl font-black mb-10 text-black tracking-tighter break-words px-2">Place Order</h1>
 
           <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left w-full overflow-hidden">
-            
+
             {globalError && (
               <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200 break-words">
-                  ⚠️ {globalError}
+                ⚠️ {globalError}
               </div>
             )}
-            
+
             {successMessage && (
               <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200 break-words">
-                  ✅ {successMessage}
+                ✅ {successMessage}
               </div>
             )}
 
             <div className="space-y-5 w-full">
-              
+
               <div className="w-full">
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Name:</label>
                 <input
@@ -203,11 +203,10 @@ export default function PlaceOrderForm() {
                     }
                   }}
                   placeholder="e.g. Juan Dela Cruz"
-                  className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${
-                    fieldErrors.name 
-                      ? "border-red-400 bg-red-50 text-red-700" 
-                      : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
-                  }`}
+                  className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.name
+                    ? "border-red-400 bg-red-50 text-red-700"
+                    : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                    }`}
                 />
               </div>
 
@@ -220,11 +219,10 @@ export default function PlaceOrderForm() {
                       setSelectedZone(e.target.value);
                       if (e.target.value) setFieldErrors(prev => ({ ...prev, zone: false }));
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer transition-colors pr-10 ${
-                      fieldErrors.zone 
-                        ? "border-red-400 bg-red-50 text-red-700" 
-                        : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
-                    }`}
+                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer transition-colors pr-10 ${fieldErrors.zone
+                      ? "border-red-400 bg-red-50 text-red-700"
+                      : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                      }`}
                     disabled={locations.length === 0}
                   >
                     {locations.length === 0 ? (
@@ -249,11 +247,10 @@ export default function PlaceOrderForm() {
                     if (e.target.value) setFieldErrors(prev => ({ ...prev, location: false }));
                   }}
                   placeholder="Block, Lot, Street, etc."
-                  className={`w-full h-28 p-4 px-6 rounded-[30px] border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none transition-colors ${
-                    fieldErrors.location 
-                      ? "border-red-400 bg-red-50 text-red-700" 
-                      : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
-                  }`}
+                  className={`w-full h-28 p-4 px-6 rounded-[30px] border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none transition-colors ${fieldErrors.location
+                    ? "border-red-400 bg-red-50 text-red-700"
+                    : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
+                    }`}
                 />
               </div>
 
@@ -276,11 +273,10 @@ export default function PlaceOrderForm() {
 
               <div className="w-full">
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
-                <div className={`w-full p-4 rounded-[30px] border-2 bg-white space-y-4 transition-colors overflow-hidden ${
-                  fieldErrors.items 
-                    ? "border-red-400 bg-red-50 shadow-[0_0_15px_rgba(239,68,68,0.2)]" 
-                    : "border-[#1e3d58]"
-                }`}>
+                <div className={`w-full p-4 rounded-[30px] border-2 bg-white space-y-4 transition-colors overflow-hidden ${fieldErrors.items
+                  ? "border-red-400 bg-red-50 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+                  : "border-[#1e3d58]"
+                  }`}>
                   <div className={`flex justify-between items-center text-xl font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
                     <span className="flex-1 whitespace-normal break-words leading-tight">Slim Gallon:</span>
                     <div className="flex items-center gap-2 sm:gap-5 shrink-0">
@@ -320,7 +316,7 @@ export default function PlaceOrderForm() {
 
               <div className="pt-4 pb-2 w-full">
                 <Button
-                  onClick={handlePlaceOrderClick} 
+                  onClick={handlePlaceOrderClick}
                   disabled={loading}
                   className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
@@ -335,14 +331,13 @@ export default function PlaceOrderForm() {
       {/* Floating Scroll to Top Button */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
-          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
-        }`}
+        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
       >
         <ArrowUp size={24} strokeWidth={3} />
       </button>
 
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onConfirm={confirmAndProcessOrder}

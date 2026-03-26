@@ -18,7 +18,7 @@ interface OrderItem {
 
 interface FetchedOrder {
   order_id: number;
-  order_dt: string; 
+  order_dt: string;
   name: string;
   total_amount: number;
   current_status: string;
@@ -69,10 +69,10 @@ export default function OrderHistory() {
       if (startDate && endDate) {
         if (new Date(startDate) > new Date(endDate)) {
           setGlobalError("Start date cannot be later than end date.");
-          return; 
+          return;
         }
       } else {
-        return; 
+        return;
       }
     }
 
@@ -82,7 +82,7 @@ export default function OrderHistory() {
         const result = await getOrderHistory(activeFilter, startDate, endDate);
         if (result && !('error' in result)) {
           const fetchedOrders = result as FetchedOrder[];
-          
+
           const mappedOrders: DisplayOrder[] = fetchedOrders.map((order) => {
             let slim = 0;
             let round = 0;
@@ -90,7 +90,7 @@ export default function OrderHistory() {
             order.order_items.forEach((item) => {
               const product = Array.isArray(item.products) ? item.products[0] : item.products;
               const productName = product?.product_name?.toLowerCase() || "";
-              
+
               if (productName.includes("slim")) slim += item.quantity;
               else if (productName.includes("round")) round += item.quantity;
             });
@@ -174,14 +174,14 @@ export default function OrderHistory() {
             )}
 
             <div className="space-y-4 pb-4 w-full">
-              {loading ? ( 
-                <div className="text-center py-10 text-gray-400 font-bold animate-pulse">Loading history...</div> 
+              {loading ? (
+                <div className="text-center py-10 text-gray-400 font-bold animate-pulse">Loading history...</div>
               ) : orders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-bold italic">{globalError ? "Invalid date range." : "No orders found."}</div>
               ) : (
                 orders.map((order) => (
                   <div key={order.id} className="border-2 border-[#1e3d58] rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3 w-full overflow-hidden">
-                    
+
                     {/* Top Row: Flexbox logic to prevent badge/text overflow */}
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0 flex-1 pt-0.5">
@@ -193,7 +193,7 @@ export default function OrderHistory() {
                         {order.status}
                       </div>
                     </div>
-                    
+
                     {/* Bottom Row: Flexbox logic to keep prices aligned securely */}
                     <div className="flex justify-between items-center bg-[#e8eef1] p-3 rounded-[15px] gap-2 w-full">
                       <div className="text-sm font-bold text-[#1e3d58] min-w-0 flex-1 whitespace-normal break-words leading-tight">
@@ -212,9 +212,8 @@ export default function OrderHistory() {
 
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
-          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
-        }`}
+        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
       >
         <ArrowUp size={24} strokeWidth={3} />
       </button>
