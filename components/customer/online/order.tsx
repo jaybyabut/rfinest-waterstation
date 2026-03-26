@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, Upload } from "lucide-react"; 
+import { ChevronLeft, Upload, ArrowUp } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createOnlineOrder } from "@/app/actions/createOnlineOrder";
@@ -21,6 +21,7 @@ export default function CustomerPlaceOrder() {
   const [userZone, setUserZone] = useState<string>("Loading...");
   const [pricePerGallon, setPricePerGallon] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     if (userData) {
@@ -34,6 +35,19 @@ export default function CustomerPlaceOrder() {
       }
     }
   }, [userData]);
+
+  // Window scroll logic para sa floating button
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    window.addEventListener("scroll", handleWindowScroll);
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const totalAmount = (slimCount + roundCount) * pricePerGallon;
 
@@ -84,7 +98,7 @@ export default function CustomerPlaceOrder() {
   };
 
   return (
-    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500">
+    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative">
       <div className="w-full max-w-md">
         
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
@@ -93,9 +107,9 @@ export default function CustomerPlaceOrder() {
             <Link href="/home" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-           <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-12">
-            Place Order
-          </h1>
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-12">
+              Place Order
+            </h1>
           </div>
 
           <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left">
@@ -188,6 +202,16 @@ export default function CustomerPlaceOrder() {
           </div>
         </div>
       </div>
+
+      {/* Floating Scroll to Top Button */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-24 right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
+          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+      >
+        <ArrowUp size={24} strokeWidth={3} />
+      </button>
 
       <ConfirmationModal 
         isOpen={isModalOpen}

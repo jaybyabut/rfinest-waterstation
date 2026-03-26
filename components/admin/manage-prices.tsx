@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, SquarePen, Plus, Search, RefreshCw } from "lucide-react";
+import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal"; 
 import { getLocations, batchUpdatePrices } from "@/app/actions/locations";
+
 type PriceItem = {
   id: number;
   name: string;
@@ -24,6 +25,7 @@ export default function ManagePricesPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const fetchPrices = async () => {
     setInitialLoading(true);
@@ -48,6 +50,12 @@ export default function ManagePricesPage() {
 
   useEffect(() => {
     fetchPrices();
+    
+    const handleWindowScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    window.addEventListener("scroll", handleWindowScroll);
+    return () => window.removeEventListener("scroll", handleWindowScroll);
   }, []);
 
   const applyGlobalIncrease = () => {
@@ -79,7 +87,6 @@ export default function ManagePricesPage() {
   };
 
   const updatePrice = (id: number, newPrice: string) => {
-    // Allows clearing the input to type a new number
     const amount = newPrice === "" ? "" : parseInt(newPrice);
     setPrices(prices.map((p) => (p.id === id ? { ...p, price: amount } : p)));
   };
@@ -95,7 +102,7 @@ export default function ManagePricesPage() {
     const invalidPrices = prices.filter(p => p.price === "" || p.price <= 0);
     
     if (invalidPrices.length > 0) {
-      setGlobalError("All locations must have a valid price greater than ₱0. Please check the highlighted fields.");
+      setGlobalError("All locations must have a valid price greater than ₱0.");
       return false;
     }
     return true;
@@ -142,18 +149,20 @@ export default function ManagePricesPage() {
   );
 
   return (
-    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative">
+    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative overflow-x-hidden">
       <div className="w-full max-w-md">
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl">
+          
           <div className="flex items-center mb-8 relative px-2">
-          <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
-            <ChevronLeft size={44} strokeWidth={3} />
-          </Link>
-         <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-12">
-          Manage Prices
-        </h1>
+            <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
+              <ChevronLeft size={44} strokeWidth={3} />
+            </Link>
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-12">
+              Manage Prices
+            </h1>
           </div>
-          <div className="bg-white rounded-[40px] p-5 sm:p-6 shadow-inner border border-gray-100 text-left">
+
+          <div className="bg-white rounded-[40px] p-5 sm:p-8 shadow-inner border border-gray-100 text-left relative overflow-hidden">
             
             {globalError && (
                 <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200">
@@ -172,7 +181,7 @@ export default function ManagePricesPage() {
                 Bulk Increase:
               </label>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-end">
-                <div className="relative w-28 sm:w-28">
+                <div className="relative w-28">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1e3d58] font-black text-lg">₱</span>
                   <input
                     type="number"
@@ -184,16 +193,16 @@ export default function ManagePricesPage() {
                 </div>
                 <Button 
                   onClick={applyGlobalIncrease}
-                  className="h-10 w-10 rounded-lg bg-[#43b0f1] text-white hover:bg-[#1e3d58] p-0 flex items-center justify-center transition-colors shadow-sm"
+                  className="h-10 w-10 rounded-lg bg-[#43b0f1] text-white hover:bg-[#1e3d58] p-0 flex items-center justify-center transition-colors shadow-sm shrink-0"
                 >
                   <Plus size={20} strokeWidth={4} />
                 </Button>
               </div>
             </div>
 
-            <hr className="border-dashed border-gray-300 mb-4" />
+            <hr className="border-dashed border-gray-300 mb-6" />
 
-            <div className="relative mb-4">
+            <div className="relative mb-6">
               <input
                 type="text"
                 placeholder="Search location..."
@@ -211,7 +220,7 @@ export default function ManagePricesPage() {
               </button>
             </div>
 
-            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 pb-2 custom-scrollbar">
+            <div className="space-y-3 pb-2">
               {initialLoading ? (
                 <div className="flex flex-col items-center justify-center py-12 opacity-50">
                   <RefreshCw className="animate-spin text-[#1e3d58] mb-2" size={40} />
@@ -226,12 +235,17 @@ export default function ManagePricesPage() {
                   const isInvalid = location.price === "" || location.price <= 0;
 
                   return (
-                    <div key={location.id} className={`flex justify-between items-center p-4 border-2 rounded-[20px] bg-white transition-colors ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
-                      <span className={`text-xl sm:text-2xl font-medium ${isInvalid ? 'text-red-600 font-bold' : 'text-[#1e3d58]'}`}>
-                        {location.name}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <span className={`text-xl sm:text-2xl font-medium ${isInvalid ? 'text-red-500' : editingId === location.id ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
+                    <div key={location.id} className={`flex justify-between items-start p-4 border-2 rounded-[20px] bg-white transition-colors gap-3 ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
+                      {/* Name Container: flex-1 allows it to take space, whitespace-normal allows multi-line */}
+                      <div className="flex-1 min-w-0 pt-1">
+                        <span className={`text-xl sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
+                          {location.name}
+                        </span>
+                      </div>
+
+                      {/* Price Controls Container: shrink-0 prevents the design from being pushed/compressed */}
+                      <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                        <span className={`text-xl sm:text-2xl font-bold ${isInvalid ? 'text-red-500' : editingId === location.id ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
                           ₱
                         </span>
                         <input
@@ -241,7 +255,7 @@ export default function ManagePricesPage() {
                           onChange={(e) => updatePrice(location.id, e.target.value)}
                           readOnly={editingId !== location.id}
                           onBlur={() => setEditingId(null)}
-                          className={`w-12 text-xl sm:text-2xl font-medium text-right bg-transparent focus:outline-none transition-colors ${
+                          className={`w-14 text-xl sm:text-2xl font-black text-right bg-transparent focus:outline-none transition-colors ${
                             isInvalid 
                               ? "text-red-600 border-b-2 border-red-500" 
                               : editingId === location.id 
@@ -252,8 +266,7 @@ export default function ManagePricesPage() {
                         <SquarePen 
                           onClick={() => handleEditClick(location.id)}
                           size={24} 
-                          strokeWidth={1.5} 
-                          className={`ml-2 cursor-pointer transition-all ${
+                          className={`ml-2 cursor-pointer transition-all shrink-0 ${
                             isInvalid 
                               ? "text-red-400 hover:text-red-600" 
                               : editingId === location.id 
@@ -268,11 +281,11 @@ export default function ManagePricesPage() {
               )}
             </div>
 
-            <div className="pt-6 flex justify-center">
+            <div className="pt-8 flex justify-center">
               <Button 
                 onClick={handleSaveClick}
                 disabled={loading}
-                className="w-3/4 h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
                 {loading ? "Saving..." : "Save Changes"}
               </Button>
@@ -280,6 +293,15 @@ export default function ManagePricesPage() {
           </div>
         </div>
       </div>
+
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className={`fixed bottom-24 right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
+          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+      >
+        <ArrowUp size={24} strokeWidth={3} />
+      </button>
 
       <ConfirmationModal 
         isOpen={isModalOpen}
