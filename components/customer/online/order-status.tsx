@@ -78,11 +78,11 @@ export default function CustomerOrderStatus() {
       const result = await getCustomerOrders();
       if (result && !('error' in result)) {
         const fetchedOrders = result as BackendOrder[];
-        
+
         const formattedOrders = fetchedOrders.map((order) => {
           let slim = 0;
           let round = 0;
-          
+
           order.order_items.forEach((item) => {
             const product = Array.isArray(item.products) ? item.products[0] : item.products;
             const productName = product?.product_name?.toLowerCase() || "";
@@ -133,7 +133,7 @@ export default function CustomerOrderStatus() {
       <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative overflow-x-hidden">
         <div className="w-full max-w-md mx-auto">
           <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative overflow-hidden">
-            
+
             <div className="flex items-center justify-center mb-8 relative w-full px-2">
               <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
                 <ChevronLeft size={44} strokeWidth={3} />
@@ -151,9 +151,9 @@ export default function CustomerOrderStatus() {
                 ) : orders.length === 0 ? (
                   <div className="text-center py-4 text-gray-500 font-bold">No orders found.</div>
                 ) : orders.map((order) => (
-                  <button 
+                  <button
                     key={order.id}
-                    onClick={() => handleOrderClick(order)} 
+                    onClick={() => handleOrderClick(order)}
                     className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/60 hover:bg-[#e8eef1] transition-colors border-2 border-transparent hover:border-[#43b0f1]/30 shadow-sm gap-3"
                   >
                     <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
@@ -190,9 +190,8 @@ export default function CustomerOrderStatus() {
         {/* Floating Scroll to Top Button */}
         <button
           onClick={scrollToTop}
-          className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
-            showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
-          }`}
+          className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+            }`}
         >
           <ArrowUp size={24} strokeWidth={3} />
         </button>
@@ -206,9 +205,9 @@ export default function CustomerOrderStatus() {
     return (
       <div className="flex flex-col items-center w-full px-4 py-6 animate-in slide-in-from-right-8 duration-300 mb-24 relative overflow-x-hidden">
         <div className="w-full max-w-md mx-auto">
-          
+
           <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative overflow-hidden">
-            
+
             <div className="flex items-center justify-center mb-8 relative w-full px-2">
               <button onClick={handleBackToList} className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
                 <ChevronLeft size={44} strokeWidth={3} />
@@ -219,7 +218,7 @@ export default function CustomerOrderStatus() {
             </div>
 
             <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left w-full overflow-hidden">
- 
+
               <div className="mb-8 p-4 sm:p-5 rounded-[25px] bg-[#e8eef1]/50 border-2 border-[#1e3d58]/10 flex flex-col gap-1 text-left shadow-sm w-full overflow-hidden">
                 <div className="flex justify-between items-start sm:items-center gap-2 flex-wrap sm:flex-nowrap">
                   <span className="text-sm font-black text-[#1e3d58] uppercase tracking-wider flex-1 min-w-0 break-words leading-tight">Order ID</span>
@@ -236,7 +235,7 @@ export default function CustomerOrderStatus() {
 
               <div className="space-y-6 px-2 w-full">
                 <h2 className="text-2xl font-extrabold text-[#1e3d58] mb-4">Delivery Status</h2>
-                
+
                 {/* TODO: BACKEND - [REAL-TIME] Real-time Status Tracker
                   Gamitin ang supabase.channel() para mag-subscribe sa 'UPDATE' events ng 'orders' table.
                   I-filter ang subscription para sa selectedOrder.id lang.
@@ -252,8 +251,8 @@ export default function CustomerOrderStatus() {
                       <div key={index} className="relative pl-8">
                         <div className={cn(
                           "absolute -left-[22px] top-0 p-2 rounded-full border-4 border-white shadow-sm flex items-center justify-center",
-                          isActive ? "bg-[#43b0f1] text-white animate-pulse" : 
-                          isCompleted ? "bg-[#1e3d58] text-white" : "bg-gray-200 text-gray-400"
+                          isActive ? "bg-[#43b0f1] text-white animate-pulse" :
+                            isCompleted ? "bg-[#1e3d58] text-white" : "bg-gray-200 text-gray-400"
                         )}>
                           {isCompleted ? <CheckCircle2 size={20} /> : <Icon size={20} />}
                         </div>
@@ -261,8 +260,8 @@ export default function CustomerOrderStatus() {
                         <div className="min-w-0">
                           <h3 className={cn(
                             "text-xl font-bold break-words leading-tight",
-                            isActive ? "text-[#43b0f1]" : 
-                            isCompleted ? "text-[#1e3d58]" : "text-gray-400"
+                            isActive ? "text-[#43b0f1]" :
+                              isCompleted ? "text-[#1e3d58]" : "text-gray-400"
                           )}>
                             {step.title}
                           </h3>
@@ -292,9 +291,8 @@ export default function CustomerOrderStatus() {
         {/* Floating Scroll to Top Button for Detail View */}
         <button
           onClick={scrollToTop}
-          className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
-            showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
-          }`}
+          className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+            }`}
         >
           <ArrowUp size={24} strokeWidth={3} />
         </button>

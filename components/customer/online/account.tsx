@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ConfirmationModal from "@/components/ui/confirmation-modal"; 
+import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
 import { updateCustomerName } from "@/app/actions/updateCustomerName";
 import { updateCustomerLocation } from "@/app/actions/updateCustomerLocation";
@@ -33,34 +33,34 @@ export default function CustomerAccount() {
   const [firstName, setFirstName] = useState(userData?.first_name || "");
   const [lastName, setLastName] = useState(userData?.last_name || "");
   const [middleInitial, setMiddleInitial] = useState(userData?.middle_initial || "");
-  
+
   const defaultAddress = userData?.address || "";
   const addressParts = defaultAddress.split(",").map(str => str.trim());
   const defaultHouseNo = addressParts[0] || "";
   const defaultStreetName = addressParts.slice(1).join(", ") || "";
 
   const defaultZoneId = userData?.location_id || "";
-  const defaultZoneName = Array.isArray(userData?.location_pricing) 
-    ? userData?.location_pricing[0]?.location_name 
+  const defaultZoneName = Array.isArray(userData?.location_pricing)
+    ? userData?.location_pricing[0]?.location_name
     : userData?.location_pricing?.location_name || "";
 
   const [houseNo, setHouseNo] = useState(defaultHouseNo);
   const [streetName, setStreetName] = useState(defaultStreetName);
   const [zoneId, setZoneId] = useState(defaultZoneId);
   const [zoneName, setZoneName] = useState(defaultZoneName);
-  
+
   const [mobileNo, setMobileNo] = useState("09610123193");
 
   const [tempFirstName, setTempFirstName] = useState(firstName);
   const [tempLastName, setTempLastName] = useState(lastName);
   const [tempMI, setTempMI] = useState(middleInitial);
-  
+
   const [tempHouseNo, setTempHouseNo] = useState(houseNo);
   const [tempStreetName, setTempStreetName] = useState(streetName);
   const [tempZoneId, setTempZoneId] = useState(zoneId);
-  
+
   const [tempMobileNo, setTempMobileNo] = useState(mobileNo);
-  
+
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -70,11 +70,11 @@ export default function CustomerAccount() {
   const [isSaving, setIsSaving] = useState(false);
 
   const validateForm = () => {
-  const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {};
 
     if (view === "name") {
       const nameRegex = /^[A-Za-z\s]+$/;
-      
+
       if (!tempFirstName.trim()) newErrors.firstName = "First name is required.";
       else if (!nameRegex.test(tempFirstName)) newErrors.firstName = "Letters and spaces only.";
 
@@ -104,10 +104,10 @@ export default function CustomerAccount() {
 
     if (view === "password") {
       if (!oldPassword) newErrors.oldPassword = "Old password is required.";
-      
+
       if (!newPassword) newErrors.newPassword = "New password is required.";
       else if (newPassword.length < 8) newErrors.newPassword = "Must be at least 8 characters.";
-      
+
       if (newPassword !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
     }
 
@@ -117,7 +117,7 @@ export default function CustomerAccount() {
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
-    setErrors({}); 
+    setErrors({});
 
     try {
       if (view === "name") {
@@ -126,13 +126,13 @@ export default function CustomerAccount() {
           setFirstName(tempFirstName);
           setLastName(tempLastName);
           setMiddleInitial(tempMI);
-          router.refresh(); 
+          router.refresh();
           setView("menu");
         } else {
           setErrors({ submit: res.error || "Failed to update name" });
         }
       }
-      
+
       if (view === "location") {
         const fullAddress = `${tempHouseNo}, ${tempStreetName}`;
         const res = await updateCustomerLocation(fullAddress, tempZoneId);
@@ -142,18 +142,18 @@ export default function CustomerAccount() {
           setZoneId(tempZoneId);
           const chosenLoc = locations.find(l => l.location_id === tempZoneId);
           if (chosenLoc) setZoneName(chosenLoc.location_name);
-          router.refresh(); 
+          router.refresh();
           setView("menu");
         } else {
           setErrors({ submit: res.error || "Failed to update location" });
         }
       }
-      
+
       if (view === "number") {
         setMobileNo(tempMobileNo);
         setView("menu");
       }
-      
+
       if (view === "password") {
         const res = await updateCustomerPassword(oldPassword, newPassword);
         if (res.success) {
@@ -165,7 +165,7 @@ export default function CustomerAccount() {
           setErrors({ submit: res.error || "Failed to update password" });
         }
       }
-      
+
     } finally {
       setIsSaving(false);
       setIsModalOpen(false);
@@ -176,10 +176,10 @@ export default function CustomerAccount() {
     // TODO: BACKEND - I-trigger ang Supabase SignOut dito
     // Example: const supabase = createClientComponentClient();
     // await supabase.auth.signOut();
-    
+
     console.log("Logged out!");
     setIsLogoutModalOpen(false);
-    router.push("/"); 
+    router.push("/");
   };
 
   const resetTempStates = () => {
@@ -209,20 +209,20 @@ export default function CustomerAccount() {
       <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-10 relative overflow-x-hidden">
         <div className="w-full max-w-md mx-auto">
           <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
-            
+
             <div className="flex items-center justify-center mb-8 relative w-full px-2">
               <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
                 <ChevronLeft size={44} strokeWidth={3} />
               </Link>
               <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 break-words leading-tight">
-              Account
+                Account
               </h1>
             </div>
 
             <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left space-y-4 w-full overflow-hidden">
-              
+
               <h2 className="text-[#1e3d58] font-black text-2xl tracking-tight ml-2 mb-2">Profile Details</h2>
-              
+
               <button onClick={() => setView("name")} className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/60 hover:bg-[#e8eef1] transition-colors border-2 border-transparent hover:border-[#43b0f1]/30 shadow-sm gap-3">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#43b0f1] shadow-sm shrink-0"><User size={24} /></div>
@@ -257,7 +257,7 @@ export default function CustomerAccount() {
               </button>
 
               <div className="border-t-2 border-dashed border-gray-200 my-5"></div>
-              
+
               <h2 className="text-[#1e3d58] font-black text-2xl tracking-tight ml-2 mb-2">Security</h2>
 
               <button onClick={() => setView("password")} className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/60 hover:bg-[#e8eef1] transition-colors border-2 border-transparent hover:border-[#43b0f1]/30 shadow-sm gap-3">
@@ -285,7 +285,7 @@ export default function CustomerAccount() {
           </div>
         </div>
 
-        <ConfirmationModal 
+        <ConfirmationModal
           isOpen={isLogoutModalOpen}
           onClose={() => setIsLogoutModalOpen(false)}
           onConfirm={handleLogout}
@@ -301,7 +301,7 @@ export default function CustomerAccount() {
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in slide-in-from-right-8 duration-300 mb-10 relative overflow-x-hidden">
       <div className="w-full max-w-md mx-auto">
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
-          
+
           <div className="flex items-center justify-center mb-8 relative w-full px-2">
             <button onClick={handleBack} className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
               <ChevronLeft size={44} strokeWidth={3} />
@@ -312,7 +312,7 @@ export default function CustomerAccount() {
           </div>
 
           <div className="bg-white rounded-[40px] p-5 sm:p-8 shadow-inner border border-gray-100 text-left space-y-5 w-full overflow-hidden">
-            
+
             {errors.submit && (
               <div className="bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm break-words">
                 {errors.submit}
@@ -461,7 +461,7 @@ export default function CustomerAccount() {
             )}
 
             <div className="pt-6 w-full">
-              <Button 
+              <Button
                 onClick={() => {
                   if (validateForm()) {
                     setIsModalOpen(true);
@@ -477,7 +477,7 @@ export default function CustomerAccount() {
         </div>
       </div>
 
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={isModalOpen}
         onClose={() => !isSaving && setIsModalOpen(false)}
         onConfirm={handleSaveChanges}

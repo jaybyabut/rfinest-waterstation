@@ -22,10 +22,10 @@ interface OrderItem {
 
 interface FetchedOrder {
   order_id: number;
-  order_dt: string; 
+  order_dt: string;
   name: string;
   total_amount: number;
-  transaction_type: string; 
+  transaction_type: string;
   current_status: string;
   location_pricing: {
     location_name: string;
@@ -53,7 +53,7 @@ export default function OrderStatus() {
   const [orders, setOrders] = useState<DisplayOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [globalError, setGlobalError] = useState<string | null>(null);
-  
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -62,10 +62,10 @@ export default function OrderStatus() {
       try {
         setGlobalError(null);
         const result = await getAllOrders();
-        
+
         if (result && !('error' in result)) {
           const fetchedOrders = result as FetchedOrder[];
-          
+
           const mappedOrders: DisplayOrder[] = fetchedOrders.map((order) => {
             let slim = 0;
             let round = 0;
@@ -73,7 +73,7 @@ export default function OrderStatus() {
             order.order_items.forEach((item) => {
               const product = Array.isArray(item.products) ? item.products[0] : item.products;
               const productName = product?.product_name?.toLowerCase() || "";
-              
+
               if (productName.includes("slim")) {
                 slim += item.quantity;
               } else if (productName.includes("round")) {
@@ -216,8 +216,8 @@ export default function OrderStatus() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setOrders(orders.map((order) => order.id === orderToCancel ? { ...order, status: "Cancelled" } : order));
     } catch (error) {
-       console.error("Failed to cancel order:", error);
-       alert("Failed to cancel order. Please try again."); 
+      console.error("Failed to cancel order:", error);
+      alert("Failed to cancel order. Please try again.");
     } finally {
       setIsCancelling(false);
       setIsModalOpen(false);
@@ -229,18 +229,18 @@ export default function OrderStatus() {
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative overflow-x-hidden">
       <div className="w-full max-w-md mx-auto">
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-8 text-center border-2 border-white shadow-xl">
-          
+
           <div className="flex items-center mb-6 relative px-2">
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-12 leading-tight">  
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-12 leading-tight">
               Order Status
             </h1>
           </div>
 
           <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left relative w-full overflow-hidden">
-            
+
             {globalError && (
               <div className="mb-4 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200 break-words">
                 ⚠️ {globalError}
@@ -253,13 +253,11 @@ export default function OrderStatus() {
                 <button
                   key={filter}
                   onClick={() => setActiveFilter(filter)}
-                  className={`px-1 py-2.5 rounded-full text-xs sm:text-base font-bold border-2 transition-all truncate ${
-                    filter === "All" ? "col-span-2 w-full" : "w-full"
-                  } ${
-                    activeFilter === filter
+                  className={`px-1 py-2.5 rounded-full text-xs sm:text-base font-bold border-2 transition-all truncate ${filter === "All" ? "col-span-2 w-full" : "w-full"
+                    } ${activeFilter === filter
                       ? "bg-[#1e3d58] text-white border-[#1e3d58]"
                       : "bg-[#e8eef1] text-[#1e3d58] border-transparent hover:border-[#1e3d58]"
-                  }`}
+                    }`}
                 >
                   {filter}
                 </button>
@@ -269,17 +267,17 @@ export default function OrderStatus() {
             {/* Order List - Natural Scroll (No max-h) */}
             <div className="space-y-4 pb-4">
               {loading ? (
-                 <div className="text-center py-10 text-gray-400 font-bold animate-pulse">
-                   Loading orders...
-                 </div>
+                <div className="text-center py-10 text-gray-400 font-bold animate-pulse">
+                  Loading orders...
+                </div>
               ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-bold italic">
                   {globalError ? "Cannot load data." : `No orders found.`}
                 </div>
               ) : (
                 filteredOrders.map((order) => (
-                  <div 
-                    key={order.id} 
+                  <div
+                    key={order.id}
                     onClick={() => handleCardClick(order)}
                     className="border-2 border-[#1e3d58] rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3 cursor-pointer hover:border-[#43b0f1] transition-colors overflow-hidden"
                   >
@@ -287,7 +285,7 @@ export default function OrderStatus() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-black text-[#1e3d58] truncate">{order.id}</h3>
-                          <button 
+                          <button
                             onClick={(e) => { e.stopPropagation(); handleCopyId(order.id); }}
                             className="text-gray-400 hover:text-[#43b0f1] transition-colors shrink-0"
                           >
@@ -298,14 +296,13 @@ export default function OrderStatus() {
                           {order.name} • {order.zone}
                         </p>
                       </div>
-                      <button 
+                      <button
                         onClick={(e) => handleStatusClick(e, order)}
                         disabled={order.status === "Cancelled"}
-                        className={`px-3 py-1 rounded-full border text-[10px] sm:text-xs font-black shrink-0 whitespace-nowrap transition-all ${
-                          order.status === "Cancelled" 
-                            ? "opacity-50 cursor-not-allowed" 
-                            : "hover:opacity-80 cursor-pointer"
-                        } ${getStatusColor(order.status)}`}
+                        className={`px-3 py-1 rounded-full border text-[10px] sm:text-xs font-black shrink-0 whitespace-nowrap transition-all ${order.status === "Cancelled"
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:opacity-80 cursor-pointer"
+                          } ${getStatusColor(order.status)}`}
                       >
                         {order.status}
                       </button>
@@ -340,9 +337,8 @@ export default function OrderStatus() {
       {/* Floating Scroll to Top */}
       <button
         onClick={scrollToTop}
-        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
-          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
-        }`}
+        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
       >
         <ArrowUp size={24} strokeWidth={3} />
       </button>
@@ -364,9 +360,9 @@ export default function OrderStatus() {
               <button onClick={() => setSelectedOrderDetails(null)} className="absolute top-5 right-5 text-gray-400 hover:text-red-500 transition-colors">
                 <X size={24} />
               </button>
-              
+
               <h2 className="text-2xl font-black text-[#1e3d58] mb-6 pr-8">Order Details</h2>
-              
+
               <div className="space-y-4 text-sm sm:text-base">
                 <div className="flex justify-between border-b border-gray-100 pb-2 gap-2">
                   <span className="text-gray-500 font-bold shrink-0">Order ID</span>
@@ -398,12 +394,11 @@ export default function OrderStatus() {
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-gray-500 font-bold">Status</span>
-                  <button 
+                  <button
                     onClick={(e) => handleStatusClick(e, selectedOrderDetails)}
                     disabled={selectedOrderDetails.status === "Cancelled"}
-                    className={`px-4 py-1.5 rounded-full border text-[10px] font-black shadow-sm transition-all whitespace-nowrap ${
-                      getStatusColor(selectedOrderDetails.status)
-                    }`}
+                    className={`px-4 py-1.5 rounded-full border text-[10px] font-black shadow-sm transition-all whitespace-nowrap ${getStatusColor(selectedOrderDetails.status)
+                      }`}
                   >
                     {selectedOrderDetails.status}
                   </button>
@@ -421,9 +416,9 @@ export default function OrderStatus() {
             <div className="bg-white rounded-[30px] p-6 text-center border border-gray-100">
               <h2 className="text-2xl font-black text-[#1e3d58] mb-2 tracking-tight">Update Status</h2>
               <p className="mb-6 text-gray-500 font-bold text-sm">Update <span className="text-[#43b0f1]">{statusChangeOrder.id}</span></p>
-              
+
               <div className="relative">
-                <select 
+                <select
                   className="w-full p-4 mb-8 border-2 border-gray-200 rounded-2xl font-bold text-[#1e3d58] outline-none focus:border-[#43b0f1] appearance-none bg-gray-50/50"
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}

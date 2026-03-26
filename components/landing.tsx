@@ -34,9 +34,9 @@ export default function LandingPage() {
           </div>
 
           <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none rotate-180">
-              <svg className="relative block w-[calc(100%+1.3px)] h-[70px] lg:h-[120px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                  <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="fill-[#1e3d58]"></path>
-              </svg>
+            <svg className="relative block w-[calc(100%+1.3px)] h-[70px] lg:h-[120px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+              <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="fill-[#1e3d58]"></path>
+            </svg>
           </div>
         </section>
 
@@ -52,15 +52,15 @@ export default function LandingPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 w-full">
-              <BenefitCard 
+              <BenefitCard
                 title="One-Tap Ordering"
                 description="Don't type your name and address every single time. Set it up once, order forever."
               />
-              <BenefitCard 
+              <BenefitCard
                 title="Direct to Station"
                 description="Orders go straight to our main dashboard, avoiding the risk of buried text messages."
               />
-              <BenefitCard 
+              <BenefitCard
                 title="Better Service"
                 description="Using the app helps us organize our delivery routes, meaning we can serve the whole community faster."
               />
@@ -74,9 +74,9 @@ export default function LandingPage() {
               Experience a <br className="lg:hidden" />
               <span className="text-[#43b0f1] italic">smarter way to refill.</span>
             </h3>
-            
+
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 lg:gap-6 w-full max-w-md mx-auto">
-              
+
               {/* Added flex utilities inside the Link to ensure button text and icons align safely */}
               <Button asChild className="w-full h-16 text-xl font-bold rounded-full bg-[#43b0f1] hover:bg-[#1e3d58] text-white shadow-xl shadow-[#43b0f1]/30 transition-all active:scale-95 break-words leading-tight whitespace-normal">
                 <Link href="/auth/sign-up" className="flex items-center justify-center w-full">

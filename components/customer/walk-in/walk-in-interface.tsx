@@ -32,16 +32,16 @@ interface TerminalButtonProps {
 }
 
 // SUB-COMPONENT: KIOSK-SIZED CONFIRMATION
-function WalkInConfirmation({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  total, 
-  method 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onConfirm: () => void; 
+function WalkInConfirmation({
+  isOpen,
+  onClose,
+  onConfirm,
+  total,
+  method
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
   total: number;
   method: string;
 }) {
@@ -62,9 +62,9 @@ function WalkInConfirmation({
           <h2 className="text-4xl sm:text-6xl font-black text-[#1e3d58] mb-4 uppercase tracking-tighter break-words leading-tight">
             CONFIRM ORDER
           </h2>
-          
+
           <p className="text-xl sm:text-3xl font-bold text-gray-500 mb-8 sm:mb-12 uppercase tracking-wide leading-tight break-words whitespace-normal">
-            YOU ARE PLACING AN ORDER FOR <span className="text-[#43b0f1]">₱{total.toLocaleString()}</span><br/>
+            YOU ARE PLACING AN ORDER FOR <span className="text-[#43b0f1]">₱{total.toLocaleString()}</span><br />
             VIA <span className="text-[#43b0f1]">{method}</span>. IS THIS CORRECT?
           </p>
 
@@ -118,11 +118,10 @@ function TerminalButton({ active, onClick, label, icon }: TerminalButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl font-black transition-all duration-200 active:scale-95 flex flex-col items-center justify-center gap-2 text-lg sm:text-xl 2xl:text-2xl uppercase tracking-widest min-w-0 break-words leading-tight w-full h-full border-2 ${
-        active 
-          ? "border-[#43b0f1] bg-[#e8eef1] text-[#1e3d58] shadow-md" 
+      className={`flex-1 p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl font-black transition-all duration-200 active:scale-95 flex flex-col items-center justify-center gap-2 text-lg sm:text-xl 2xl:text-2xl uppercase tracking-widest min-w-0 break-words leading-tight w-full h-full border-2 ${active
+          ? "border-[#43b0f1] bg-[#e8eef1] text-[#1e3d58] shadow-md"
           : "border-[#e8eef1] bg-white text-gray-400 hover:bg-gray-50"
-      }`}
+        }`}
     >
       {icon && React.cloneElement(icon, { className: "w-8 h-8 2xl:w-10 2xl:h-10 shrink-0", strokeWidth: 2.5 })}
       <span className="truncate w-full whitespace-normal">{label}</span>
@@ -139,7 +138,7 @@ function SuccessModal({ isOpen, onNextCustomer }: { isOpen: boolean; onNextCusto
           <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 2xl:w-24 2xl:h-24 text-green-600" strokeWidth={3} />
         </div>
         <h2 className="text-4xl sm:text-5xl 2xl:text-6xl font-black mb-4 2xl:mb-6 text-[#1e3d58] uppercase tracking-tight break-words leading-tight">ORDER PLACED!</h2>
-        <p className="text-xl sm:text-2xl 2xl:text-3xl font-bold text-gray-500 mb-8 sm:mb-12 uppercase leading-relaxed break-words whitespace-normal">PLEASE PROCEED TO THE COUNTER<br/>TO HAND OVER YOUR CONTAINERS.</p>
+        <p className="text-xl sm:text-2xl 2xl:text-3xl font-bold text-gray-500 mb-8 sm:mb-12 uppercase leading-relaxed break-words whitespace-normal">PLEASE PROCEED TO THE COUNTER<br />TO HAND OVER YOUR CONTAINERS.</p>
         <Button onClick={onNextCustomer} className="w-full h-20 sm:h-24 2xl:h-28 text-2xl sm:text-3xl 2xl:text-4xl font-black bg-[#43b0f1] hover:bg-[#1e3d58] text-white rounded-2xl 2xl:rounded-3xl uppercase tracking-widest active:scale-95 shadow-xl whitespace-normal break-words leading-tight border-2 border-[#43b0f1]">DONE</Button>
       </div>
     </div>
@@ -154,7 +153,7 @@ export default function WalkInInterface() {
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   // New State for "SURE?" confirmation
   const [confirmClear, setConfirmClear] = useState<boolean>(false);
 
@@ -220,7 +219,7 @@ export default function WalkInInterface() {
         pricePerUnit: PRICE_PER_GALLON,
         transaction_type: "Walk-in",
         payment_mode: paymentMethod === "CASH" ? "Cash" : "GCash",
-        note: "Ordered via Kiosk" 
+        note: "Ordered via Kiosk"
       });
 
       if (result?.error) {
@@ -240,7 +239,7 @@ export default function WalkInInterface() {
 
   return (
     <div className="h-[100dvh] w-full bg-[#f4f7f9] flex flex-col p-4 sm:p-6 2xl:p-12 relative overflow-hidden font-sans select-none">
-      
+
       <button onClick={toggleFullscreen} className={`absolute top-4 right-4 sm:top-6 sm:right-6 2xl:top-8 2xl:right-8 z-50 p-3 sm:p-4 rounded-full transition-all duration-300 shadow-sm ${isFullscreen ? "opacity-0 hover:opacity-100 bg-black/50 text-white" : "opacity-100 bg-white text-[#1e3d58] border border-[#e8eef1]"}`}>
         {isFullscreen ? <Minimize className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={3} /> : <Maximize className="w-6 h-6 sm:w-7 sm:h-7" strokeWidth={3} />}
       </button>
@@ -253,7 +252,7 @@ export default function WalkInInterface() {
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row items-stretch gap-6 2xl:gap-12 mt-6 2xl:mt-8 w-full min-h-0">
-        
+
         {/* Left Column */}
         <div className="w-full lg:w-[55%] 2xl:w-[60%] flex flex-col gap-6 2xl:gap-8 h-full min-h-0">
           <RefillItem label={CONTAINER_TYPES.ROUND} count={roundGallons} setCount={setRoundGallons} borderColor="border-l-[#1e3d58]" />
@@ -286,13 +285,12 @@ export default function WalkInInterface() {
 
           <div className="flex flex-col sm:flex-row gap-4 mt-6 2xl:mt-8 shrink-0 w-full h-[80px] sm:h-[100px] 2xl:h-[120px]">
             {hasItems && (
-              <button 
-                onClick={handleClearClick} 
-                className={`w-full sm:w-[120px] 2xl:w-[140px] h-full flex sm:flex-col flex-row items-center justify-center gap-2 sm:gap-1 border-2 rounded-2xl 2xl:rounded-3xl active:scale-95 shrink-0 transition-colors shadow-sm ${
-                  confirmClear 
-                    ? "text-white bg-red-500 hover:bg-red-600 border-red-500" 
+              <button
+                onClick={handleClearClick}
+                className={`w-full sm:w-[120px] 2xl:w-[140px] h-full flex sm:flex-col flex-row items-center justify-center gap-2 sm:gap-1 border-2 rounded-2xl 2xl:rounded-3xl active:scale-95 shrink-0 transition-colors shadow-sm ${confirmClear
+                    ? "text-white bg-red-500 hover:bg-red-600 border-red-500"
                     : "text-red-500 bg-red-50 hover:bg-red-100 border-red-200"
-                }`}
+                  }`}
               >
                 <RotateCcw className="w-6 h-6 sm:w-8 sm:h-8 2xl:w-10 2xl:h-10 shrink-0" strokeWidth={3} />
                 <span className="text-base sm:text-sm 2xl:text-lg font-black tracking-widest whitespace-normal break-words leading-tight">
@@ -303,11 +301,10 @@ export default function WalkInInterface() {
             <button
               onClick={() => setShowOrderConfirmation(true)}
               disabled={!hasItems || loading}
-              className={`flex-1 w-full h-full text-2xl sm:text-3xl 2xl:text-4xl font-black transition-all active:scale-95 uppercase tracking-widest rounded-2xl 2xl:rounded-3xl whitespace-normal break-words leading-tight border-2 ${
-                hasItems 
-                  ? "bg-[#43b0f1] hover:bg-[#1e3d58] text-white border-[#43b0f1] shadow-xl" 
+              className={`flex-1 w-full h-full text-2xl sm:text-3xl 2xl:text-4xl font-black transition-all active:scale-95 uppercase tracking-widest rounded-2xl 2xl:rounded-3xl whitespace-normal break-words leading-tight border-2 ${hasItems
+                  ? "bg-[#43b0f1] hover:bg-[#1e3d58] text-white border-[#43b0f1] shadow-xl"
                   : "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
-              }`}
+                }`}
             >
               {loading ? "PLACING..." : hasItems ? "PLACE ORDER" : "ADD ITEMS"}
             </button>
@@ -315,12 +312,12 @@ export default function WalkInInterface() {
         </div>
       </div>
 
-      <WalkInConfirmation 
-        isOpen={showOrderConfirmation} 
-        onClose={() => !loading && setShowOrderConfirmation(false)} 
-        onConfirm={executeTransaction} 
-        total={total} 
-        method={paymentMethod} 
+      <WalkInConfirmation
+        isOpen={showOrderConfirmation}
+        onClose={() => !loading && setShowOrderConfirmation(false)}
+        onConfirm={executeTransaction}
+        total={total}
+        method={paymentMethod}
       />
 
       <SuccessModal isOpen={showSuccessModal} onNextCustomer={handleNextCustomer} />
