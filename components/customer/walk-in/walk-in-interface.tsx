@@ -119,8 +119,8 @@ function TerminalButton({ active, onClick, label, icon }: TerminalButtonProps) {
     <button
       onClick={onClick}
       className={`flex-1 p-4 2xl:p-6 rounded-2xl 2xl:rounded-3xl font-black transition-all duration-200 active:scale-95 flex flex-col items-center justify-center gap-2 text-lg sm:text-xl 2xl:text-2xl uppercase tracking-widest min-w-0 break-words leading-tight w-full h-full border-2 ${active
-          ? "border-[#43b0f1] bg-[#e8eef1] text-[#1e3d58] shadow-md"
-          : "border-[#e8eef1] bg-white text-gray-400 hover:bg-gray-50"
+        ? "border-[#43b0f1] bg-[#e8eef1] text-[#1e3d58] shadow-md"
+        : "border-[#e8eef1] bg-white text-gray-400 hover:bg-gray-50"
         }`}
     >
       {icon && React.cloneElement(icon, { className: "w-8 h-8 2xl:w-10 2xl:h-10 shrink-0", strokeWidth: 2.5 })}
@@ -218,7 +218,7 @@ export default function WalkInInterface() {
         roundCount: roundGallons,
         pricePerUnit: PRICE_PER_GALLON,
         transaction_type: "Walk-in",
-        payment_mode: paymentMethod === "CASH" ? "Cash" : "GCash",
+        payment_mode: paymentMethod === "CASH" ? "Cash" : "E-Bank",
         note: "Ordered via Kiosk"
       });
 
@@ -288,8 +288,8 @@ export default function WalkInInterface() {
               <button
                 onClick={handleClearClick}
                 className={`w-full sm:w-[120px] 2xl:w-[140px] h-full flex sm:flex-col flex-row items-center justify-center gap-2 sm:gap-1 border-2 rounded-2xl 2xl:rounded-3xl active:scale-95 shrink-0 transition-colors shadow-sm ${confirmClear
-                    ? "text-white bg-red-500 hover:bg-red-600 border-red-500"
-                    : "text-red-500 bg-red-50 hover:bg-red-100 border-red-200"
+                  ? "text-white bg-red-500 hover:bg-red-600 border-red-500"
+                  : "text-red-500 bg-red-50 hover:bg-red-100 border-red-200"
                   }`}
               >
                 <RotateCcw className="w-6 h-6 sm:w-8 sm:h-8 2xl:w-10 2xl:h-10 shrink-0" strokeWidth={3} />
@@ -302,8 +302,8 @@ export default function WalkInInterface() {
               onClick={() => setShowOrderConfirmation(true)}
               disabled={!hasItems || loading}
               className={`flex-1 w-full h-full text-2xl sm:text-3xl 2xl:text-4xl font-black transition-all active:scale-95 uppercase tracking-widest rounded-2xl 2xl:rounded-3xl whitespace-normal break-words leading-tight border-2 ${hasItems
-                  ? "bg-[#43b0f1] hover:bg-[#1e3d58] text-white border-[#43b0f1] shadow-xl"
-                  : "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
+                ? "bg-[#43b0f1] hover:bg-[#1e3d58] text-white border-[#43b0f1] shadow-xl"
+                : "bg-gray-200 text-gray-400 border-gray-200 cursor-not-allowed"
                 }`}
             >
               {loading ? "PLACING..." : hasItems ? "PLACE ORDER" : "ADD ITEMS"}
