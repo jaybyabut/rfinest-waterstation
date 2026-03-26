@@ -57,12 +57,12 @@ export async function getAnalyticsData(selectedMonth: string) {
             .eq('current_status', 'Delivered');
 
         if (todayError) {
-             console.error("Error fetching today's orders:", todayError);
-             throw todayError;
+            console.error("Error fetching today's orders:", todayError);
+            throw todayError;
         }
 
         if (todayOrders) {
-             todayOrders.forEach(order => {
+            todayOrders.forEach(order => {
                 // Calculate Earnings
                 const amount = order.total_amount || 0;
                 result.today.earnings.total += amount;
@@ -77,46 +77,46 @@ export async function getAnalyticsData(selectedMonth: string) {
                 // Group by payment_mode
                 if (order.payment_mode?.toLowerCase() === 'cash') {
                     result.today.earnings.cash += amount;
-                } else { 
+                } else {
                     result.today.earnings.eBank += amount;
                 }
 
                 // Calculate Gallons
                 order.order_items?.forEach((item: any) => {
-                     const productName = item.products?.product_name?.toLowerCase() || "";
-                     const qty = Number(item.quantity) || 0; 
-                     
-                     if (productName.includes('slim')) {
-                         result.today.gallons.slim += qty;
-                     } else if (productName.includes('round')) {
-                         result.today.gallons.round += qty;
-                     }
-                     result.today.gallons.total += qty;
+                    const productName = item.products?.product_name?.toLowerCase() || "";
+                    const qty = Number(item.quantity) || 0;
+
+                    if (productName.includes('slim')) {
+                        result.today.gallons.slim += qty;
+                    } else if (productName.includes('round')) {
+                        result.today.gallons.round += qty;
+                    }
+                    result.today.gallons.total += qty;
                 });
-             });
+            });
         }
 
         // Fetch Monthly Orders
-         const { data: monthOrders, error: monthError } = await supabase
-         .from('orders')
-         .select('total_amount')
-         .gte('order_dt', startOfMonth)
-         .lt('order_dt', endOfMonth)
-         .eq('current_status', 'Delivered');
+        const { data: monthOrders, error: monthError } = await supabase
+            .from('orders')
+            .select('total_amount')
+            .gte('order_dt', startOfMonth)
+            .lt('order_dt', endOfMonth)
+            .eq('current_status', 'Delivered');
 
-         if (monthError) {
-             console.error("Error fetching monthly orders:", monthError);
-             throw monthError;
-         }
+        if (monthError) {
+            console.error("Error fetching monthly orders:", monthError);
+            throw monthError;
+        }
 
-         if (monthOrders) {
-             result.monthly.earnings = monthOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-         }
+        if (monthOrders) {
+            result.monthly.earnings = monthOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+        }
 
         return { success: true, data: result };
 
     } catch (error) {
-         console.error("Analytics aggregation error:", error);
-         return { success: false, error: "Failed to aggregate analytics data." };
+        console.error("Analytics aggregation error:", error);
+        return { success: false, error: "Failed to aggregate analytics data." };
     }
 }
