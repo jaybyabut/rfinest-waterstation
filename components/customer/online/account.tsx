@@ -11,9 +11,8 @@ import { updateCustomerName } from "@/app/actions/updateCustomerName";
 import { updateCustomerLocation } from "@/app/actions/updateCustomerLocation";
 import { updateCustomerPassword } from "@/app/actions/updateCustomerPassword";
 import { getLocations } from "@/app/actions/locations";
+import { createClient } from "@/lib/supabase/client";
 
-// TODO: BACKEND - Setup Supabase client here if needed for logout
-// import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'; 
 
 export default function CustomerAccount() {
   const router = useRouter();
@@ -173,13 +172,10 @@ export default function CustomerAccount() {
   };
 
   const handleLogout = async () => {
-    // TODO: BACKEND - I-trigger ang Supabase SignOut dito
-    // Example: const supabase = createClientComponentClient();
-    // await supabase.auth.signOut();
-    
-    console.log("Logged out!");
+    const supabase = createClient();
+    await supabase.auth.signOut();
     setIsLogoutModalOpen(false);
-    router.push("/"); 
+    router.push("/auth/login");
   };
 
   const resetTempStates = () => {
