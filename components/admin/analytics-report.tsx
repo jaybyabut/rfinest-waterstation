@@ -27,7 +27,6 @@ export default function AnalyticsAndReports() {
     total: 0,
   });
 
-  // TODO: BACKEND - Fetch monthly aggregation based on selectedMonth
   const [monthlyStats, setMonthlyStats] = useState({
     month: "Loading...",
     days: 0,
@@ -58,18 +57,30 @@ export default function AnalyticsAndReports() {
       setGlobalError(null);
 
       try {
-        // TODO: BACKEND - Implement actual API call here passing selectedMonth
-        await new Promise((resolve) => setTimeout(resolve, 800)); 
+        const response = await getAnalyticsData(selectedMonth);
 
-        const dateObj = new Date(selectedMonth + "-01");
+        if (!response.success || !response.data) {
+             throw new Error(response.error || "Unknown error fetching data");
+        }
+
+        setGallons(response.data.today.gallons);
+        setEarnings(response.data.today.earnings);
+
+        const [yearStr, monthStr] = selectedMonth.split('-');
+        const year = parseInt(yearStr);
+        const monthIndex = parseInt(monthStr) - 1;
+
+        const dateObj = new Date(year, monthIndex, 1);
         const monthName = dateObj.toLocaleString("default", { month: "long", year: "numeric" });
-        const daysInMonth = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0).getDate();
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
         setMonthlyStats({
           month: monthName,
           days: daysInMonth,
-          earnings: Math.floor(Math.random() * 50000) + 10000, 
+          earnings: response.data.monthly.earnings, 
         });
+
+        console.log("Analytics data fetched successfully:", response.data);
 
       } catch (error) {
         console.error(error);
@@ -182,6 +193,7 @@ export default function AnalyticsAndReports() {
                   type="month"
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
+                  disabled={loading}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
                 <Button className="absolute inset-0 w-full max-w-[200px] mx-auto h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-white shadow-md hover:bg-[#1e3d58] transition-all pointer-events-none active:scale-95">
