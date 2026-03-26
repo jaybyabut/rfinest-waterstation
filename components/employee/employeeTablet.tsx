@@ -77,26 +77,33 @@ export default function SeniorFriendlyTablet() {
     try {
       const data = await getOnlineOrders();
       if (Array.isArray(data)) {
-        setOnlineOrders(data.map(o => {
-          let receipt_url = undefined;
-          if (o.proof_payment) {
-            const { data: publicUrlData } = supabase.storage.from('proof_payment').getPublicUrl(o.proof_payment);
-            receipt_url = publicUrlData.publicUrl;
-          }
+        const mappedData = await Promise.all(
+          data.map(async (o) => {
+            let receipt_url = undefined;
+            if (o.proof_payment) {
+              const { data: signedUrlData, error } = await supabase.storage.from('proof_payment').createSignedUrl(o.proof_payment, 60 * 60 * 24); // valid for 24 hours
+              if (signedUrlData) {
+                receipt_url = signedUrlData.signedUrl;
+              } else {
+                console.error("Failed to generate signed url:", error);
+              }
+            }
 
-          return {
-            id: o.order_id.toString(),
-            status: o.current_status.toLowerCase(),
-            location: o.address || o.name,
-            notes: o.note,
-            payment_method: o.payment_mode,
-            receipt_url: receipt_url,
-            items: o.order_items.map((i: any) => ({
-              type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
-              quantity: i.quantity
-            }))
-          };
-        }));
+            return {
+              id: o.order_id.toString(),
+              status: o.current_status.toLowerCase(),
+              location: o.address || o.name,
+              notes: o.note,
+              payment_method: o.payment_mode,
+              receipt_url: receipt_url,
+              items: o.order_items.map((i: any) => ({
+                type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
+                quantity: i.quantity
+              }))
+            };
+          })
+        );
+        setOnlineOrders(mappedData);
       }
     } catch (error) {
       console.error("Failed to fetch online orders:", error);
