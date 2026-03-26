@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from "@/lib/supabase/server"
+import { logActivity } from "./logActivity";
 
 export async function createOrder(orderInfo: any) {
     const supabase = await createClient();
@@ -76,59 +77,46 @@ export async function createOrder(orderInfo: any) {
     if (items.length === 0) {
         return { error: "No items to order" };
     }
+    let rpcData, error;
 
+    if (orderInfo.transaction_type === 'Walk-in') {
+        const { data, error: rpcError } = await supabase.rpc('create_complete_order', {
+            p_user_id: null,
+            p_name: orderInfo.name,
+            p_address: orderInfo.location,
+            p_number: orderInfo.mobileNumber,
+            p_location_id: locationId,
+            p_items: items,
+            p_transaction_type: orderInfo.transaction_type,
+            p_payment_mode: orderInfo.payment_mode,
+            p_note: orderInfo.note,
+        });
+        rpcData = data;
+        error = rpcError;
+    } else {
+        const { data, error: rpcError } = await supabase.rpc('create_complete_order', {
+            p_user_id: null,
+            p_name: orderInfo.name,
+            p_address: orderInfo.location,
+            p_number: orderInfo.mobileNumber,
+            p_location_id: locationId,
+            p_items: items,
+            p_transaction_type: orderInfo.transaction_type,
+            p_payment_mode: orderInfo.payment_mode,
+            p_note: orderInfo.note,
 
-    const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-        p_user_id: null,
-        p_name: orderInfo.name,
-        p_address: orderInfo.location,
-        p_number: orderInfo.mobileNumber,
-        p_location_id: locationId,
-        p_items: items,
-
-        p_transaction_type: orderInfo.transaction_type,
-        p_payment_mode: orderInfo.payment_mode
-    });
+        });
+        rpcData = data;
+        error = rpcError;
+    }
 
     if (error) {
         console.error("RPC Error:", error);
         return { error: error.message };
     }
 
+    // Log the activity
+    await logActivity(`Created ${orderInfo.transaction_type} order for ${orderInfo.name}`);
+
     return { success: true, data: rpcData };
 }
-
-/* 
-
-ONLINE RPC CALL
-
-const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-    p_user_id: user?.id, // Use the real ID from the session
-    p_name: orderInfo.name,
-    p_address: orderInfo.location,
-    p_number: orderInfo.mobileNumber,
-    p_location_id: locationId,
-    p_items: items,
-    
-    // Updated for Online Flow
-    p_transaction_type: 'Online', 
-    p_payment_mode: 'GCash', // Or whatever your online payment method is
-});
-
-WALK-IN
-const { data: rpcData, error } = await supabase.rpc('create_complete_order', {
-    p_user_id: null, 
-    p_name: "Walk-in", 
-    p_address: "Walk-in", 
-    p_number: "0000", 
-    p_location_id: 1,
-    p_items: items,
-    
-    p_transaction_type: 'Walk-in',
-    p_payment_mode: 'Cash'
-});
-
-
-
-*/
-

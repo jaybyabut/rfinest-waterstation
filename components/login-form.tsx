@@ -25,13 +25,17 @@ export default function LoginForm({
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+      if (data.user.app_metadata.role === "employee") {
       router.push("/dashboard");
-    } catch (error: unknown) {
+      } else {
+        router.push("/home");
+      }
+    } catch (error: unknown) {  
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsLoading(false);
