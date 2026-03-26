@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, CalendarClock, User, Tag } from "lucide-react";
+import { ChevronLeft, CalendarClock, User, Tag, ArrowUp } from "lucide-react";
 import { getActivityLogs } from "@/app/actions/getActivityLogs";
 
 interface ActivityLog {
@@ -16,6 +16,7 @@ export default function ActivityLogs() {
   const [loading, setLoading] = useState(true);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -43,46 +44,56 @@ export default function ActivityLogs() {
     };
 
     fetchLogs();
+
+    const handleWindowScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    window.addEventListener("scroll", handleWindowScroll);
+    return () => window.removeEventListener("scroll", handleWindowScroll);
   }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative">
       <div className="w-full max-w-md">
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl">
-          
+
           <div className="flex items-center mb-8 relative px-2">
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center px-12 leading-[0.9]">
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 leading-tight">
               Activity <br className="sm:hidden" /> Logs
             </h1>
           </div>
 
-          <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left space-y-4 relative min-h-[500px]">
-            
+          <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left relative min-h-[500px]">
+
             {globalError && (
-              <div className="mb-2 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200">
+              <div className="mb-4 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200">
                 ⚠️ {globalError}
               </div>
             )}
 
             {loading && !globalError && (
-              <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-[40px]">
-                 <span className="text-[#1e3d58] font-bold text-lg animate-pulse">Loading logs...</span>
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-[40px]">
+                <span className="text-[#1e3d58] font-black text-lg animate-pulse">Loading logs...</span>
               </div>
             )}
 
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar pb-4">
+            <div className="space-y-4 pb-4">
               {!loading && logs.length === 0 ? (
-                <div className="text-center py-10 font-bold text-gray-400">
+                <div className="text-center py-20 font-bold text-gray-400 italic">
                   No logs found.
                 </div>
               ) : (
                 logs.map((log) => (
-                  <div key={log.id} className="bg-[#e8eef1] rounded-[25px] p-4 sm:p-5 border border-gray-200 shadow-sm">
-                    
-                    <div className="flex justify-between items-start mb-3 border-b border-gray-300 pb-3">
+                  <div key={log.id} className="bg-[#e8eef1] rounded-[25px] p-4 sm:p-5 border border-[#1e3d58]/10 shadow-sm">
+
+                    <div className="flex justify-between items-start mb-3 border-b border-white/50 pb-3">
                       <div className="flex items-center gap-2 text-[#1e3d58]">
                         <CalendarClock size={16} strokeWidth={3} />
                         <span className="text-xs font-black uppercase tracking-widest">
@@ -102,7 +113,7 @@ export default function ActivityLogs() {
                       </div>
                     </div>
 
-                    <div className="mt-4 border border-black rounded-[15px] bg-white p-3 text-sm font-bold text-[#1e3d58] leading-snug">
+                    <div className="mt-4 border-2 border-[#cdd9e0] rounded-[15px] bg-white p-3 text-sm font-bold text-[#1e3d58] leading-snug shadow-sm">
                       {log.activity}
                     </div>
 
@@ -110,10 +121,18 @@ export default function ActivityLogs() {
                 ))
               )}
             </div>
-
           </div>
         </div>
       </div>
+
+      {/* Floating Scroll to Top Button */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-24 right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
+      >
+        <ArrowUp size={24} strokeWidth={3} />
+      </button>
     </div>
   );
 }

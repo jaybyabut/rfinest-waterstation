@@ -5,15 +5,16 @@ import { LayoutGrid, Package, X, Bike, ShoppingBag, Droplets, CheckCircle2, Maxi
 import { getWalkInOrders } from "@/app/actions/getWalkInOrders";
 import { getOnlineOrders } from "@/app/actions/getOnlineOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
+import { createClient } from "@/lib/supabase/client";
 
 type OrderItem = { type: string; quantity: number };
 type WalkInOrder = { id: string; items: OrderItem[]; status: string };
 
 // TODO: BACKEND - I-align ang status strings sa actual database values niyo, at siguraduhing nafe-fetch ang payment_method at receipt_url
-type OnlineOrder = { 
-  id: string; 
-  items: OrderItem[]; 
-  status: string; 
+type OnlineOrder = {
+  id: string;
+  items: OrderItem[];
+  status: string;
   location: string;
   notes?: string;
   payment_method: 'cash' | 'ebank' | string;
@@ -31,7 +32,7 @@ export default function SeniorFriendlyTablet() {
   const [activeTab, setActiveTab] = useState<'walkin' | 'online'>('walkin');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
+
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [logs, setLogs] = useState<EmployeeLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
@@ -72,21 +73,37 @@ export default function SeniorFriendlyTablet() {
   const [loadingOnline, setLoadingOnline] = useState(true);
 
   const fetchOnline = async () => {
+    const supabase = createClient();
     try {
       const data = await getOnlineOrders();
       if (Array.isArray(data)) {
-        setOnlineOrders(data.map(o => ({
-          id: o.order_id.toString(),
-          status: o.current_status.toLowerCase(),
-          location: o.address || o.name,
-          notes: o.note,
-          payment_method: o.payment_mode,
-          receipt_url: o.proof_payment ? `https://${process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]}/storage/v1/object/public/proof_payment/${o.proof_payment}` : undefined,
-          items: o.order_items.map((i: any) => ({
-            type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
-            quantity: i.quantity
-          }))
-        })));
+        const mappedData = await Promise.all(
+          data.map(async (o) => {
+            let receipt_url = undefined;
+            if (o.proof_payment) {
+              const { data: signedUrlData, error } = await supabase.storage.from('proof_payment').createSignedUrl(o.proof_payment, 60 * 60 * 24); // valid for 24 hours
+              if (signedUrlData) {
+                receipt_url = signedUrlData.signedUrl;
+              } else {
+                console.error("Failed to generate signed url:", error);
+              }
+            }
+
+            return {
+              id: o.order_id.toString(),
+              status: o.current_status.toLowerCase(),
+              location: o.address || o.name,
+              notes: o.note,
+              payment_method: o.payment_mode,
+              receipt_url: receipt_url,
+              items: o.order_items.map((i: any) => ({
+                type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
+                quantity: i.quantity
+              }))
+            };
+          })
+        );
+        setOnlineOrders(mappedData);
       }
     } catch (error) {
       console.error("Failed to fetch online orders:", error);
@@ -138,7 +155,7 @@ export default function SeniorFriendlyTablet() {
       if (res.success) {
         setOnlineOrders(prev => prev.map(o => o.id === id ? { ...o, status: nextStatus.toLowerCase() } : o));
         if (nextStatus === 'Delivered') {
-           setOnlineOrders(prev => prev.filter(o => o.id !== id));
+          setOnlineOrders(prev => prev.filter(o => o.id !== id));
         }
         setConfirmingId(null);
       }
@@ -150,7 +167,7 @@ export default function SeniorFriendlyTablet() {
     setLogError(null);
     try {
       // TODO: BACKEND - Fetch logs specifically for this tablet/employee for TODAY
-      await new Promise((resolve) => setTimeout(resolve, 800)); 
+      await new Promise((resolve) => setTimeout(resolve, 800));
       const dummyLogs: EmployeeLog[] = [
         { id: "LOG-1", timestamp: new Date().toISOString(), action: "Marked as Delivered", details: "Order ORD-9918 has been delivered to customer." },
         { id: "LOG-2", timestamp: new Date(Date.now() - 1800000).toISOString(), action: "Updated Status", details: "Order ORD-9919 marked as 'Out for Delivery'." },
@@ -173,7 +190,7 @@ export default function SeniorFriendlyTablet() {
 
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans relative">
-      
+
       {viewingReceipt && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in duration-300 p-4 md:p-12">
           <div className="relative w-full max-w-2xl bg-white rounded-[30px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -181,7 +198,7 @@ export default function SeniorFriendlyTablet() {
               <h2 className="text-3xl font-black text-[#1e3d58] tracking-tight flex items-center gap-3">
                 <ImageIcon size={32} className="text-[#43b0f1]" /> PROOF OF PAYMENT
               </h2>
-              <button 
+              <button
                 onClick={() => setViewingReceipt(null)}
                 className="bg-red-500 text-white p-3 rounded-xl hover:bg-red-600 transition-colors active:scale-95 shadow-md"
               >
@@ -189,10 +206,10 @@ export default function SeniorFriendlyTablet() {
               </button>
             </div>
             <div className="flex-1 overflow-auto p-6 flex justify-center items-center bg-slate-50">
-               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src={viewingReceipt} 
-                alt="Payment Receipt" 
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={viewingReceipt}
+                alt="Payment Receipt"
                 className="max-w-full max-h-[60vh] object-contain rounded-2xl shadow-sm border border-slate-200"
               />
             </div>
@@ -209,28 +226,25 @@ export default function SeniorFriendlyTablet() {
         </button>
         <button
           onClick={toggleFullscreen}
-          className={`p-3 md:p-4 rounded-full transition-all duration-300 shadow-md ${
-            isFullscreen ? "opacity-0 hover:opacity-100 bg-black/50 text-white" : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"
-          }`}
+          className={`p-3 md:p-4 rounded-full transition-all duration-300 shadow-md ${isFullscreen ? "opacity-0 hover:opacity-100 bg-black/50 text-white" : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"
+            }`}
         >
           {isFullscreen ? <Minimize size={28} strokeWidth={2.5} /> : <Maximize size={28} strokeWidth={2.5} />}
         </button>
       </div>
 
       <div className="flex w-full bg-white border-b-4 border-slate-200 h-24 md:h-32 flex-none shadow-sm pr-32 md:pr-48">
-        <button 
+        <button
           onClick={() => { setActiveTab('walkin'); setConfirmingId(null); }}
-          className={`flex-1 flex items-center justify-center gap-4 md:gap-6 text-3xl md:text-5xl font-black transition-all ${
-            activeTab === 'walkin' ? 'bg-[#43b0f1] text-white' : 'bg-white text-slate-400'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-4 md:gap-6 text-3xl md:text-5xl font-black transition-all ${activeTab === 'walkin' ? 'bg-[#43b0f1] text-white' : 'bg-white text-slate-400'
+            }`}
         >
           <LayoutGrid className="w-8 h-8 md:w-12 md:h-12" /> WALK-IN
         </button>
-        <button 
+        <button
           onClick={() => { setActiveTab('online'); setConfirmingId(null); }}
-          className={`flex-1 flex items-center justify-center gap-4 md:gap-6 text-3xl md:text-5xl font-black transition-all ${
-            activeTab === 'online' ? 'bg-[#43b0f1] text-white' : 'bg-white text-slate-400'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-4 md:gap-6 text-3xl md:text-5xl font-black transition-all ${activeTab === 'online' ? 'bg-[#43b0f1] text-white' : 'bg-white text-slate-400'
+            }`}
         >
           <Package className="w-8 h-8 md:w-12 md:h-12" /> ONLINE
         </button>
@@ -265,8 +279,8 @@ export default function SeniorFriendlyTablet() {
 
                   <div className="flex flex-col items-end md:flex-row md:items-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-2 border-slate-100">
                     <div className="text-right">
-                        <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
-                        <span className="text-4xl md:text-6xl font-black text-slate-900">ORD-{order.id.split('-')[0]}</span>
+                      <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
+                      <span className="text-4xl md:text-6xl font-black text-slate-900">ORD-{order.id.split('-')[0]}</span>
                     </div>
 
                     {confirmingId === order.id ? (
@@ -279,7 +293,7 @@ export default function SeniorFriendlyTablet() {
                         </button>
                       </div>
                     ) : (
-                      <button 
+                      <button
                         onClick={() => setConfirmingId(order.id)}
                         className="bg-[#1e3d58] text-white px-6 md:px-12 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-xl md:text-3xl shadow-lg active:scale-95 transition-transform"
                       >
@@ -307,28 +321,26 @@ export default function SeniorFriendlyTablet() {
           ) : (
             onlineOrders.length > 0 ? (
               onlineOrders.map((order) => (
-                <div key={order.id} 
-                  className={`flex items-center w-full p-4 md:p-8 bg-white rounded-2xl md:rounded-3xl border border-slate-200 border-l-[16px] md:border-l-[24px] shadow-sm hover:shadow-md transition-all duration-500 ${
-                    order.status === 'pending' ? 'border-l-orange-500' : 
-                    order.status === 'processing' ? 'border-l-sky-500' : 
-                    order.status === 'refilled' ? 'border-l-blue-500' : 
-                    'border-l-purple-500'
-                  }`}
+                <div key={order.id}
+                  className={`flex items-center w-full p-4 md:p-8 bg-white rounded-2xl md:rounded-3xl border border-slate-200 border-l-[16px] md:border-l-[24px] shadow-sm hover:shadow-md transition-all duration-500 ${order.status === 'pending' ? 'border-l-orange-500' :
+                    order.status === 'processing' ? 'border-l-sky-500' :
+                      order.status === 'refilled' ? 'border-l-blue-500' :
+                        'border-l-purple-500'
+                    }`}
                 >
-                  <div className={`flex flex-col items-center justify-center w-24 md:w-40 border-r-2 border-slate-100 pr-4 md:pr-8 mr-4 md:mr-8 ${
-                    order.status === 'pending' ? 'text-orange-600' : 
-                    order.status === 'processing' ? 'text-sky-600' : 
-                    order.status === 'refilled' ? 'text-blue-600' : 
-                    'text-purple-600'
-                  }`}>
-                    {order.status === 'pending' && <ShoppingBag className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5}/>}
-                    {['processing', 'refilled'].includes(order.status) && <Droplets className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5}/>}
-                    {order.status === 'out for delivery' && <Bike className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5}/>}
+                  <div className={`flex flex-col items-center justify-center w-24 md:w-40 border-r-2 border-slate-100 pr-4 md:pr-8 mr-4 md:mr-8 ${order.status === 'pending' ? 'text-orange-600' :
+                    order.status === 'processing' ? 'text-sky-600' :
+                      order.status === 'refilled' ? 'text-blue-600' :
+                        'text-purple-600'
+                    }`}>
+                    {order.status === 'pending' && <ShoppingBag className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
+                    {['processing', 'refilled'].includes(order.status) && <Droplets className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
+                    {order.status === 'out for delivery' && <Bike className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
                     <span className="font-bold text-sm md:text-xl uppercase tracking-widest mt-2 text-center leading-none">
-                        {order.status === 'pending' && 'PENDING'}
-                        {order.status === 'processing' && 'QUEUED'}
-                        {order.status === 'refilled' && 'REFILLED'}
-                        {order.status === 'out for delivery' && 'DELIVERY'}
+                      {order.status === 'pending' && 'PENDING'}
+                      {order.status === 'processing' && 'QUEUED'}
+                      {order.status === 'refilled' && 'REFILLED'}
+                      {order.status === 'out for delivery' && 'DELIVERY'}
                     </span>
                   </div>
 
@@ -346,7 +358,7 @@ export default function SeniorFriendlyTablet() {
                     </div>
                     {order.notes && (
                       <p className="text-lg md:text-2xl font-bold text-slate-500 italic flex items-center gap-2 md:gap-4">
-                        <span className="bg-slate-100 px-3 py-1 rounded-md not-italic text-xs md:text-lg">NOTE</span> 
+                        <span className="bg-slate-100 px-3 py-1 rounded-md not-italic text-xs md:text-lg">NOTE</span>
                         {order.notes}
                       </p>
                     )}
@@ -354,17 +366,17 @@ export default function SeniorFriendlyTablet() {
 
                   <div className="flex flex-col items-end md:flex-row md:items-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-2 border-slate-100">
                     <div className="text-right">
-                        <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
-                        <span className="text-4xl md:text-6xl font-black text-slate-900">ORD-{order.id.split('-')[0]}</span>
+                      <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
+                      <span className="text-4xl md:text-6xl font-black text-slate-900">ORD-{order.id.split('-')[0]}</span>
                     </div>
 
                     <div className="flex flex-col gap-3">
-                      {order.payment_method?.toLowerCase() === 'gcash' && order.receipt_url && (
-                        <button 
+                      {order.payment_method === 'E-Bank' && order.receipt_url && (
+                        <button
                           onClick={() => setViewingReceipt(order.receipt_url || null)}
                           className="flex items-center justify-center gap-2 bg-[#e8eef1] text-[#1e3d58] border-2 border-[#1e3d58]/20 hover:border-[#43b0f1] hover:text-[#43b0f1] px-4 py-3 rounded-2xl font-black text-lg md:text-xl shadow-sm transition-all active:scale-95"
                         >
-                          <ImageIcon size={24} strokeWidth={2.5}/> VIEW RECEIPT
+                          <ImageIcon size={24} strokeWidth={2.5} /> VIEW RECEIPT
                         </button>
                       )}
 
@@ -378,14 +390,13 @@ export default function SeniorFriendlyTablet() {
                           </button>
                         </div>
                       ) : (
-                        <button 
+                        <button
                           onClick={() => setConfirmingId(order.id)}
-                          className={`min-w-[150px] md:min-w-[350px] px-6 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-2xl shadow-lg transition-all text-white active:scale-95 text-center ${
-                            order.status === 'pending' ? 'bg-orange-500' : 
-                            order.status === 'processing' ? 'bg-sky-600' : 
-                            order.status === 'refilled' ? 'bg-blue-600' : 
-                            'bg-purple-600'
-                          }`}
+                          className={`min-w-[150px] md:min-w-[350px] px-6 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-2xl shadow-lg transition-all text-white active:scale-95 text-center ${order.status === 'pending' ? 'bg-orange-500' :
+                            order.status === 'processing' ? 'bg-sky-600' :
+                              order.status === 'refilled' ? 'bg-blue-600' :
+                                'bg-purple-600'
+                            }`}
                         >
                           {order.status === 'pending' && "MARK PROCESSING"}
                           {order.status === 'processing' && "MARK REFILLED"}
@@ -408,24 +419,23 @@ export default function SeniorFriendlyTablet() {
       </div>
 
       {isHistoryOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] animate-in fade-in duration-300"
           onClick={() => setIsHistoryOpen(false)}
         />
       )}
 
-      <div 
-        className={`fixed top-0 right-0 h-full w-full md:w-[450px] bg-[#e8eef1] shadow-2xl z-[70] transform transition-transform duration-500 flex flex-col ${
-          isHistoryOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+      <div
+        className={`fixed top-0 right-0 h-full w-full md:w-[450px] bg-[#e8eef1] shadow-2xl z-[70] transform transition-transform duration-500 flex flex-col ${isHistoryOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="flex items-center justify-between p-6 md:p-8 bg-white shadow-sm border-b border-gray-100 shrink-0">
           <div className="flex items-center gap-3">
             <History className="text-[#43b0f1]" size={32} strokeWidth={3} />
             <h2 className="text-3xl font-black text-[#1e3d58] uppercase tracking-tighter">My History</h2>
           </div>
-          <button 
-            onClick={() => setIsHistoryOpen(false)} 
+          <button
+            onClick={() => setIsHistoryOpen(false)}
             className="p-2 bg-slate-100 hover:bg-red-100 hover:text-red-500 text-slate-400 rounded-xl transition-colors"
           >
             <X size={32} strokeWidth={3} />
@@ -441,8 +451,8 @@ export default function SeniorFriendlyTablet() {
 
           {loadingLogs && !logError ? (
             <div className="flex flex-col items-center justify-center h-40 gap-3">
-               <Clock className="text-[#43b0f1] animate-spin" size={32} />
-               <span className="text-[#1e3d58] font-black tracking-widest uppercase text-sm animate-pulse">Loading actions...</span>
+              <Clock className="text-[#43b0f1] animate-spin" size={32} />
+              <span className="text-[#1e3d58] font-black tracking-widest uppercase text-sm animate-pulse">Loading actions...</span>
             </div>
           ) : logs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 opacity-30">

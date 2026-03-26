@@ -3,24 +3,31 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ArrowUp } from "lucide-react";
+import { getAnalyticsData } from "@/app/actions/getReport";
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function AnalyticsAndReports() {
   const [loading, setLoading] = useState(true);
   const [globalError, setGlobalError] = useState<string | null>(null);
-  
-  const [selectedMonth, setSelectedMonth] = useState("");
 
-  // TODO: BACKEND - Fetch daily stats from database (orders table)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [selectedMonth, setSelectedMonth] = useState("");
+  
+  // Custom Modal State (Fixed for Next.js Hydration)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tempYear, setTempYear] = useState(2026); // Static fallback
+  const [tempMonth, setTempMonth] = useState(1);  // Static fallback
+
+  // Scroll to Top State
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
   const [gallons, setGallons] = useState({
     slim: 0,
     round: 0,
     total: 0,
   });
 
-  // TODO: BACKEND - Fetch earnings breakdown
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [earnings, setEarnings] = useState({
     walkIn: 0,
     online: 0,
@@ -29,12 +36,20 @@ export default function AnalyticsAndReports() {
     total: 0,
   });
 
-  // TODO: BACKEND - Fetch monthly aggregation based on selectedMonth
   const [monthlyStats, setMonthlyStats] = useState({
     month: "Loading...",
     days: 0,
     earnings: 0,
   });
+
+  // Scroll Listener for Arrow Up Button
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    window.addEventListener("scroll", handleWindowScroll);
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, []);
 
   useEffect(() => {
     if (!selectedMonth) {
@@ -48,18 +63,30 @@ export default function AnalyticsAndReports() {
       setGlobalError(null);
 
       try {
-        // TODO: BACKEND - Implement actual API call here passing selectedMonth
-        await new Promise((resolve) => setTimeout(resolve, 800)); 
+        const response = await getAnalyticsData(selectedMonth);
 
-        const dateObj = new Date(selectedMonth + "-01");
+        if (!response.success || !response.data) {
+          throw new Error(response.error || "Unknown error fetching data");
+        }
+
+        setGallons(response.data.today.gallons);
+        setEarnings(response.data.today.earnings);
+
+        const [yearStr, monthStr] = selectedMonth.split('-');
+        const year = parseInt(yearStr);
+        const monthIndex = parseInt(monthStr) - 1;
+
+        const dateObj = new Date(year, monthIndex, 1);
         const monthName = dateObj.toLocaleString("default", { month: "long", year: "numeric" });
-        const daysInMonth = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0).getDate();
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
 
         setMonthlyStats({
           month: monthName,
           days: daysInMonth,
-          earnings: Math.floor(Math.random() * 50000) + 10000, 
+          earnings: response.data.monthly.earnings,
         });
+
+        console.log("Analytics data fetched successfully:", response.data);
 
       } catch (error) {
         console.error(error);
@@ -72,22 +99,42 @@ export default function AnalyticsAndReports() {
     fetchAnalytics();
   }, [selectedMonth]);
 
+  const handleOpenModal = () => {
+    if (selectedMonth) {
+      const [yearStr, monthStr] = selectedMonth.split('-');
+      setTempYear(parseInt(yearStr));
+      setTempMonth(parseInt(monthStr));
+    } else {
+      // Safe to call new Date() here because it only runs on client interaction
+      const now = new Date();
+      setTempYear(now.getFullYear());
+      setTempMonth(now.getMonth() + 1);
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmMonth = () => {
+    const formatted = `${tempYear}-${String(tempMonth).padStart(2, '0')}`;
+    setSelectedMonth(formatted);
+    setIsModalOpen(false);
+  };
+
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative">
       <div className="w-full max-w-md">
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl">
-          
+
           <div className="flex items-center mb-8 relative px-2">
             <Link href="/dashboard" className="absolute left-2 text-black hover:scale-110 transition-transform">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-3xl sm:text-4xl font-black text-black tracking-tighter w-full text-center px-12">
-            Analytics & Report
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 leading-tight">
+              Sales Report
             </h1>
           </div>
 
           <div className="bg-white rounded-[40px] p-6 shadow-inner border border-gray-100 text-left space-y-8 relative">
-            
+
             {globalError && (
               <div className="mb-2 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200">
                 ⚠️ {globalError}
@@ -96,13 +143,14 @@ export default function AnalyticsAndReports() {
 
             {loading && !globalError && (
               <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-[40px]">
-                 <span className="text-[#1e3d58] font-bold text-lg animate-pulse">Loading data...</span>
+                <span className="text-[#1e3d58] font-bold text-lg animate-pulse">Loading data...</span>
               </div>
             )}
 
+            {/* TODAY'S SUMMARY */}
             <div className="bg-[#e8eef1] rounded-[30px] p-5 border border-gray-200 shadow-sm">
               <h2 className="text-3xl font-black text-[#1e3d58] text-center mb-6 tracking-tight">Today&apos;s Summary</h2>
-             
+
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-[#1e3d58] text-center mb-3">Gallons Processed:</h3>
                 <div className="border border-black rounded-[20px] bg-white p-4 space-y-2">
@@ -149,10 +197,11 @@ export default function AnalyticsAndReports() {
               </div>
             </div>
 
+            {/* MONTHLY SUMMARY */}
             <div className="bg-[#e8eef1] rounded-[30px] p-5 border border-gray-200 shadow-sm">
               <h2 className="text-3xl font-black text-[#1e3d58] text-center mb-4 tracking-tight">Monthly Earnings:</h2>
-              <h3 className="text-3xl font-bold text-[#43b0f1] text-center mb-4">{monthlyStats.month}</h3>
-              
+              <h3 className="text-3xl font-bold text-[#43b0f1] text-center mb-4 leading-tight break-words">{monthlyStats.month}</h3>
+
               <div className="mb-4">
                 <p className="text-xl font-bold text-[#1e3d58] text-center mb-2">Number of days:</p>
                 <div className="border border-black rounded-[20px] bg-white py-3 text-center">
@@ -162,19 +211,17 @@ export default function AnalyticsAndReports() {
 
               <div className="mb-6">
                 <p className="text-xl font-bold text-[#1e3d58] text-center mb-2">Earnings:</p>
-                <div className="border border-black rounded-[20px] bg-white py-3 text-center">
-                  <span className="text-3xl text-[#43b0f1]">₱{monthlyStats.earnings.toLocaleString()}</span>
+                <div className="border border-black rounded-[20px] bg-white py-3 text-center px-2">
+                  <span className="text-3xl text-[#43b0f1] break-all">₱{monthlyStats.earnings.toLocaleString()}</span>
                 </div>
               </div>
 
-              <div className="flex justify-center relative w-full h-14">
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                />
-                <Button className="absolute inset-0 w-3/4 mx-auto h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 pointer-events-none">
+              <div className="flex justify-center w-full">
+                <Button 
+                  onClick={handleOpenModal} 
+                  disabled={loading} 
+                  className="w-3/4 h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95"
+                >
                   Select Month
                 </Button>
               </div>
@@ -183,6 +230,81 @@ export default function AnalyticsAndReports() {
           </div>
         </div>
       </div>
+
+      {/* ARROW UP SCROLL BUTTON */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
+          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+      >
+        <ArrowUp size={24} strokeWidth={3} />
+      </button>
+
+      {/* CUSTOM MONTH & YEAR SELECTOR MODAL (SCALED DOWN) */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/80 backdrop-blur-sm animate-in fade-in p-4 min-w-0">
+          <div className="bg-white rounded-3xl p-5 w-full max-w-[300px] shadow-2xl border-4 border-[#e8eef1] animate-in zoom-in-95 duration-200 relative min-w-0">
+            
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="absolute right-3 top-3 p-1.5 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+            >
+              <X size={20} strokeWidth={3} />
+            </button>
+
+            <h2 className="text-xl font-black text-[#1e3d58] text-center mb-4 tracking-tight pr-6">
+              Select Month
+            </h2>
+
+            {/* Year Toggle */}
+            <div className="flex justify-between items-center bg-[#e8eef1] rounded-xl p-1.5 mb-5 border-2 border-white shadow-inner min-w-0">
+              <button 
+                onClick={() => setTempYear(y => y - 1)}
+                className="p-1.5 hover:bg-white rounded-lg transition-colors text-[#1e3d58] shrink-0"
+              >
+                <ChevronLeft size={20} strokeWidth={3} />
+              </button>
+              <span className="text-lg font-black text-[#1e3d58] tabular-nums">{tempYear}</span>
+              <button 
+                onClick={() => setTempYear(y => y + 1)}
+                className="p-1.5 hover:bg-white rounded-lg transition-colors text-[#1e3d58] shrink-0"
+              >
+                <ChevronRight size={20} strokeWidth={3} />
+              </button>
+            </div>
+
+            {/* Months Grid */}
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              {MONTHS.map((month, idx) => {
+                const monthNumber = idx + 1;
+                const isSelected = tempMonth === monthNumber;
+                return (
+                  <button
+                    key={month}
+                    onClick={() => setTempMonth(monthNumber)}
+                    className={`py-2 rounded-lg font-bold text-sm transition-all active:scale-95 ${
+                      isSelected 
+                        ? 'bg-[#43b0f1] text-white shadow-md border-2 border-[#43b0f1]' 
+                        : 'bg-slate-50 text-[#1e3d58] hover:bg-[#e8eef1] border-2 border-transparent'
+                    }`}
+                  >
+                    {month}
+                  </button>
+                );
+              })}
+            </div>
+
+            <Button 
+              onClick={handleConfirmMonth}
+              className="w-full h-12 text-base font-bold rounded-xl bg-[#1e3d58] hover:bg-[#2a5175] text-white transition-all active:scale-95 shadow-lg"
+            >
+              Confirm
+            </Button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

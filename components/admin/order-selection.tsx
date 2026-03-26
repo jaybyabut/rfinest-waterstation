@@ -21,7 +21,7 @@ interface OrderSelectionProps {
 export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
     // FIX: Best practice para hindi nagre-render nang paulit-ulit
     const [supabase] = useState(() => createClient());
-    
+
     const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
     const [loadingList, setLoadingList] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -31,7 +31,7 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
     const fetchPendingOrders = useCallback(async () => {
         setLoadingList(true);
         setError(null);
-        
+
         try {
             const { data, error: fetchError } = await supabase
                 .from("orders")
@@ -59,12 +59,12 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
 
     useEffect(() => {
         fetchPendingOrders();
-    // FIX: Wala nang eslint-disable-next-line comment! Malinis na malinis na.
+        // FIX: Wala nang eslint-disable-next-line comment! Malinis na malinis na.
     }, [fetchPendingOrders]);
 
     const filteredOrders = pendingOrders.filter((order) => {
         const query = searchQuery.toLowerCase();
-        const shortId = order.order_id?.toString().substring(0,8).toLowerCase() || "";
+        const shortId = order.order_id?.toString().substring(0, 8).toLowerCase() || "";
         const name = (order.name || "").toLowerCase();
         return shortId.includes(query) || name.includes(query);
     });
@@ -107,13 +107,13 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
                     </div>
                 ) : (
                     filteredOrders.map((order) => {
-                        const shortId = order.order_id?.toString().substring(0,8).toUpperCase();
+                        const shortId = order.order_id?.toString().substring(0, 8).toUpperCase();
                         const locData = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
                         const locName = locData?.location_name || order.transaction_type || "N/A";
-                        
+
                         return (
-                            <button 
-                                key={order.order_id} 
+                            <button
+                                key={order.order_id}
                                 onClick={() => onSelectOrder(order.order_id)}
                                 className="w-full bg-[#f8fbfd] hover:bg-[#e8eef1] border-2 border-[#1e3d58]/10 hover:border-[#43b0f1] transition-all rounded-[20px] p-4 text-left group"
                             >
