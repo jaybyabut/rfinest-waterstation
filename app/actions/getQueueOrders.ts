@@ -11,6 +11,7 @@ export async function getQueueOrders() {
             order_id,
             order_dt,
             name,
+            address,
             total_amount,
             transaction_type,
             current_status,

@@ -9,7 +9,7 @@ import { getAllOrders } from "@/app/actions/getAllOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
 import { createClient } from "@/lib/supabase/client";
 
-const status_options = ["Pending", "Processing", "Refilled", "Out for Delivery", "Delivered", "Cancelled"];
+const status_options = ["Pending", "Pick-up", "Processing", "Refilled", "Out for Delivery", "Delivered", "Cancelled"];
 const FILTERS = ["All", ...status_options];
 
 interface OrderItem {
@@ -91,7 +91,7 @@ export default function OrderStatus() {
             const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
 
             let statusString = order.current_status || "Pending";
-            if (statusString === "Picked-up") statusString = "Processing";
+
 
             let receipt_url = undefined;
             if (order.proof_payment) {
@@ -166,7 +166,7 @@ export default function OrderStatus() {
     e.stopPropagation();
     if (order.status === "Cancelled") return;
     setStatusChangeOrder(order);
-    setNewStatus(order.status === "Pending" ? "Processing" : order.status);
+    setNewStatus(order.status === "Pending" ? "Pick-up" : order.status);
   };
 
   const confirmStatusChange = async () => {
@@ -201,6 +201,8 @@ export default function OrderStatus() {
     switch (status) {
       case "Pending":
         return "bg-gray-200 text-gray-700 border-gray-400";
+      case "Pick-up":
+        return "bg-amber-100 text-amber-700 border-amber-400";
       case "Processing":
         return "bg-orange-100 text-orange-700 border-orange-400";
       case "Refilled":

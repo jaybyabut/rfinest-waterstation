@@ -6,7 +6,8 @@ import { Bike, Droplets, MapPin, ShoppingBag } from "lucide-react";
 export interface QueueOrder {
   id: string;
   status: string;
-  location: string;
+  name: string;
+  address: string;
   qtySlim: number;
   qtyRound: number;
   notes: string;
@@ -18,23 +19,24 @@ export default function QueueCard({ order }: { order: QueueOrder }) {
   let icon = null;
   let statusLabel = "";
   let mainInstruction = "";
+  let subInstruction = "";
 
-  // Sinasalo na natin dito yung totoong status galing sa database
   const currentStatus = order.status.toUpperCase();
 
   switch (currentStatus) {
     case "PENDING":
-    case "PICKUP": // fallback
+    case "PICKUP":
       borderColor = "border-l-orange-500";
       textColor = "text-orange-600";
       icon = <ShoppingBag className="w-[4vh] h-[4vh]" strokeWidth={2.5} />;
-      statusLabel = "PICKUP";
-      mainInstruction = `Pickup at: ${order.location}`;
+      statusLabel = "PICK-UP";
+      mainInstruction = order.address;
+      subInstruction = order.name;
       break;
 
+    case "REFILL":
     case "PROCESSING":
     case "REFILLED":
-    case "REFILL": // fallback
       borderColor = "border-l-blue-500";
       textColor = "text-blue-600";
       icon = <Droplets className="w-[4vh] h-[4vh]" strokeWidth={2.5} />;
@@ -44,25 +46,27 @@ export default function QueueCard({ order }: { order: QueueOrder }) {
       if (order.qtySlim > 0) itemsArr.push(`${order.qtySlim} SLIM`);
       if (order.qtyRound > 0) itemsArr.push(`${order.qtyRound} ROUND`);
       
-      mainInstruction = itemsArr.length > 0 ? `Refill: ${itemsArr.join(" | ")}` : "Refill: Containers";
+      mainInstruction = itemsArr.length > 0 ? itemsArr.join(" | ") : "Containers";
+      subInstruction = order.name; // Keep name as secondary for refill
       break;
 
+    case "DELIVER":
     case "OUT FOR DELIVERY":
-    case "DELIVER": // fallback
       borderColor = "border-l-green-500";
       textColor = "text-green-600";
       icon = <MapPin className="w-[4vh] h-[4vh]" strokeWidth={2.5} />;
       statusLabel = "DELIVER";
-      mainInstruction = `Deliver to: ${order.location}`;
+      mainInstruction = order.address;
+      subInstruction = order.name;
       break;
       
     default:
-      // Fallback kung may bagong status na idagdag ang backend na hindi natin alam
       borderColor = "border-l-slate-500";
       textColor = "text-slate-600";
       icon = <Bike className="w-[4vh] h-[4vh]" strokeWidth={2.5} />;
       statusLabel = currentStatus;
-      mainInstruction = order.location;
+      mainInstruction = order.name;
+      subInstruction = order.address;
       break;
   }
 
@@ -78,12 +82,20 @@ export default function QueueCard({ order }: { order: QueueOrder }) {
       </div>
 
       {/* MAIN CONTENT COLUMN */}
-      <div className="flex-1 flex flex-col justify-center py-[0.5vh] pr-[3vw]">
-        <p className="text-[3.6vh] 2xl:text-[4.2vh] font-black text-slate-800 tracking-tight uppercase leading-tight line-clamp-2 w-full">
+      <div className="flex-1 flex flex-col justify-center py-[0.5vh] pr-[3vw] min-w-0">
+        <p className="text-[3.6vh] 2xl:text-[4.2vh] font-black text-slate-800 tracking-tight uppercase leading-tight line-clamp-1 w-full">
           {mainInstruction}
         </p>
+        
+        {subInstruction && (
+          <div className="flex items-center gap-[0.5vw] mt-[0.5vh] w-full">
+             <span className="text-[2vh] font-bold text-slate-500 uppercase tracking-tight truncate w-full leading-none">
+              {subInstruction}
+            </span>
+          </div>
+        )}
    
-        {currentStatus === "OUT FOR DELIVERY" && order.notes && (
+        {(currentStatus === "OUT FOR DELIVERY" || currentStatus === "DELIVER") && order.notes && (
           <div className="flex items-center gap-[1vw] mt-[1vh] w-full">
             <span className="bg-slate-100 px-[1vw] py-[0.5vh] rounded-md font-bold text-slate-500 text-[1.5vh] tracking-wider shrink-0 leading-none">
               NOTE

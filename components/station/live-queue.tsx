@@ -16,7 +16,9 @@ interface OrderItemRecord {
 interface RawOrderRecord {
   order_id: string;
   transaction_type: string;
-  current_status?: string; // BACKEND TODO: Backend needs to pass the status here (e.g., "PICKUP", "REFILL", "DELIVER")
+  current_status: string;
+  name: string;
+  address: string | null;
   location_pricing?: { location_name: string } | null;
   note?: string | null;
   order_items?: OrderItemRecord[] | null;
@@ -116,7 +118,7 @@ export default function LiveQueueDisplay() {
     let qtyRound = 0;
 
     order.order_items?.forEach((item) => {
-      const productName = (item.products?.product_name || "").toLowerCase();
+      const productName = (Array.isArray(item.products) ? item.products[0]?.product_name : item.products?.product_name || "").toLowerCase();
       if (productName.includes("slim")) {
         qtySlim += item.quantity;
       } else if (productName.includes("round")) {
@@ -124,27 +126,28 @@ export default function LiveQueueDisplay() {
       }
     });
 
-    // BACKEND TODO: Ensure the query returns 'current_status' so it maps correctly to the cards
-    let status = order.current_status?.toUpperCase() || "";
-    if (!status) {
-      // Fallback logic if current_status is not yet provided by backend
-      status = order.transaction_type === "Walk-in" ? "REFILL" : "DELIVER";
-    }
+    let status = (order.current_status || "Pending").toUpperCase();
+    
+    // BACKEND SYNC: Map based on user's simplified labels
+    if (status === "OUT FOR DELIVERY") status = "DELIVER";
+    if (status === "PROCESSING") status = "REFILL";
+    if (status === "PICK-UP") status = "PICKUP";
 
-    const locName = order.location_pricing?.location_name || order.transaction_type || "N/A";
+    const locName = order.location_pricing?.location_name || "";
+    const fullAddress = [order.address, locName].filter(Boolean).join(" | ");
 
     const rawId = order.order_id?.toString() || "";
     const idParts = rawId.split('-');
     
-    // BACKEND TODO: Extracting the actual ID hash. Adjust if DB UUID format changes.
     const displayId = idParts.length > 1 
-      ? idParts[1].substring(0, 8).toUpperCase() 
+      ? idParts[0].substring(0, 8).toUpperCase() 
       : rawId.substring(0, 8).toUpperCase();
 
     return {
       id: displayId,
       status: status,
-      location: order.transaction_type === "Walk-in" ? "Walk-in" : locName,
+      name: order.name,
+      address: fullAddress || "No Address Provided",
       qtySlim,
       qtyRound,
       notes: order.note || ""
