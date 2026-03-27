@@ -16,6 +16,7 @@ interface OrderItemRecord {
 interface RawOrderRecord {
   order_id: string;
   transaction_type: string;
+  current_status?: string; // BACKEND TODO: Backend needs to pass the status here (e.g., "PICKUP", "REFILL", "DELIVER")
   location_pricing?: { location_name: string } | null;
   note?: string | null;
   order_items?: OrderItemRecord[] | null;
@@ -123,14 +124,22 @@ export default function LiveQueueDisplay() {
       }
     });
 
-    const status = order.transaction_type === "Walk-in" ? "REFILL" : "DELIVER";
+    // BACKEND TODO: Ensure the query returns 'current_status' so it maps correctly to the cards
+    let status = order.current_status?.toUpperCase() || "";
+    if (!status) {
+      // Fallback logic if current_status is not yet provided by backend
+      status = order.transaction_type === "Walk-in" ? "REFILL" : "DELIVER";
+    }
+
     const locName = order.location_pricing?.location_name || order.transaction_type || "N/A";
 
     const rawId = order.order_id?.toString() || "";
     const idParts = rawId.split('-');
-    const displayId = idParts.length > 0 
-      ? `ORD-${idParts[0].toUpperCase()}`
-      : `ORD-${rawId.substring(0, 8).toUpperCase()}`;
+    
+    // BACKEND TODO: Extracting the actual ID hash. Adjust if DB UUID format changes.
+    const displayId = idParts.length > 1 
+      ? idParts[1].substring(0, 8).toUpperCase() 
+      : rawId.substring(0, 8).toUpperCase();
 
     return {
       id: displayId,
