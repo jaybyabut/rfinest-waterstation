@@ -1,14 +1,12 @@
 'use server'
-import { createClient } from "../../lib/supabase/server"
+import { ensureAuthenticated } from "../../lib/supabase/server"
 import { logActivity } from "./logActivity";
 
 export async function updateCustomerPassword(oldPassword: string, newPassword: string) {
-    const supabase = await createClient();
+    const { supabase, user } = await ensureAuthenticated();
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (userError || !user?.email) {
-        return { success: false, error: "Unauthorized or missing email address." };
+    if (!user.email) {
+        return { success: false, error: "Missing email address." };
     }
 
     const { error: signInError } = await supabase.auth.signInWithPassword({

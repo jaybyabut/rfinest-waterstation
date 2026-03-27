@@ -5,25 +5,11 @@ import Link from "next/link";
 import { ChevronLeft, Minus, Plus, RefreshCw, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { createClient } from "@/lib/supabase/client";
+import { getOrderForEdit } from "@/app/actions/getOrderForEdit";
+import { saveOrderEdit } from "@/app/actions/saveOrderEdit";
 import OrderSelection from "./order-selection";
 
-interface ProductRecord {
-    id?: string;
-    product_id?: string;
-    product_name: string;
-}
-
-interface OrderItemRecord {
-    product_id: string;
-    quantity: number;
-    subtotal: number;
-    products?: ProductRecord[] | ProductRecord | null;
-}
-
 export default function EditOrderForm() {
-    const supabase = createClient();
-
     const [viewState, setViewState] = useState<"selection" | "editing">("selection");
 
     const [selectedOrderId, setSelectedOrderId] = useState("");
@@ -54,8 +40,8 @@ export default function EditOrderForm() {
         return () => window.removeEventListener("scroll", handleWindowScroll);
     }, []);
 
-    const loadOrderDetails = async (selectedOrderId: string) => {
-        setSelectedOrderId(selectedOrderId);
+    const loadOrderDetails = async (id: string) => {
+        setSelectedOrderId(id);
         setGlobalError(null);
         setSuccessMessage(null);
         setErrors({});
@@ -63,49 +49,22 @@ export default function EditOrderForm() {
         setLoadingSave(true);
 
         try {
-            const { data, error } = await supabase
-                .from("orders")
-                .select(`
-                    *,
-                    location_pricing ( location_name, location_price ),
-                    order_items (
-                        product_id, quantity, subtotal,
-                        products ( product_name )
-                    )
-                `)
-                .eq("order_id", selectedOrderId)
-                .single();
+            const result = await getOrderForEdit(id);
 
-            if (error || !data) {
-                setGlobalError("Order not found. Please try again.");
+            if ('error' in result) {
+                setGlobalError(result.error || "Order not found.");
                 setViewState("selection");
                 return;
             }
 
-            let fetchedSlimCount = 0;
-            let fetchedRoundCount = 0;
-
-            data?.order_items?.forEach((item: OrderItemRecord) => {
-                const productData = Array.isArray(item.products) ? item.products[0] : item.products;
-                const productName = productData?.product_name?.toLowerCase() || "";
-                if (productName.includes("slim")) {
-                    fetchedSlimCount = item.quantity || 0;
-                } else if (productName.includes("round")) {
-                    fetchedRoundCount = item.quantity || 0;
-                }
-            });
-
-            setOrderId(`ORD-${selectedOrderId.substring(0, 8).toUpperCase()}`);
-            setCustomerName(data.name || "N/A");
-            setContactNumber(data.number || "N/A");
-
-            const locData = Array.isArray(data.location_pricing) ? data.location_pricing[0] : data.location_pricing;
-            setCustomerZone(locData?.location_name || "N/A");
-            setPricePerUnit(locData?.location_price || 0);
-
-            setSlimCount(fetchedSlimCount || 0);
-            setRoundCount(fetchedRoundCount || 0);
-
+            const { order } = result;
+            setOrderId(order.displayId);
+            setCustomerName(order.customerName);
+            setContactNumber(order.contactNumber);
+            setCustomerZone(order.zone);
+            setPricePerUnit(order.pricePerUnit);
+            setSlimCount(order.slimCount);
+            setRoundCount(order.roundCount);
         } catch (e) {
             console.error(e);
             setGlobalError("Failed to fetch order details.");
@@ -140,62 +99,23 @@ export default function EditOrderForm() {
         setGlobalError(null);
 
         try {
-            const { error: orderError } = await supabase
-                .from("orders")
-                .update({ total_amount: newTotal })
-                .eq("order_id", selectedOrderId)
-                .eq("current_status", "Pending");
+            const result = await saveOrderEdit({
+                orderId: selectedOrderId,
+                slimCount,
+                roundCount,
+                pricePerUnit,
+            });
 
-            if (orderError) throw orderError;
-
-            const { data: allProducts, error: productsError } = await supabase.from("products").select("*");
-            if (productsError) throw productsError;
-
-            const slimProduct = allProducts?.find((p: ProductRecord) => p.product_name?.toLowerCase().includes("slim"));
-            const roundProduct = allProducts?.find((p: ProductRecord) => p.product_name?.toLowerCase().includes("round"));
-
-            const slimProductId = slimProduct?.product_id || slimProduct?.id;
-            const roundProductId = roundProduct?.product_id || roundProduct?.id;
-
-            const { data: currentItems, error: itemsFetchError } = await supabase
-                .from("order_items")
-                .select("product_id")
-                .eq("order_id", selectedOrderId);
-
-            if (itemsFetchError) throw itemsFetchError;
-
-            const existingProductIds = currentItems?.map(item => item.product_id) || [];
-
-            const saveItem = async (productId: string | undefined, quantity: number) => {
-                if (!productId) return;
-                const itemExists = existingProductIds.includes(productId);
-
-                if (itemExists && quantity === 0) {
-                    const { error } = await supabase.from("order_items").delete()
-                        .eq("order_id", selectedOrderId).eq("product_id", productId);
-                    if (error) throw error;
-                } else if (itemExists && quantity > 0) {
-                    const { error } = await supabase.from("order_items").update({
-                        quantity: quantity, unit_price: pricePerUnit, subtotal: quantity * pricePerUnit
-                    }).eq("order_id", selectedOrderId).eq("product_id", productId);
-                    if (error) throw error;
-                } else if (!itemExists && quantity > 0) {
-                    const { error } = await supabase.from("order_items").insert({
-                        order_id: selectedOrderId, product_id: productId, quantity: quantity, unit_price: pricePerUnit, subtotal: quantity * pricePerUnit
-                    });
-                    if (error) throw error;
-                }
-            };
-
-            await saveItem(slimProductId, slimCount);
-            await saveItem(roundProductId, roundCount);
-
-            setSuccessMessage("Order updated successfully!");
-            setErrors({});
-            setTimeout(() => {
-                setSuccessMessage(null);
-                setViewState("selection");
-            }, 3000);
+            if ('error' in result) {
+                setGlobalError(result.error || "Failed to update order.");
+            } else {
+                setSuccessMessage("Order updated successfully!");
+                setErrors({});
+                setTimeout(() => {
+                    setSuccessMessage(null);
+                    setViewState("selection");
+                }, 3000);
+            }
         } catch (e) {
             console.error("An error occurred", e);
             setGlobalError("An unexpected error occurred while updating the order.");

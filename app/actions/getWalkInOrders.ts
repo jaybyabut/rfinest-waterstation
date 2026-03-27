@@ -1,8 +1,8 @@
 'use server'
-import { createClient } from "../../lib/supabase/server"
+import { ensureRole } from "../../lib/supabase/server"
 
 export async function getWalkInOrders() {
-    const supabase = await createClient();
+    const { supabase } = await ensureRole(['employee', 'admin']);
 
     const { data, error } = await supabase
         .from('orders')
