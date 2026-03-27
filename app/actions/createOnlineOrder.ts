@@ -1,10 +1,11 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureAuthenticated } from "@/lib/supabase/server"
 import { logActivity } from "./logActivity";
 
 export async function createOnlineOrder(formData: FormData) {
-    const supabase = await createClient();
-    
+    const { supabase, user } = await ensureAuthenticated();
+    const userId = user.id;
+
     // Extract order info from FormData
     const slimCount = parseInt(formData.get('slimCount') as string) || 0;
     const roundCount = parseInt(formData.get('roundCount') as string) || 0;
@@ -15,9 +16,6 @@ export async function createOnlineOrder(formData: FormData) {
     // Get receipt file
     const receipt = formData.get('receipt') as File | null;
     let proof_payment_url = null;
-
-    const user = await supabase.auth.getClaims();
-    const userId = user.data?.claims.sub;
 
     const { data: userDetails, error: userError } = await supabase
         .from('users')

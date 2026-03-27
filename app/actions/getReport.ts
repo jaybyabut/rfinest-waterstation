@@ -1,9 +1,8 @@
 'use server'
-
-import { createClient } from "@/lib/supabase/server";
+import { ensureRole } from "@/lib/supabase/server"
 
 export async function getAnalyticsData(selectedMonth: string) {
-    const supabase = await createClient();
+    const { supabase } = await ensureRole(['admin']);
 
     const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: 'Asia/Manila',

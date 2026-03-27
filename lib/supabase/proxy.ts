@@ -67,15 +67,35 @@ export async function updateSession(request: NextRequest) {
       request.nextUrl.pathname.startsWith("/auth"))
   ) {
     const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-    const role = supabaseUser?.app_metadata?.role;
+    const role = supabaseUser?.app_metadata?.role || supabaseUser?.user_metadata?.role;
 
     const url = request.nextUrl.clone();
-    if (role === "employee") {
+    if (role === "admin") {
       url.pathname = "/dashboard";
+    } else if (role === "employee") {
+      url.pathname = "/tablet";
+    } else if (role === "station") {
+      url.pathname = "/queueDisplay";
     } else {
       url.pathname = "/home";
     }
     return NextResponse.redirect(url);
+  }
+
+  // Route protection for specific dashboards
+  if (user) {
+    const role = (user as any).role || (user as any).user_role; // check both for safety
+    const path = request.nextUrl.pathname;
+
+    if (path.startsWith("/dashboard") && role !== "admin") {
+      return NextResponse.redirect(new URL("/home", request.url));
+    }
+    if (path.startsWith("/tablet") && role !== "employee" && role !== "admin") {
+      return NextResponse.redirect(new URL("/home", request.url));
+    }
+    if (path.startsWith("/queueDisplay") && role !== "station" && role !== "admin") {
+      return NextResponse.redirect(new URL("/home", request.url));
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

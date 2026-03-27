@@ -30,8 +30,14 @@ export default function LoginForm({
         password,
       });
       if (error) throw error;
-      if (data.user.app_metadata.role === "employee") {
-      router.push("/dashboard");
+      const role = data.user.app_metadata.role || data.user.user_metadata.role;
+
+      if (role === "admin") {
+        router.push("/dashboard");
+      } else if (role === "employee") {
+        router.push("/tablet");
+      } else if (role === "station") {
+        router.push("/queueDisplay");
       } else {
         router.push("/home");
       }

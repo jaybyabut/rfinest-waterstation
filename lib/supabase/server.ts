@@ -32,3 +32,24 @@ export async function createClient() {
     },
   );
 }
+export async function ensureAuthenticated() {
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) {
+    throw new Error("Unauthorized: Please log in.");
+  }
+  return { supabase, user };
+}
+
+export async function ensureRole(allowedRoles: string[]) {
+  const { supabase, user } = await ensureAuthenticated();
+  const role = user.app_metadata?.role || 
+               user.app_metadata?.user_role || 
+               user.user_metadata?.role || 
+               user.user_metadata?.user_role;
+
+  if (!role || !allowedRoles.includes(role)) {
+    throw new Error(`Unauthorized: Role '${role || 'None'}' not permitted.`);
+  }
+  return { supabase, user, role };
+}
