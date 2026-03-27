@@ -1,16 +1,11 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureAuthenticated } from "../../lib/supabase/server"
 
 export async function getUserId() {
-    const supabase = await createClient();
-    const {
-        data: { user },
-        error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError) {
-        console.error("Error fetching user:", authError.message);
+    try {
+        const { user } = await ensureAuthenticated();
+        return user.id;
+    } catch {
         return null;
     }
-    return user?.id;
 }

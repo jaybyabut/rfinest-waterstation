@@ -1,16 +1,8 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureAuthenticated } from "../../lib/supabase/server"
 
 export async function logActivity(activity: string) {
-    const supabase = await createClient();
-    
-    // Get the current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-        console.error("Error getting user for activity log:", authError);
-        return { success: false, error: "Unauthorized" };
-    }
+    const { supabase, user } = await ensureAuthenticated();
 
     // Get the user's name from the users table
     const { data: userData, error: userError } = await supabase

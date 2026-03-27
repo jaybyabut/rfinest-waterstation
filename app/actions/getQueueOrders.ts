@@ -1,8 +1,8 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureRole } from "../../lib/supabase/server"
 
 export async function getQueueOrders() {
-    const supabase = await createClient();
+    const { supabase } = await ensureRole(['station', 'admin']);
 
     // Fetch orders that are not 'Delivered' and not 'Cancelled'
     const { data, error } = await supabase
@@ -11,6 +11,7 @@ export async function getQueueOrders() {
             order_id,
             order_dt,
             name,
+            address,
             total_amount,
             transaction_type,
             current_status,

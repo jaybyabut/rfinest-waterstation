@@ -1,8 +1,8 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureRole } from "../../lib/supabase/server"
 
 export async function getOrderHistory(filter: string, customStartDate?: string, customEndDate?: string) {
-    const supabase = await createClient();
+    const { supabase } = await ensureRole(['admin']);
 
     let query = supabase
         .from('orders')

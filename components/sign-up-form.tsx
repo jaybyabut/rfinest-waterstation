@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react"; // DINAGDAG: Import icons
 
 export default function SignUpForm({
   className,
@@ -23,6 +24,10 @@ export default function SignUpForm({
   const [barangay, setBarangay] = useState("");
   const [isConfirmed, setIsConfirmed] = useState(false); 
   
+  // DINAGDAG: States for showing passwords
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
+
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -239,27 +244,57 @@ export default function SignUpForm({
               {errors.barangay && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.barangay}</p>}
             </div>
 
+            {/* FIRST PASSWORD INPUT */}
             <div>
               <label className="block text-xl font-bold text-[#1e3d58] mb-1 ml-2">Create Password:</label>
-              <input
-                type="password"
-                placeholder="Min. 8 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.password ? 'border-red-500' : 'border-[#1e3d58]'}`}
-              />
+              <div className="relative w-full">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Min. 8 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all ${errors.password ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff size={24} strokeWidth={2.5} />
+                  ) : (
+                    <Eye size={24} strokeWidth={2.5} />
+                  )}
+                </button>
+              </div>
               {errors.password && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.password}</p>}
             </div>
 
+            {/* SECOND PASSWORD INPUT (REPEAT) */}
             <div>
               <label className="block text-xl font-bold text-[#1e3d58] mb-1 ml-2">Confirm Password:</label>
-              <input
-                type="password"
-                placeholder="Re-enter password"
-                value={repeatPassword}
-                onChange={(e) => setRepeatPassword(e.target.value)}
-                className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.repeatPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
-              />
+              <div className="relative w-full">
+                <input
+                  type={showRepeatPassword ? "text" : "password"}
+                  placeholder="Re-enter password"
+                  value={repeatPassword}
+                  onChange={(e) => setRepeatPassword(e.target.value)}
+                  className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all ${errors.repeatPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowRepeatPassword(!showRepeatPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                  title={showRepeatPassword ? "Hide password" : "Show password"}
+                >
+                  {showRepeatPassword ? (
+                    <EyeOff size={24} strokeWidth={2.5} />
+                  ) : (
+                    <Eye size={24} strokeWidth={2.5} />
+                  )}
+                </button>
+              </div>
               {errors.repeatPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.repeatPassword}</p>}
             </div>
 

@@ -16,6 +16,9 @@ interface OrderItemRecord {
 interface RawOrderRecord {
   order_id: string;
   transaction_type: string;
+  current_status: string;
+  name: string;
+  address: string | null;
   location_pricing?: { location_name: string } | null;
   note?: string | null;
   order_items?: OrderItemRecord[] | null;
@@ -115,7 +118,7 @@ export default function LiveQueueDisplay() {
     let qtyRound = 0;
 
     order.order_items?.forEach((item) => {
-      const productName = (item.products?.product_name || "").toLowerCase();
+      const productName = (Array.isArray(item.products) ? item.products[0]?.product_name : item.products?.product_name || "").toLowerCase();
       if (productName.includes("slim")) {
         qtySlim += item.quantity;
       } else if (productName.includes("round")) {
@@ -123,19 +126,28 @@ export default function LiveQueueDisplay() {
       }
     });
 
-    const status = order.transaction_type === "Walk-in" ? "REFILL" : "DELIVER";
-    const locName = order.location_pricing?.location_name || order.transaction_type || "N/A";
+    let status = (order.current_status || "Pending").toUpperCase();
+    
+    // BACKEND SYNC: Map based on user's simplified labels
+    if (status === "OUT FOR DELIVERY") status = "DELIVER";
+    if (status === "PROCESSING") status = "REFILL";
+    if (status === "PICK-UP") status = "PICKUP";
+
+    const locName = order.location_pricing?.location_name || "";
+    const fullAddress = [order.address, locName].filter(Boolean).join(" | ");
 
     const rawId = order.order_id?.toString() || "";
     const idParts = rawId.split('-');
+    
     const displayId = idParts.length > 1 
-      ? idParts[1].substring(0, 8).toUpperCase() 
+      ? idParts[0].substring(0, 8).toUpperCase() 
       : rawId.substring(0, 8).toUpperCase();
 
     return {
       id: displayId,
       status: status,
-      location: order.transaction_type === "Walk-in" ? "Walk-in" : locName,
+      name: order.name,
+      address: fullAddress || "No Address Provided",
       qtySlim,
       qtyRound,
       notes: order.note || ""

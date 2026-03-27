@@ -19,6 +19,7 @@ import {
 import { getWalkInOrders } from "@/app/actions/getWalkInOrders";
 import { getOnlineOrders } from "@/app/actions/getOnlineOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
+import { getActivityLogs } from "@/app/actions/getActivityLogs";
 import { createClient } from "@/lib/supabase/client";
 
 type OrderItem = { type: string; quantity: number };
@@ -29,7 +30,8 @@ type OnlineOrder = {
   id: string;
   items: OrderItem[];
   status: string;
-  location: string;
+  name: string;
+  address: string;
   notes?: string;
   payment_method: 'cash' | 'ebank' | string;
   receipt_url?: string;
@@ -106,7 +108,8 @@ export default function EmployeeTablet() {
             return {
               id: o.order_id.toString(),
               status: o.current_status.toLowerCase(),
-              location: o.address || o.name,
+              name: o.name,
+              address: o.address,
               notes: o.note,
               payment_method: o.payment_mode,
               receipt_url: receipt_url,
@@ -159,7 +162,8 @@ export default function EmployeeTablet() {
     if (!currentOrder) return;
 
     let nextStatus = '';
-    if (currentOrder.status === 'pending') nextStatus = 'Processing';
+    if (currentOrder.status === 'pending') nextStatus = 'Pick-up';
+    else if (currentOrder.status === 'pick-up') nextStatus = 'Processing';
     else if (currentOrder.status === 'processing') nextStatus = 'Refilled';
     else if (currentOrder.status === 'refilled') nextStatus = 'Out for Delivery';
     else if (currentOrder.status === 'out for delivery') nextStatus = 'Delivered';
@@ -180,14 +184,17 @@ export default function EmployeeTablet() {
     setLoadingLogs(true);
     setLogError(null);
     try {
-      // TODO: BACKEND - Fetch logs specifically for this tablet/employee for TODAY
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      const dummyLogs: EmployeeLog[] = [
-        { id: "LOG-1", timestamp: new Date().toISOString(), action: "Marked as Delivered", details: "Order ORD-9918 has been delivered to customer." },
-        { id: "LOG-2", timestamp: new Date(Date.now() - 1800000).toISOString(), action: "Updated Status", details: "Order ORD-9919 marked as 'Out for Delivery'." },
-        { id: "LOG-3", timestamp: new Date(Date.now() - 3600000).toISOString(), action: "Order Refilled", details: "Completed refill for 5 Round Containers (ORD-9920)." },
-      ];
-      setLogs(dummyLogs);
+      const result = await getActivityLogs();
+      if (result && 'logs' in result && Array.isArray(result.logs)) {
+        setLogs(result.logs.map((log: any) => ({
+          id: log.log_id.toString(),
+          timestamp: log.created_at,
+          action: log.activity,
+          details: `Performed by ${log.user_name || 'Staff'}`
+        })));
+      } else {
+        setLogError("Failed to load your history data.");
+      }
     } catch (error) {
       console.error(error);
       setLogError("Failed to load your history.");
@@ -359,20 +366,24 @@ export default function EmployeeTablet() {
                         'text-purple-600'
                     }`}>
                     {order.status === 'pending' && <ShoppingBag className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
-                    {['processing', 'refilled'].includes(order.status) && <Droplets className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
+                    {['pick-up', 'processing', 'refilled'].includes(order.status) && <Droplets className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
                     {order.status === 'out for delivery' && <Bike className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
                     <span className="font-bold text-sm md:text-xl uppercase tracking-widest mt-2 text-center leading-none">
                       {order.status === 'pending' && 'PENDING'}
+                      {order.status === 'pick-up' && 'PICK-UP'}
                       {order.status === 'processing' && 'QUEUED'}
                       {order.status === 'refilled' && 'REFILLED'}
                       {order.status === 'out for delivery' && 'DELIVERY'}
                     </span>
                   </div>
 
-                  {/* MIDDLE COLUMN: LOCATION & ITEMS (No Truncation) */}
+                  {/* MIDDLE COLUMN: NAME, ADDRESS & ITEMS */}
                   <div className="flex-1 flex flex-col justify-center py-2">
-                    <p className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight uppercase leading-tight mb-4 break-words whitespace-normal w-full">
-                      {order.location}
+                    <p className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight uppercase leading-tight mb-1 break-words whitespace-normal w-full">
+                      {order.name}
+                    </p>
+                    <p className="text-lg md:text-2xl font-bold text-slate-500 uppercase italic mb-4 break-words whitespace-normal w-full">
+                      {order.address}
                     </p>
                     <div className="flex flex-wrap gap-4 md:gap-8 mb-2 w-full">
                       {order.items.map((item, idx) => (
@@ -423,12 +434,14 @@ export default function EmployeeTablet() {
                         <button
                           onClick={() => setConfirmingId(order.id)}
                           className={`w-full px-6 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-2xl shadow-lg transition-all text-white active:scale-95 text-center ${order.status === 'pending' ? 'bg-orange-500' :
+                             order.status === 'pick-up' ? 'bg-amber-600' :
                             order.status === 'processing' ? 'bg-sky-600' :
                               order.status === 'refilled' ? 'bg-blue-600' :
                                 'bg-purple-600'
                             }`}
                         >
-                          {order.status === 'pending' && "MARK PROCESSING"}
+                          {order.status === 'pending' && "MARK FOR PICK-UP"}
+                          {order.status === 'pick-up' && "MARK PROCESSING"}
                           {order.status === 'processing' && "MARK REFILLED"}
                           {order.status === 'refilled' && "MARK FOR DELIVERY"}
                           {order.status === 'out for delivery' && "MARK DELIVERED"}
@@ -447,6 +460,7 @@ export default function EmployeeTablet() {
           )
         )}
       </div>
+
 
       {/* HISTORY SIDEBAR & BACKDROP */}
       {isHistoryOpen && (

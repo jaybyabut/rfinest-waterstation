@@ -3,7 +3,7 @@ import { ensureAuthenticated } from "../../lib/supabase/server"
 import { logActivity } from "./logActivity";
 import { validatePasswordStrength } from "../../lib/validatePassword";
 
-export async function updateCustomerPassword(oldPassword: string, newPassword: string) {
+export async function updatePassword(oldPassword: string, newPassword: string) {
     const { supabase, user } = await ensureAuthenticated();
 
     if (!user.email) {

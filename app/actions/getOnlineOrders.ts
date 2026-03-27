@@ -1,8 +1,8 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureRole } from "../../lib/supabase/server"
 
 export async function getOnlineOrders() {
-    const supabase = await createClient();
+    const { supabase } = await ensureRole(['employee', 'admin']);
 
     const { data, error } = await supabase
         .from('orders')
@@ -25,7 +25,7 @@ export async function getOnlineOrders() {
             )
         `)
         .not('transaction_type', 'eq', 'Walk-in')
-        .in('current_status', ['Pending', 'Processing', 'Refilled', 'Out for Delivery'])
+        .in('current_status', ['Pending', 'Pick-up', 'Processing', 'Refilled', 'Out for Delivery'])
         .order('order_dt', { ascending: true });
 
     if (error) {

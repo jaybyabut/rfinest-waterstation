@@ -1,12 +1,9 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
-
-
+import { ensureAuthenticated } from "../../lib/supabase/server"
 
 export async function getCustomerAddy() {
-    const supabase = await createClient();
-    const user = await supabase.auth.getClaims();
-    const userId = user.data?.claims.sub;
+    const { supabase, user } = await ensureAuthenticated();
+    const userId = user.id;
 
 
 
