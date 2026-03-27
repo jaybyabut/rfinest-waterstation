@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react"; // DINAGDAG: Import icons
+import { Eye, EyeOff, Check, X as XIcon } from "lucide-react";
+import { getPasswordChecks, validatePasswordStrength } from "@/lib/validatePassword";
 
 export default function UpdatePasswordForm({
   className,
@@ -29,6 +30,13 @@ export default function UpdatePasswordForm({
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    const pwError = validatePasswordStrength(password);
+    if (pwError) {
+      setError(pwError);
       setIsLoading(false);
       return;
     }
@@ -90,6 +98,24 @@ export default function UpdatePasswordForm({
                   )}
                 </button>
               </div>
+              
+              {/* Password Strength Checklist */}
+              {password.length > 0 && (
+                <div className="mt-3 ml-2 space-y-1">
+                  {getPasswordChecks(password).map((check) => (
+                    <div key={check.label} className="flex items-center gap-2">
+                      {check.pass ? (
+                        <Check size={14} className="text-green-500 shrink-0" strokeWidth={3} />
+                      ) : (
+                        <XIcon size={14} className="text-red-400 shrink-0" strokeWidth={3} />
+                      )}
+                      <span className={`text-xs font-bold ${check.pass ? 'text-green-600' : 'text-gray-400'}`}>
+                        {check.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* CONFIRM PASSWORD FIELD */}

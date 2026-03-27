@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff } from "lucide-react"; // DINAGDAG: Eye, EyeOff
+import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff, Check, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
@@ -12,6 +12,7 @@ import { updateCustomerLocation } from "@/app/actions/updateCustomerLocation";
 import { updateCustomerPassword } from "@/app/actions/updateCustomerPassword";
 import { getLocations } from "@/app/actions/locations";
 import { createClient } from "@/lib/supabase/client";
+import { getPasswordChecks, validatePasswordStrength } from "@/lib/validatePassword";
 
 
 export default function CustomerAccount() {
@@ -109,8 +110,8 @@ export default function CustomerAccount() {
     if (view === "password") {
       if (!oldPassword) newErrors.oldPassword = "Old password is required.";
 
-      if (!newPassword) newErrors.newPassword = "New password is required.";
-      else if (newPassword.length < 8) newErrors.newPassword = "Must be at least 8 characters.";
+      const pwError = validatePasswordStrength(newPassword);
+      if (pwError) newErrors.newPassword = pwError;
 
       if (newPassword !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
     }
@@ -472,6 +473,24 @@ export default function CustomerAccount() {
                     </button>
                   </div>
                   {errors.newPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.newPassword}</p>}
+                  
+                  {/* Password Strength Checklist */}
+                  {newPassword.length > 0 && (
+                    <div className="mt-3 ml-2 space-y-1">
+                      {getPasswordChecks(newPassword).map((check) => (
+                        <div key={check.label} className="flex items-center gap-2">
+                          {check.pass ? (
+                            <Check size={14} className="text-green-500 shrink-0" strokeWidth={3} />
+                          ) : (
+                            <XIcon size={14} className="text-red-400 shrink-0" strokeWidth={3} />
+                          )}
+                          <span className={`text-xs font-bold ${check.pass ? 'text-green-600' : 'text-gray-400'}`}>
+                            {check.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* CONFIRM PASSWORD */}

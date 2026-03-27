@@ -1,12 +1,19 @@
 'use server'
 import { ensureAuthenticated } from "../../lib/supabase/server"
 import { logActivity } from "./logActivity";
+import { validatePasswordStrength } from "../../lib/validatePassword";
 
 export async function updateCustomerPassword(oldPassword: string, newPassword: string) {
     const { supabase, user } = await ensureAuthenticated();
 
     if (!user.email) {
         return { success: false, error: "Missing email address." };
+    }
+
+    // Server-side password strength validation
+    const passwordError = validatePasswordStrength(newPassword);
+    if (passwordError) {
+        return { success: false, error: passwordError };
     }
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
