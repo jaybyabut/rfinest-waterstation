@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react"; // DINAGDAG: Import icons
 
 export default function UpdatePasswordForm({
   className,
@@ -12,6 +13,11 @@ export default function UpdatePasswordForm({
 }: React.ComponentPropsWithoutRef<"div">) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState(""); 
+  
+  // DINAGDAG: States for showing passwords
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -56,34 +62,64 @@ export default function UpdatePasswordForm({
           </div>
 
           <form className="space-y-6" onSubmit={handleUpdatePassword}>
+            {/* NEW PASSWORD FIELD */}
             <div>
               <label className="block text-xl font-bold text-[#1e3d58] mb-2 ml-2">
                 New Password:
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                placeholder="New password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
-              />
+              <div className="relative w-full">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="New password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-14 pl-6 pr-14 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff size={24} strokeWidth={2.5} />
+                  ) : (
+                    <Eye size={24} strokeWidth={2.5} />
+                  )}
+                </button>
+              </div>
             </div>
 
+            {/* CONFIRM PASSWORD FIELD */}
             <div>
               <label className="block text-xl font-bold text-[#1e3d58] mb-2 ml-2">
                 Confirm Password:
               </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                required
-                placeholder="Confirm new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
-              />
+              <div className="relative w-full">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full h-14 pl-6 pr-14 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                  title={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={24} strokeWidth={2.5} />
+                  ) : (
+                    <Eye size={24} strokeWidth={2.5} />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (
