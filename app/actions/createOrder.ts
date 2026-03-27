@@ -13,6 +13,7 @@ interface OrderInfo {
     transaction_type: string;
     payment_mode: string;
     note?: string;
+    pricePerUnit?: number;
 }
 
 export async function createOrder(orderInfo: OrderInfo) {
