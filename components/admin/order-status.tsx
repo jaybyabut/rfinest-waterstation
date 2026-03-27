@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, Copy, Check, X, ArrowUp } from "lucide-react";
+import { ChevronLeft, Copy, Check, X, ArrowUp, Image as ImageIcon } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { Button } from "@/components/ui/button";
 import { getAllOrders } from "@/app/actions/getAllOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
+import { createClient } from "@/lib/supabase/client";
 
 const status_options = ["Pending", "Processing", "Refilled", "Out for Delivery", "Delivered", "Cancelled"];
 const FILTERS = ["All", ...status_options];
@@ -33,6 +34,8 @@ interface FetchedOrder {
     location_name: string;
   }[] | null;
   order_items: OrderItem[];
+  payment_mode?: string;
+  proof_payment?: string;
 }
 
 interface DisplayOrder {
@@ -46,6 +49,8 @@ interface DisplayOrder {
   status: string;
   date: string;
   transactionType: string;
+  paymentMode?: string;
+  receiptUrl?: string;
 }
 
 export default function OrderStatus() {
@@ -56,9 +61,11 @@ export default function OrderStatus() {
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
+      const supabase = createClient();
       try {
         setGlobalError(null);
         const result = await getAllOrders();
@@ -66,7 +73,7 @@ export default function OrderStatus() {
         if (result && !('error' in result)) {
           const fetchedOrders = result as FetchedOrder[];
 
-          const mappedOrders: DisplayOrder[] = fetchedOrders.map((order) => {
+          const mappedOrders: DisplayOrder[] = await Promise.all(fetchedOrders.map(async (order) => {
             let slim = 0;
             let round = 0;
 
@@ -86,6 +93,16 @@ export default function OrderStatus() {
             let statusString = order.current_status || "Pending";
             if (statusString === "Picked-up") statusString = "Processing";
 
+            let receipt_url = undefined;
+            if (order.proof_payment) {
+              const { data: signedUrlData, error } = await supabase.storage.from('proof_payment').createSignedUrl(order.proof_payment, 60 * 60 * 24);
+              if (signedUrlData) {
+                receipt_url = signedUrlData.signedUrl;
+              } else {
+                console.error("Failed to generate signed url:", error);
+              }
+            }
+
             return {
               id: `ORD-${order.order_id}`,
               rawId: order.order_id,
@@ -97,8 +114,10 @@ export default function OrderStatus() {
               status: statusString,
               date: new Date(order.order_dt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
               transactionType: order.transaction_type || "N/A",
+              paymentMode: order.payment_mode,
+              receiptUrl: receipt_url,
             };
-          });
+          }));
 
           setOrders(mappedOrders);
         } else {
@@ -292,8 +311,9 @@ export default function OrderStatus() {
                             {copiedId === order.id ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
                           </button>
                         </div>
-                        <p className="text-sm font-bold text-gray-500 break-words">
+                        <p className="text-sm font-bold text-gray-500 break-words flex items-center gap-2">
                           {order.name} • {order.zone}
+                          {order.receiptUrl && <ImageIcon size={14} className="text-[#43b0f1]" />}
                         </p>
                       </div>
                       <button
@@ -403,7 +423,44 @@ export default function OrderStatus() {
                     {selectedOrderDetails.status}
                   </button>
                 </div>
+                {selectedOrderDetails.paymentMode === 'E-Bank' && selectedOrderDetails.receiptUrl && (
+                  <div className="pt-4 mt-2 border-t border-gray-100 italic">
+                    <button
+                      onClick={() => setViewingReceipt(selectedOrderDetails.receiptUrl || null)}
+                      className="w-full flex items-center justify-center gap-2 bg-[#e8eef1] text-[#1e3d58] border-2 border-[#1e3d58]/20 hover:border-[#43b0f1] hover:text-[#43b0f1] px-4 py-3 rounded-2xl font-black text-lg transition-all active:scale-95"
+                    >
+                      <ImageIcon size={24} strokeWidth={2.5} /> VIEW RECEIPT
+                    </button>
+                  </div>
+                )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: VIEW RECEIPT */}
+      {viewingReceipt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in duration-300 p-4" onClick={() => setViewingReceipt(null)}>
+          <div className="relative w-full max-w-2xl bg-white rounded-[30px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-[#e8eef1]">
+              <h2 className="text-xl sm:text-2xl font-black text-[#1e3d58] tracking-tight flex items-center gap-2 uppercase">
+                <ImageIcon size={28} className="text-[#43b0f1]" /> Proof of Payment
+              </h2>
+              <button
+                onClick={() => setViewingReceipt(null)}
+                className="bg-red-500 text-white p-2 rounded-xl hover:bg-red-600 transition-colors active:scale-95"
+              >
+                <X size={24} strokeWidth={3} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 flex justify-center items-center bg-slate-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={viewingReceipt}
+                alt="Payment Receipt"
+                className="max-w-full max-h-[65vh] object-contain rounded-2xl shadow-sm border border-slate-200"
+              />
             </div>
           </div>
         </div>

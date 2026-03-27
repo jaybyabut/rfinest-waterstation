@@ -16,6 +16,8 @@ export async function getAllOrders() {
             location_pricing (
                 location_name
             ),
+            payment_mode,
+            proof_payment,
             order_items (
                 quantity,
                 products (
