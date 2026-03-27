@@ -128,9 +128,9 @@ export default function LiveQueueDisplay() {
 
     const rawId = order.order_id?.toString() || "";
     const idParts = rawId.split('-');
-    const displayId = idParts.length > 1 
-      ? idParts[1].substring(0, 8).toUpperCase() 
-      : rawId.substring(0, 8).toUpperCase();
+    const displayId = idParts.length > 0 
+      ? `ORD-${idParts[0].toUpperCase()}`
+      : `ORD-${rawId.substring(0, 8).toUpperCase()}`;
 
     return {
       id: displayId,

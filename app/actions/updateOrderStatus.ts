@@ -1,9 +1,9 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureRole } from "../../lib/supabase/server"
 import { logActivity } from "./logActivity";
 
 export async function updateOrderStatus(orderId: number, newStatus: string) {
-    const supabase = await createClient();
+    const { supabase } = await ensureRole(['admin', 'employee']);
 
     const { error } = await supabase
         .from('orders')

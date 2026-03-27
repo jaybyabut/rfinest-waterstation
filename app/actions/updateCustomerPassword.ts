@@ -1,5 +1,5 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "../../lib/supabase/server"
 import { logActivity } from "./logActivity";
 
 export async function updateCustomerPassword(oldPassword: string, newPassword: string) {

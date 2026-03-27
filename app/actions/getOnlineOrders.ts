@@ -1,5 +1,5 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "../../lib/supabase/server"
 
 export async function getOnlineOrders() {
     const supabase = await createClient();
