@@ -48,6 +48,8 @@ export async function ensureRole(allowedRoles: string[]) {
                user.user_metadata?.role || 
                user.user_metadata?.user_role;
 
+  if (role === 'admin') return { supabase, user, role };
+
   if (!role || !allowedRoles.includes(role)) {
     throw new Error(`Unauthorized: Role '${role || 'None'}' not permitted.`);
   }

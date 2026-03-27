@@ -84,16 +84,20 @@ export async function updateSession(request: NextRequest) {
 
   // Route protection for specific dashboards
   if (user) {
-    const role = (user as any).role || (user as any).user_role; // check both for safety
+    const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+    const role = supabaseUser?.app_metadata?.role || supabaseUser?.user_metadata?.role;
     const path = request.nextUrl.pathname;
+
+    // Admin is allowed to visit any endpoint
+    if (role === "admin") return supabaseResponse;
 
     if (path.startsWith("/dashboard") && role !== "admin") {
       return NextResponse.redirect(new URL("/home", request.url));
     }
-    if (path.startsWith("/tablet") && role !== "employee" && role !== "admin") {
+    if (path.startsWith("/tablet") && role !== "employee") {
       return NextResponse.redirect(new URL("/home", request.url));
     }
-    if (path.startsWith("/queueDisplay") && role !== "station" && role !== "admin") {
+    if (path.startsWith("/queueDisplay") && role !== "station") {
       return NextResponse.redirect(new URL("/home", request.url));
     }
   }
