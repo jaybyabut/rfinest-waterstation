@@ -1,9 +1,31 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureAuthenticated } from "@/lib/supabase/server"
 import { logActivity } from "./logActivity";
 
-export async function createOrder(orderInfo: any) {
-    const supabase = await createClient();
+interface OrderInfo {
+    slimCount: number;
+    roundCount: number;
+    locationId?: number;
+    selectedZone?: string;
+    name: string;
+    location: string;
+    mobileNumber: string;
+    transaction_type: string;
+    payment_mode: string;
+    note?: string;
+}
+
+export async function createOrder(orderInfo: OrderInfo) {
+    const { supabase } = await ensureAuthenticated();
+
+    // Validation: Prevent negative quantities or empty orders
+    if (orderInfo.slimCount < 0 || orderInfo.roundCount < 0) {
+        return { error: "Quantities cannot be negative." };
+    }
+    
+    if (orderInfo.slimCount === 0 && orderInfo.roundCount === 0) {
+        return { error: "Order must contain at least one item." };
+    }
 
     // get product details
     const { data: products, error: productError } = await supabase

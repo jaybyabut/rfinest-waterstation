@@ -17,6 +17,15 @@ export async function createOnlineOrder(formData: FormData) {
     const receipt = formData.get('receipt') as File | null;
     let proof_payment_url = null;
 
+    // Validation: Prevent negative quantities
+    if (slimCount < 0 || roundCount < 0) {
+        return { error: "Quantities cannot be negative." };
+    }
+    
+    if (slimCount === 0 && roundCount === 0) {
+        return { error: "Order must contain at least one item." };
+    }
+
     const { data: userDetails, error: userError } = await supabase
         .from('users')
         .select(`
@@ -43,10 +52,22 @@ export async function createOnlineOrder(formData: FormData) {
         : pricingData?.location_price;
     const locationId = userDetails?.location_id;
 
-    // Handle File Upload if E-Bank
+    // Handle File Upload if E-Bank with security validation
     if (paymentMethod === 'E-Bank' && receipt && receipt.size > 0) {
-        const fileExt = receipt.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
+        const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/heic'];
+        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+
+        if (!ALLOWED_TYPES.includes(receipt.type)) {
+            return { error: "Only PNG, JPG, and HEIC images are allowed for receipts." };
+        }
+
+        if (receipt.size > MAX_SIZE) {
+            return { error: "Receipt image too large. Max size is 5MB." };
+        }
+
+        // Safe extension extraction
+        const fileExt = receipt.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const fileName = `${crypto.randomUUID()}.${fileExt}`;
         const filePath = `receipts/${fileName}`;
 
         const { error: uploadError } = await supabase.storage

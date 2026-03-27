@@ -1,15 +1,10 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { ensureAuthenticated } from "@/lib/supabase/server"
 import { logActivity } from "./logActivity";
 
 export async function updateCustomerLocation(address: string, locationId: string) {
-    const supabase = await createClient();
-    const user = await supabase.auth.getClaims();
-    const userId = user.data?.claims.sub;
-
-    if (!userId) {
-        return { success: false, error: "Unauthorized" };
-    }
+    const { supabase, user } = await ensureAuthenticated();
+    const userId = user.id;
 
     const { error } = await supabase
         .from('users')

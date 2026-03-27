@@ -1,10 +1,10 @@
 'use server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, ensureRole } from '@/lib/supabase/server'
 import { logActivity } from './logActivity'
 
 export async function getLocations() {
     const supabase = await createClient()
-
+    
     const { data, error } = await supabase.from('location_pricing').select('location_id, location_name, location_price')
 
     if (error) {
@@ -15,7 +15,7 @@ export async function getLocations() {
 }
 
 export async function batchUpdatePrices(prices: { id: number, price: number }[]) {
-    const supabase = await createClient()
+    const { supabase } = await ensureRole(['admin'])
 
     for (const item of prices) {
         const { error } = await supabase
