@@ -29,7 +29,8 @@ type OnlineOrder = {
   id: string;
   items: OrderItem[];
   status: string;
-  location: string;
+  name: string;
+  address: string;
   notes?: string;
   payment_method: 'cash' | 'ebank' | string;
   receipt_url?: string;
@@ -106,7 +107,8 @@ export default function EmployeeTablet() {
             return {
               id: o.order_id.toString(),
               status: o.current_status.toLowerCase(),
-              location: o.address || o.name,
+              name: o.name,
+              address: o.address,
               notes: o.note,
               payment_method: o.payment_mode,
               receipt_url: receipt_url,
@@ -369,10 +371,13 @@ export default function EmployeeTablet() {
                     </span>
                   </div>
 
-                  {/* MIDDLE COLUMN: LOCATION & ITEMS (No Truncation) */}
+                  {/* MIDDLE COLUMN: NAME, ADDRESS & ITEMS */}
                   <div className="flex-1 flex flex-col justify-center py-2">
-                    <p className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight uppercase leading-tight mb-4 break-words whitespace-normal w-full">
-                      {order.location}
+                    <p className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight uppercase leading-tight mb-1 break-words whitespace-normal w-full">
+                      {order.name}
+                    </p>
+                    <p className="text-lg md:text-2xl font-bold text-slate-500 uppercase italic mb-4 break-words whitespace-normal w-full">
+                      {order.address}
                     </p>
                     <div className="flex flex-wrap gap-4 md:gap-8 mb-2 w-full">
                       {order.items.map((item, idx) => (
@@ -447,6 +452,7 @@ export default function EmployeeTablet() {
           )
         )}
       </div>
+
 
       {/* HISTORY SIDEBAR & BACKDROP */}
       {isHistoryOpen && (
