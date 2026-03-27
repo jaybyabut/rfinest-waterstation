@@ -1,8 +1,25 @@
 'use server'
 import { ensureAuthenticated } from "../../lib/supabase/server"
 
+/**
+ * Sanitizes a string for safe storage in activity logs.
+ * - Strips HTML tags
+ * - Removes control characters (newlines, tabs, null bytes, etc.)
+ * - Trims whitespace
+ * - Enforces a max length
+ */
+function sanitizeLogInput(input: string, maxLength = 500): string {
+    return input
+        .replace(/<[^>]*>/g, '')           // Strip HTML tags
+        .replace(/[\x00-\x1F\x7F]/g, ' ')  // Replace control chars with space
+        .trim()
+        .substring(0, maxLength);
+}
+
 export async function logActivity(activity: string) {
     const { supabase, user } = await ensureAuthenticated();
+
+    const safeActivity = sanitizeLogInput(activity);
 
     // Get the user's name from the users table
     const { data: userData, error: userError } = await supabase
@@ -11,14 +28,15 @@ export async function logActivity(activity: string) {
         .eq('user_id', user.id)
         .single();
 
-    const userName = userData ? `${userData.first_name} ${userData.last_name}` : user.email;
+    const rawName = userData ? `${userData.first_name} ${userData.last_name}` : user.email || 'Unknown';
+    const safeName = sanitizeLogInput(rawName, 100);
 
     const { error: logError } = await supabase
         .from('activity_log')
         .insert({
-            activity,
+            activity: safeActivity,
             user_id: user.id,
-            user_name: userName
+            user_name: safeName
         });
 
     if (logError) {
