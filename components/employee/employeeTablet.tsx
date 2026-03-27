@@ -1,7 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Package, X, Bike, ShoppingBag, Droplets, CheckCircle2, Maximize, Minimize, History, Clock, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { 
+  LayoutGrid, 
+  Package, 
+  X, 
+  Bike, 
+  ShoppingBag, 
+  Droplets, 
+  CheckCircle2, 
+  Maximize, 
+  Minimize, 
+  History, 
+  Clock, 
+  Image as ImageIcon, 
+  Loader2 
+} from 'lucide-react';
 import { getWalkInOrders } from "@/app/actions/getWalkInOrders";
 import { getOnlineOrders } from "@/app/actions/getOnlineOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
@@ -28,7 +42,7 @@ interface EmployeeLog {
   details: string;
 }
 
-export default function SeniorFriendlyTablet() {
+export default function EmployeeTablet() {
   const [activeTab, setActiveTab] = useState<'walkin' | 'online'>('walkin');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -191,6 +205,7 @@ export default function SeniorFriendlyTablet() {
   return (
     <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 overflow-hidden font-sans relative">
 
+      {/* MODAL: VIEW RECEIPT - PERFECTLY CENTERED */}
       {viewingReceipt && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in zoom-in duration-300 p-4 md:p-12">
           <div className="relative w-full max-w-2xl bg-white rounded-[30px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -217,6 +232,7 @@ export default function SeniorFriendlyTablet() {
         </div>
       )}
 
+      {/* HEADER CONTROLS */}
       <div className="absolute top-6 right-6 md:top-8 md:right-8 z-50 flex gap-3 md:gap-4">
         <button
           onClick={() => setIsHistoryOpen(true)}
@@ -233,6 +249,7 @@ export default function SeniorFriendlyTablet() {
         </button>
       </div>
 
+      {/* NAVIGATION TABS */}
       <div className="flex w-full bg-white border-b-4 border-slate-200 h-24 md:h-32 flex-none shadow-sm pr-32 md:pr-48">
         <button
           onClick={() => { setActiveTab('walkin'); setConfirmingId(null); }}
@@ -250,6 +267,7 @@ export default function SeniorFriendlyTablet() {
         </button>
       </div>
 
+      {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {activeTab === 'walkin' && (
           loadingWalkIn ? (
@@ -260,46 +278,52 @@ export default function SeniorFriendlyTablet() {
           ) : (
             walkInOrders.length > 0 ? (
               walkInOrders.map((order) => (
-                <div key={order.id} className="flex items-center w-full p-4 md:p-8 bg-white rounded-2xl md:rounded-3xl border border-slate-200 border-l-[16px] md:border-l-[24px] border-l-[#1e3d58] shadow-sm hover:shadow-md transition-all">
-                  <div className="flex flex-col items-center justify-center w-24 md:w-40 border-r-2 border-slate-100 pr-4 md:pr-8 mr-4 md:mr-8 text-slate-400">
+                <div key={order.id} className="flex items-stretch w-full p-4 md:p-8 bg-white rounded-2xl md:rounded-3xl border border-slate-200 border-l-[16px] md:border-l-[24px] border-l-[#1e3d58] shadow-sm hover:shadow-md transition-all">
+                  
+                  {/* LEFT COLUMN: STATUS ICON */}
+                  <div className="flex flex-col items-center justify-center w-24 md:w-40 border-r-4 border-slate-100 pr-4 md:pr-8 mr-4 md:mr-8 text-slate-400 shrink-0">
                     <CheckCircle2 className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />
                     <span className="font-bold text-sm md:text-xl uppercase tracking-widest mt-2 text-center">WALK-IN</span>
                   </div>
 
-                  <div className="flex-1 flex flex-col justify-center">
-                    <div className="flex flex-wrap gap-6 md:gap-12">
+                  {/* MIDDLE COLUMN: ITEMS (No Truncation, Clean Wrapping) */}
+                  <div className="flex-1 flex flex-col justify-center py-2">
+                    <div className="flex flex-wrap gap-6 md:gap-12 w-full">
                       {order.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 md:gap-4">
-                          <span className="text-5xl md:text-7xl font-black text-slate-800">{item.quantity}</span>
-                          <span className="text-2xl md:text-4xl font-bold text-slate-400 uppercase italic">{item.type}</span>
+                        <div key={idx} className="flex items-baseline gap-2 md:gap-4 shrink-0">
+                          <span className="text-5xl md:text-7xl font-black text-slate-800 leading-none">{item.quantity}</span>
+                          <span className="text-2xl md:text-4xl font-bold text-slate-500 uppercase italic">{item.type}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end md:flex-row md:items-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-2 border-slate-100">
-                    <div className="text-right">
-                      <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
-                      <span className="text-4xl md:text-6xl font-black text-slate-900">ORD-{order.id.split('-')[0]}</span>
+                  {/* RIGHT COLUMN: ID & CONTROLS (Unified Width) */}
+                  <div className="flex flex-col items-end justify-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-4 border-slate-100 shrink-0 min-w-[200px] md:min-w-[400px]">
+                    <div className="text-right w-full">
+                      <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest mb-1">Order ID</span>
+                      <span className="block text-4xl md:text-6xl font-black text-slate-900 break-all whitespace-normal leading-none w-full">ORD-{order.id.split('-')[0]}</span>
                     </div>
 
-                    {confirmingId === order.id ? (
-                      <div className="flex gap-2 md:gap-4 items-center bg-slate-50 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 border-[#43b0f1]">
-                        <button onClick={() => setConfirmingId(null)} className="bg-red-500 text-white w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg active:scale-90">
-                          <X className="w-8 h-8 md:w-12 md:h-12" strokeWidth={4} />
+                    <div className="flex flex-col gap-3 w-full">
+                      {confirmingId === order.id ? (
+                        <div className="flex gap-2 md:gap-4 items-stretch bg-slate-50 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 border-[#43b0f1] w-full">
+                          <button onClick={() => setConfirmingId(null)} className="bg-red-500 text-white w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg active:scale-90 shrink-0">
+                            <X className="w-8 h-8 md:w-12 md:h-12" strokeWidth={4} />
+                          </button>
+                          <button onClick={() => handleRefill(order.id)} className="flex-1 bg-green-500 text-white py-3 md:py-6 rounded-xl md:rounded-2xl font-black text-xl md:text-4xl shadow-xl animate-pulse active:scale-95">
+                            SURE?
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmingId(order.id)}
+                          className="bg-[#1e3d58] text-white w-full px-6 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-xl md:text-3xl shadow-lg active:scale-95 transition-transform text-center"
+                        >
+                          MARK DELIVERED
                         </button>
-                        <button onClick={() => handleRefill(order.id)} className="bg-green-500 text-white px-4 md:px-10 py-3 md:py-6 rounded-xl md:rounded-2xl font-black text-xl md:text-4xl shadow-xl animate-pulse active:scale-95">
-                          SURE?
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setConfirmingId(order.id)}
-                        className="bg-[#1e3d58] text-white px-6 md:px-12 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-xl md:text-3xl shadow-lg active:scale-95 transition-transform"
-                      >
-                        MARK DELIVERED
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -322,13 +346,14 @@ export default function SeniorFriendlyTablet() {
             onlineOrders.length > 0 ? (
               onlineOrders.map((order) => (
                 <div key={order.id}
-                  className={`flex items-center w-full p-4 md:p-8 bg-white rounded-2xl md:rounded-3xl border border-slate-200 border-l-[16px] md:border-l-[24px] shadow-sm hover:shadow-md transition-all duration-500 ${order.status === 'pending' ? 'border-l-orange-500' :
+                  className={`flex items-stretch w-full p-4 md:p-8 bg-white rounded-2xl md:rounded-3xl border border-slate-200 border-l-[16px] md:border-l-[24px] shadow-sm hover:shadow-md transition-all duration-500 ${order.status === 'pending' ? 'border-l-orange-500' :
                     order.status === 'processing' ? 'border-l-sky-500' :
                       order.status === 'refilled' ? 'border-l-blue-500' :
                         'border-l-purple-500'
                     }`}
                 >
-                  <div className={`flex flex-col items-center justify-center w-24 md:w-40 border-r-2 border-slate-100 pr-4 md:pr-8 mr-4 md:mr-8 ${order.status === 'pending' ? 'text-orange-600' :
+                  {/* LEFT COLUMN: STATUS ICON */}
+                  <div className={`flex flex-col items-center justify-center w-24 md:w-40 border-r-4 border-slate-100 pr-4 md:pr-8 mr-4 md:mr-8 shrink-0 ${order.status === 'pending' ? 'text-orange-600' :
                     order.status === 'processing' ? 'text-sky-600' :
                       order.status === 'refilled' ? 'text-blue-600' :
                         'text-purple-600'
@@ -344,55 +369,60 @@ export default function SeniorFriendlyTablet() {
                     </span>
                   </div>
 
-                  <div className="flex-1 flex flex-col justify-center">
-                    <p className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight uppercase leading-none mb-3">
+                  {/* MIDDLE COLUMN: LOCATION & ITEMS (No Truncation) */}
+                  <div className="flex-1 flex flex-col justify-center py-2">
+                    <p className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight uppercase leading-tight mb-4 break-words whitespace-normal w-full">
                       {order.location}
                     </p>
-                    <div className="flex flex-wrap gap-4 md:gap-8 mb-2">
+                    <div className="flex flex-wrap gap-4 md:gap-8 mb-2 w-full">
                       {order.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <span className="text-3xl md:text-5xl font-black text-[#43b0f1]">{item.quantity}</span>
-                          <span className="text-lg md:text-2xl font-bold text-slate-400 uppercase italic">{item.type}</span>
+                        <div key={idx} className="flex items-baseline gap-2 md:gap-3 shrink-0">
+                          <span className="text-3xl md:text-5xl font-black text-[#43b0f1] leading-none">{item.quantity}</span>
+                          <span className="text-lg md:text-2xl font-bold text-slate-500 uppercase italic">{item.type}</span>
                         </div>
                       ))}
                     </div>
                     {order.notes && (
-                      <p className="text-lg md:text-2xl font-bold text-slate-500 italic flex items-center gap-2 md:gap-4">
-                        <span className="bg-slate-100 px-3 py-1 rounded-md not-italic text-xs md:text-lg">NOTE</span>
-                        {order.notes}
-                      </p>
+                      <div className="flex items-start gap-2 md:gap-4 mt-2 w-full">
+                        <span className="bg-slate-100 px-3 py-1 rounded-md font-bold text-slate-500 text-xs md:text-lg shrink-0 mt-1">NOTE</span>
+                        <p className="text-lg md:text-2xl font-bold text-slate-500 italic break-words whitespace-normal leading-tight w-full">
+                          {order.notes}
+                        </p>
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex flex-col items-end md:flex-row md:items-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-2 border-slate-100">
-                    <div className="text-right">
-                      <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest">Order ID</span>
-                      <span className="text-4xl md:text-6xl font-black text-slate-900">ORD-{order.id.split('-')[0]}</span>
+                  {/* RIGHT COLUMN: ID & CONTROLS (Unified Width) */}
+                  <div className="flex flex-col items-end justify-center gap-4 md:gap-8 pl-4 md:pl-8 border-l-4 border-slate-100 shrink-0 min-w-[200px] md:min-w-[400px]">
+                    <div className="text-right w-full">
+                      <span className="block text-sm md:text-xl font-bold text-slate-400 uppercase tracking-widest mb-1">Order ID</span>
+                      <span className="block text-4xl md:text-6xl font-black text-slate-900 break-all whitespace-normal leading-none w-full">ORD-{order.id.split('-')[0]}</span>
                     </div>
 
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 w-full">
+                      {/* VIEW RECEIPT - Preserved precise E-Bank condition */}
                       {order.payment_method === 'E-Bank' && order.receipt_url && (
                         <button
                           onClick={() => setViewingReceipt(order.receipt_url || null)}
-                          className="flex items-center justify-center gap-2 bg-[#e8eef1] text-[#1e3d58] border-2 border-[#1e3d58]/20 hover:border-[#43b0f1] hover:text-[#43b0f1] px-4 py-3 rounded-2xl font-black text-lg md:text-xl shadow-sm transition-all active:scale-95"
+                          className="flex items-center justify-center gap-2 bg-[#e8eef1] text-[#1e3d58] border-2 border-[#1e3d58]/20 hover:border-[#43b0f1] hover:text-[#43b0f1] px-4 py-3 rounded-2xl font-black text-lg md:text-xl shadow-sm transition-all active:scale-95 w-full"
                         >
                           <ImageIcon size={24} strokeWidth={2.5} /> VIEW RECEIPT
                         </button>
                       )}
 
                       {confirmingId === order.id ? (
-                        <div className="flex gap-2 md:gap-4 items-center bg-slate-50 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 border-slate-200">
-                          <button onClick={() => setConfirmingId(null)} className="bg-red-500 text-white w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg active:scale-90">
+                        <div className="flex gap-2 md:gap-4 items-stretch bg-slate-50 p-2 md:p-4 rounded-2xl md:rounded-3xl border-2 border-slate-200 w-full">
+                          <button onClick={() => setConfirmingId(null)} className="bg-red-500 text-white w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg active:scale-90 shrink-0">
                             <X className="w-8 h-8 md:w-12 md:h-12" strokeWidth={4} />
                           </button>
-                          <button onClick={() => cycleOnlineStatus(order.id)} className="bg-green-500 text-white px-4 md:px-10 py-3 md:py-6 rounded-xl md:rounded-2xl font-black text-xl md:text-4xl shadow-xl animate-pulse active:scale-95">
+                          <button onClick={() => cycleOnlineStatus(order.id)} className="flex-1 bg-green-500 text-white px-4 md:px-10 py-3 md:py-6 rounded-xl md:rounded-2xl font-black text-xl md:text-4xl shadow-xl animate-pulse active:scale-95">
                             SURE?
                           </button>
                         </div>
                       ) : (
                         <button
                           onClick={() => setConfirmingId(order.id)}
-                          className={`min-w-[150px] md:min-w-[350px] px-6 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-2xl shadow-lg transition-all text-white active:scale-95 text-center ${order.status === 'pending' ? 'bg-orange-500' :
+                          className={`w-full px-6 py-4 md:py-8 rounded-2xl md:rounded-3xl font-black text-lg md:text-2xl shadow-lg transition-all text-white active:scale-95 text-center ${order.status === 'pending' ? 'bg-orange-500' :
                             order.status === 'processing' ? 'bg-sky-600' :
                               order.status === 'refilled' ? 'bg-blue-600' :
                                 'bg-purple-600'
@@ -400,7 +430,7 @@ export default function SeniorFriendlyTablet() {
                         >
                           {order.status === 'pending' && "MARK PROCESSING"}
                           {order.status === 'processing' && "MARK REFILLED"}
-                          {order.status === 'refilled' && "MARK OUT FOR DELIVERY"}
+                          {order.status === 'refilled' && "MARK FOR DELIVERY"}
                           {order.status === 'out for delivery' && "MARK DELIVERED"}
                         </button>
                       )}
@@ -418,6 +448,7 @@ export default function SeniorFriendlyTablet() {
         )}
       </div>
 
+      {/* HISTORY SIDEBAR & BACKDROP */}
       {isHistoryOpen && (
         <div
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] animate-in fade-in duration-300"
