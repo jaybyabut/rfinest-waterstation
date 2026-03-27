@@ -1,5 +1,5 @@
 'use server'
-import { ensureAuthenticated } from "@/lib/supabase/server"
+import { ensureAuthenticated } from "../../lib/supabase/server"
 import { logActivity } from "./logActivity";
 
 export async function createOnlineOrder(formData: FormData) {

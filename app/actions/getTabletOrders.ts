@@ -1,5 +1,5 @@
 'use server'
-import { ensureRole } from "@/lib/supabase/server"
+import { ensureRole } from "../../lib/supabase/server"
 
 export async function getTabletOrders() {
     const { supabase } = await ensureRole(['employee', 'admin']);

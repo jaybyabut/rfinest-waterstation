@@ -32,6 +32,11 @@ export async function createClient() {
     },
   );
 }
+
+/**
+ * Ensures the user is authenticated and returns the supabase client and user data.
+ * Throws an error if not authenticated.
+ */
 export async function ensureAuthenticated() {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -41,6 +46,10 @@ export async function ensureAuthenticated() {
   return { supabase, user };
 }
 
+/**
+ * Ensures the user has one of the allowed roles (or is an admin).
+ * Throws an error if not authenticated or role is not permitted.
+ */
 export async function ensureRole(allowedRoles: string[]) {
   const { supabase, user } = await ensureAuthenticated();
   const role = user.app_metadata?.role || 
@@ -48,6 +57,7 @@ export async function ensureRole(allowedRoles: string[]) {
                user.user_metadata?.role || 
                user.user_metadata?.user_role;
 
+  // Admin is a superuser and bypassed semua checks
   if (role === 'admin') return { supabase, user, role };
 
   if (!role || !allowedRoles.includes(role)) {

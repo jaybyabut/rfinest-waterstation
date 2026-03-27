@@ -1,5 +1,5 @@
 'use server'
-import { ensureRole } from "@/lib/supabase/server"
+import { ensureRole } from "../../lib/supabase/server"
 import { logActivity } from "./logActivity";
 
 export async function updateOrderStatus(orderId: number, newStatus: string) {

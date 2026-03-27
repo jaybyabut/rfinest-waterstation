@@ -1,5 +1,5 @@
 'use server'
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "../../lib/supabase/server"
 
 export async function getOrderHistory(filter: string, customStartDate?: string, customEndDate?: string) {
     const supabase = await createClient();

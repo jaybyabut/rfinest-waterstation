@@ -1,5 +1,5 @@
 'use server'
-import { ensureAuthenticated } from "@/lib/supabase/server"
+import { ensureAuthenticated } from "../../lib/supabase/server"
 
 export async function getCustomerAddy() {
     const { supabase, user } = await ensureAuthenticated();
