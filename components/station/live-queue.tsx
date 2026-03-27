@@ -6,6 +6,11 @@ import QueueCard, { QueueOrder } from "./queue-card";
 import { getQueueOrders } from "@/app/actions/getQueueOrders";
 import { createClient } from "@/lib/supabase/client";
 
+// --- MOCK DATA TOGGLE --- 
+// LEADER: Change this to `false` kapag tapos na ang backend at gusto nang gamitin ang tunay na database.
+const SHOW_MOCK_DATA = true; 
+// ------------------------
+
 const ITEMS_PER_PAGE = 5;
 
 interface OrderItemRecord {
@@ -16,10 +21,38 @@ interface OrderItemRecord {
 interface RawOrderRecord {
   order_id: string;
   transaction_type: string;
+  current_status?: string; // Added para sa iba't ibang display statuses
   location_pricing?: { location_name: string } | null;
   note?: string | null;
   order_items?: OrderItemRecord[] | null;
 }
+
+// Mock Database para ma-test ang UI ng Display 1, 2, at 3
+const MOCK_ORDERS_DB: RawOrderRecord[] = [
+  {
+    order_id: "ORD-991A-PICKUP",
+    transaction_type: "Online",
+    current_status: "PICKUP",
+    location_pricing: { location_name: "Juan Dela Cruz | 123 Main St, Brgy. San Jose" },
+    note: "Call upon arrival",
+    order_items: [{ quantity: 3, products: { product_name: "Slim" } }]
+  },
+  {
+    order_id: "ORD-992B-REFILL",
+    transaction_type: "Walk-in",
+    current_status: "REFILL",
+    location_pricing: { location_name: "Walk-in" },
+    order_items: [{ quantity: 5, products: { product_name: "Round" } }, { quantity: 2, products: { product_name: "Slim" } }]
+  },
+  {
+    order_id: "ORD-993C-DELIVER",
+    transaction_type: "Online",
+    current_status: "DELIVER",
+    location_pricing: { location_name: "Maria Clara | 456 Elm St, Brgy. San Roque" },
+    note: "Ingat sa aso sa gate.",
+    order_items: [{ quantity: 1, products: { product_name: "Round" } }]
+  }
+];
 
 export default function LiveQueueDisplay() {
   const [mounted, setMounted] = useState(false);
@@ -68,7 +101,9 @@ export default function LiveQueueDisplay() {
     };
   }, []);
 
-  const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
+  // Use mock data if toggled ON, otherwise use real database orders
+  const activeOrders = SHOW_MOCK_DATA ? MOCK_ORDERS_DB : orders;
+  const totalPages = Math.ceil(activeOrders.length / ITEMS_PER_PAGE);
 
   useEffect(() => {
     if (totalPages <= 1) {
@@ -104,7 +139,7 @@ export default function LiveQueueDisplay() {
     }
   };
 
-  const visibleOrdersData = orders.slice(
+  const visibleOrdersData = activeOrders.slice(
     currentPage * ITEMS_PER_PAGE,
     (currentPage + 1) * ITEMS_PER_PAGE
   );
@@ -123,14 +158,19 @@ export default function LiveQueueDisplay() {
       }
     });
 
-    const status = order.transaction_type === "Walk-in" ? "REFILL" : "DELIVER";
+    // Pinalitan ang logic para suportahan ang PICKUP, REFILL, at DELIVER
+    let status = order.current_status?.toUpperCase() || "REFILL";
+    if (!order.current_status) {
+      status = order.transaction_type === "Walk-in" ? "REFILL" : "DELIVER";
+    }
+
     const locName = order.location_pricing?.location_name || order.transaction_type || "N/A";
 
     const rawId = order.order_id?.toString() || "";
     const idParts = rawId.split('-');
-    const displayId = idParts.length > 0 
-      ? `ORD-${idParts[0].toUpperCase()}`
-      : `ORD-${rawId.substring(0, 8).toUpperCase()}`;
+    const displayId = idParts.length > 1 
+      ? idParts[1].substring(0, 8).toUpperCase() 
+      : rawId.substring(0, 8).toUpperCase();
 
     return {
       id: displayId,
@@ -187,7 +227,7 @@ export default function LiveQueueDisplay() {
           <QueueCard key={order.id} order={order} />
         ))}
 
-        {!loading && orders.length === 0 && (
+        {!loading && activeOrders.length === 0 && (
           <div className="row-span-5 flex flex-col items-center justify-center text-slate-300">
             <h1 className="text-6xl font-black uppercase">No Active Orders</h1>
             <p className="text-2xl font-bold mt-4">Waiting for new requests...</p>
