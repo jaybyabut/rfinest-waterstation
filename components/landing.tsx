@@ -7,7 +7,6 @@ import Footer from "./Footer";
 
 export default function LandingPage() {
   return (
-    // Added overflow-x-hidden to strictly prevent mobile horizontal scrolling from the SVG wave
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans selection:bg-[#43b0f1]/20 overflow-x-hidden">
       <Header />
 
@@ -76,15 +75,15 @@ export default function LandingPage() {
             </h3>
 
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 lg:gap-6 w-full max-w-md mx-auto">
-
-              {/* Added flex utilities inside the Link to ensure button text and icons align safely */}
-              <Button asChild className="w-full h-16 text-xl font-bold rounded-full bg-[#43b0f1] hover:bg-[#1e3d58] text-white shadow-xl shadow-[#43b0f1]/30 transition-all active:scale-95 break-words leading-tight whitespace-normal">
+              {/* PRIMARY BUTTON */}
+              <Button asChild className="w-full h-16 text-xl font-bold rounded-full bg-[#43b0f1] hover:bg-[#1e3d58] text-white shadow-xl shadow-[#43b0f1]/30 transition-all active:scale-95 break-words leading-tight whitespace-normal border-none">
                 <Link href="/auth/sign-up" className="flex items-center justify-center w-full">
                   Create My Account <ArrowRight className="ml-2 w-6 h-6 shrink-0" />
                 </Link>
               </Button>
 
-              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold rounded-full border-2 border-[#1e3d58] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all active:scale-95 break-words leading-tight whitespace-normal">
+              {/* SECONDARY BUTTON (LOGIN) - Pwersahang nilagyan ng bg-white para iwas sa default black! */}
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold rounded-full bg-white border-2 border-[#1e3d58] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all active:scale-95 break-words leading-tight whitespace-normal">
                 <Link href="/auth/login" className="flex items-center justify-center w-full">
                   Login
                 </Link>

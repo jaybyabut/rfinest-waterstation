@@ -6,6 +6,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react"; // DINAGDAG: Import for icons
 
 export default function LoginForm({
   className,
@@ -14,6 +15,7 @@ export default function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // DINAGDAG: State for password toggle
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -80,18 +82,35 @@ export default function LoginForm({
               />
             </div>
 
+            {/* DINAGDAG: Relative container at toggle button para sa password */}
             <div>
               <label className="block text-xl font-bold text-[#1e3d58] mb-2 ml-2">
                 Password:
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
-              />
+              <div className="relative w-full">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"} // Nagbabago base sa state
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  // Pinalitan ang px-6 ng pl-6 at pr-14 para may space yung icon sa kanan
+                  className="w-full h-14 pl-6 pr-14 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-all"
+                />
+                
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff size={24} strokeWidth={2.5} />
+                  ) : (
+                    <Eye size={24} strokeWidth={2.5} />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (
