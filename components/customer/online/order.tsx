@@ -96,10 +96,11 @@ export default function CustomerPlaceOrder() {
       const data = await createOnlineOrder(formData);
 
       if (data.success === true) {
-        alert(data.data || "Order placed successfully!");
+
         window.location.href = '/home';
       } else {
-        alert(data.error || "Failed to place order.");
+        console.error("Error placing order:", data.error);
+        alert("An unexpected error occurred.");
       }
     } catch (error) {
       console.error("Error placing order:", error);
