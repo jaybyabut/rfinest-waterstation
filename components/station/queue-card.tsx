@@ -73,12 +73,12 @@ export default function QueueCard({ order }: { order: QueueOrder }) {
       </div>
 
       <div className="w-[25vw] max-w-[400px] text-right pl-[2vw] border-l-4 border-slate-100 flex flex-col justify-center shrink-0 overflow-hidden">
-        <span className="text-[1.5vh] font-bold text-slate-400 uppercase tracking-widest mb-[0.5vh]">Order No.</span>
+        <span className="text-[1.5vh] font-bold text-slate-400 uppercase tracking-widest mb-[0.5vh]">Order ID</span>
         <span 
           className="text-[4vh] 2xl:text-[5vh] font-black text-slate-900 tracking-tighter leading-none truncate w-full"
-          title={`#${order.id}`}
+          title={order.id}
         >
-          #{order.id}
+          {order.id}
         </span>
       </div>
 
