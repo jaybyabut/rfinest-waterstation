@@ -40,6 +40,8 @@ export async function createOrder(orderInfo: OrderInfo) {
         return { error: "Failed to fetch product information" };
     }
 
+    console.log("createOrder: Products fetched:", products);
+
     const slimProduct = products?.find((p: any) => p.product_name === 'Slim Gallon');
     const roundProduct = products?.find((p: any) => p.product_name === 'Round Gallon');
 
