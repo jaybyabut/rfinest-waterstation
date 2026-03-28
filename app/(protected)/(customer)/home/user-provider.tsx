@@ -8,6 +8,7 @@ export type UserData = {
   last_name?: string;
   address?: string;
   location_id?: string;
+  mobile_no?: string;
   location_pricing?: any;
 };
 

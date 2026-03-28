@@ -15,6 +15,7 @@ export async function getCustomerAddy() {
                 last_name,
                 address,
                 location_id,
+                mobile_no,
                 location_pricing(
                     location_name,
                     location_price
