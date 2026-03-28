@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, Upload, ArrowUp, Minus, Plus, Copy, Check } from "lucide-react";
+import { ChevronLeft, Upload, ArrowUp, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createOnlineOrder } from "@/app/actions/createOnlineOrder";
@@ -18,17 +18,20 @@ export default function CustomerPlaceOrder() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
 
+  // Default to empty strings/0 instead of "Loading..." text
   const [userZone, setUserZone] = useState<string>("");
   const [pricePerGallon, setPricePerGallon] = useState<number>(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
-  const [isCopied, setIsCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [showScrollTop, setShowScrollTop] = useState(false);
   const lastKnownScrollPosition = useRef(0);
   const ticking = useRef(false);
 
+  const [isCopied, setIsCopied] = useState(false);
+
+  // CHECKER KUNG NAGLO-LOAD PA YUNG DATA
   const isFetchingData = !userData || pricePerGallon === 0;
 
   useEffect(() => {
@@ -70,8 +73,23 @@ export default function CustomerPlaceOrder() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setReceipt(e.target.files[0]);
-      setError(null);
+      setError(null); 
     }
+  };
+
+  const handleCopyNumber = () => {
+    navigator.clipboard.writeText("09553466544");
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000); 
+  };
+
+  const handlePreSubmit = () => {
+    if (paymentMethod === 'G-Cash' && !receipt) {
+      setError("Please upload your G-Cash receipt to proceed.");
+      return;
+    }
+    setError(null);
+    setIsModalOpen(true);
   };
 
   const handleCopyNumber = () => {
@@ -93,7 +111,7 @@ export default function CustomerPlaceOrder() {
     setLoading(true);
     setIsModalOpen(false);
     setError(null);
-    
+
     try {
       const formData = new FormData();
       formData.append('slimCount', slimCount.toString());
@@ -116,8 +134,8 @@ export default function CustomerPlaceOrder() {
       } else {
         setError(data.error || "An unexpected error occurred. Please try again.");
       }
-    } catch (error: any) {
-      setError(error.message || "An unexpected error occurred. Please try again.");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -141,6 +159,7 @@ export default function CustomerPlaceOrder() {
           <div className="bg-white rounded-[40px] p-5 sm:p-8 shadow-inner border border-gray-100 text-left w-full overflow-hidden">
             <div className="space-y-5 w-full">
 
+              {/* ================= ZONE & PRICE WITH SKELETON LOADERS ================= */}
               <div className="w-full">
                 <label className="block text-lg sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Deliver to:</label>
                 <div className="w-full p-4 rounded-3xl bg-[#e8eef1] border-2 border-transparent text-[#1e3d58] font-bold text-base sm:text-lg break-words leading-tight flex items-center min-h-[60px]">
@@ -161,44 +180,37 @@ export default function CustomerPlaceOrder() {
                 )}
               </div>
 
-              {/* ================= DETAILS (NEW DESIGN) ================= */}
+              {/* ================= DETAILS ================= */}
               <div className="w-full">
                 <label className="block text-lg sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
-                <div className="w-full p-4 rounded-[30px] border-2 border-[#1e3d58] bg-[#e8eef1] space-y-4">
+                <div className="w-full p-4 rounded-[24px] sm:rounded-[30px] border-2 border-[#1e3d58] bg-white space-y-4 shadow-sm">
                   <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-[#1e3d58] gap-2">
                     <span className="flex-1 whitespace-normal break-words leading-tight">Slim Gallon:</span>
                     <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
-                        <Minus size={24} strokeWidth={3} />
-                      </button>
+                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors shrink-0 w-8 h-8 flex items-center justify-center">-</button>
                       <span className="w-6 sm:w-8 text-center text-2xl font-black">{slimCount}</span>
-                      <button onClick={() => setSlimCount(slimCount + 1)} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
-                        <Plus size={24} strokeWidth={3} />
-                      </button>
+                      <button onClick={() => setSlimCount(slimCount + 1)} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors shrink-0 w-8 h-8 flex items-center justify-center">+</button>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-[#1e3d58] border-t border-white/60 pt-3 gap-2">
+                  <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-[#1e3d58] border-t border-gray-100 pt-3 gap-2">
                     <span className="flex-1 whitespace-normal break-words leading-tight">Round Gallon:</span>
                     <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
-                        <Minus size={24} strokeWidth={3} />
-                      </button>
+                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors shrink-0 w-8 h-8 flex items-center justify-center">-</button>
                       <span className="w-6 sm:w-8 text-center text-2xl font-black">{roundCount}</span>
-                      <button onClick={() => setRoundCount(roundCount + 1)} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
-                        <Plus size={24} strokeWidth={3} />
-                      </button>
+                      <button onClick={() => setRoundCount(roundCount + 1)} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors shrink-0 w-8 h-8 flex items-center justify-center">+</button>
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* ================= PAYMENT METHOD ================= */}
               <div className="w-full">
                 <label className="block text-lg sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Payment Method:</label>
                 <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 w-full">
                   <button
                     onClick={() => {
                       setPaymentMethod("COD");
-                      setError(null);
+                      setError(null); 
                     }}
                     className={cn(
                       "flex-1 h-12 sm:h-14 rounded-full text-base sm:text-xl font-bold transition-all border-2 min-w-0 break-words",
@@ -255,6 +267,7 @@ export default function CustomerPlaceOrder() {
                 )}
               </div>
 
+              {/* ================= TOTAL AMOUNT WITH SKELETON ================= */}
               <div className="flex justify-between items-center pt-2 px-2 flex-wrap gap-2 w-full border-t-2 border-dashed border-gray-100 mt-2 min-h-[50px]">
                 <span className="text-lg sm:text-xl font-bold text-[#1e3d58] flex-1 whitespace-nowrap pt-2">Total Amount:</span>
                 <span className="text-3xl sm:text-5xl font-black text-[#43b0f1] shrink-0 pt-2 flex items-center h-full">
@@ -266,6 +279,7 @@ export default function CustomerPlaceOrder() {
                 </span>
               </div>
 
+              {/* ================= ACTIONS ================= */}
               <div className="pt-2 w-full">
                 {error && (
                   <p className="text-sm font-bold text-red-500 text-center px-4 py-3 bg-red-50 rounded-xl border border-red-200 mb-4 animate-in fade-in zoom-in duration-300">
@@ -275,6 +289,7 @@ export default function CustomerPlaceOrder() {
 
                 <Button
                   onClick={handlePreSubmit}
+                  // BUTTON IS NOW DISABLED IF DATA IS FETCHING
                   disabled={loading || isFetchingData || (slimCount === 0 && roundCount === 0)}
                   className="w-full h-14 sm:h-16 text-xl sm:text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >

@@ -148,42 +148,70 @@ export default function CustomerOrderStatus() {
             <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left space-y-4 w-full overflow-hidden">
               <h2 className="text-[#1e3d58] font-black text-2xl tracking-tight ml-2 mb-2">Recent Orders</h2>
               <div className="space-y-3 w-full">
+                
+                {/* ================= SKELETON LOADERS ================= */}
                 {loading ? (
-                  <div className="text-center py-4 text-gray-500 font-bold">Loading orders...</div>
+                  <>
+                    {[1, 2, 3].map((skeletonId) => (
+                      <div
+                        key={skeletonId}
+                        className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/40 border-2 border-transparent shadow-sm gap-3"
+                      >
+                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                          {/* SKELETON: Icon Circle */}
+                          <div className="w-12 h-12 rounded-full bg-slate-200 animate-pulse shrink-0 mt-1 sm:mt-0"></div>
+                          
+                          <div className="text-left flex-1 min-w-0 flex flex-col gap-1.5 py-1">
+                            {/* SKELETON: Date & Status */}
+                            <div className="flex justify-between items-center mb-0.5 gap-2">
+                              <div className="h-3 w-16 bg-slate-200 rounded animate-pulse"></div>
+                              <div className="h-4 w-16 bg-slate-200 rounded-full animate-pulse"></div>
+                            </div>
+                            {/* SKELETON: Order ID */}
+                            <div className="h-5 w-24 sm:w-32 bg-slate-300 rounded animate-pulse mt-0.5"></div>
+                            {/* SKELETON: Items List */}
+                            <div className="h-3 w-36 sm:w-48 bg-slate-200 rounded animate-pulse mt-1"></div>
+                          </div>
+                        </div>
+                        {/* SKELETON: Chevron Right */}
+                        <div className="w-5 h-5 bg-slate-200 rounded-full animate-pulse shrink-0 self-center"></div>
+                      </div>
+                    ))}
+                  </>
                 ) : orders.length === 0 ? (
                   <div className="text-center py-4 text-gray-500 font-bold">No orders found.</div>
-                ) : orders.map((order) => (
-                  <button
-                    key={order.id}
-                    onClick={() => handleOrderClick(order)}
-                    className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/60 hover:bg-[#e8eef1] transition-colors border-2 border-transparent hover:border-[#43b0f1]/30 shadow-sm gap-3"
-                  >
-                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                      <div className={cn(
-                        "w-12 h-12 rounded-full flex items-center justify-center shadow-sm shrink-0 mt-1 sm:mt-0",
-                        order.currentStep === 2 ? "bg-[#1e3d58] text-white" : "bg-white text-[#43b0f1]"
-                      )}>
-                        {order.currentStep === 2 ? <CheckCircle2 size={24} /> : <ReceiptText size={24} />}
-                      </div>
-                      <div className="text-left flex-1 min-w-0">
-                        {/* Status/Date Wrapper - Flexible to wrap when squeezed */}
-                        <div className="flex justify-between items-start sm:items-center mb-1 gap-2 flex-wrap sm:flex-nowrap">
-                          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest flex-1 min-w-0 break-words leading-tight">{order.date}</p>
-                          <span className={cn(
-                            "text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap",
-                            order.currentStep === 2 ? "bg-green-100 text-green-700" : "bg-[#43b0f1]/20 text-[#1e3d58]"
-                          )}>
-                            {order.statusText}
-                          </span>
+                ) : (
+                  orders.map((order) => (
+                    <button
+                      key={order.id}
+                      onClick={() => handleOrderClick(order)}
+                      className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/60 hover:bg-[#e8eef1] transition-colors border-2 border-transparent hover:border-[#43b0f1]/30 shadow-sm gap-3"
+                    >
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                        <div className={cn(
+                          "w-12 h-12 rounded-full flex items-center justify-center shadow-sm shrink-0 mt-1 sm:mt-0",
+                          order.currentStep === 2 ? "bg-[#1e3d58] text-white" : "bg-white text-[#43b0f1]"
+                        )}>
+                          {order.currentStep === 2 ? <CheckCircle2 size={24} /> : <ReceiptText size={24} />}
                         </div>
-                        {/* FIXED: Removed truncate, added whitespace-normal break-words */}
-                        <p className="text-lg font-black text-[#1e3d58] break-words whitespace-normal leading-tight">{order.id}</p>
-                        <p className="text-sm font-bold text-gray-500 break-words whitespace-normal leading-tight mt-0.5">₱{order.totalAmount} • {order.items.split('•')[0]}</p>
+                        <div className="text-left flex-1 min-w-0">
+                          <div className="flex justify-between items-start sm:items-center mb-1 gap-2 flex-wrap sm:flex-nowrap">
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest flex-1 min-w-0 break-words leading-tight">{order.date}</p>
+                            <span className={cn(
+                              "text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap",
+                              order.currentStep === 2 ? "bg-green-100 text-green-700" : "bg-[#43b0f1]/20 text-[#1e3d58]"
+                            )}>
+                              {order.statusText}
+                            </span>
+                          </div>
+                          <p className="text-lg font-black text-[#1e3d58] break-words whitespace-normal leading-tight">{order.id}</p>
+                          <p className="text-sm font-bold text-gray-500 break-words whitespace-normal leading-tight mt-0.5">₱{order.totalAmount} • {order.items.split('•')[0]}</p>
+                        </div>
                       </div>
-                    </div>
-                    <ChevronRight size={24} className="text-gray-400 shrink-0 self-center" />
-                  </button>
-                ))}
+                      <ChevronRight size={24} className="text-gray-400 shrink-0 self-center" />
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -226,7 +254,6 @@ export default function CustomerOrderStatus() {
                   <span className="text-sm font-black text-[#1e3d58] uppercase tracking-wider flex-1 min-w-0 break-words leading-tight">Order ID</span>
                   <span className="text-2xl font-black text-[#43b0f1] shrink-0">₱{selectedOrder.totalAmount}</span>
                 </div>
-                {/* FIXED: Removed truncate, added whitespace-normal break-words */}
                 <p className="text-2xl font-black text-[#1e3d58] break-words whitespace-normal leading-tight">{selectedOrder.id}</p>
                 <div className="flex items-start sm:items-center gap-2 mt-2">
                   <CalendarClock size={16} className="text-gray-500 shrink-0 mt-0.5 sm:mt-0" />
@@ -238,11 +265,6 @@ export default function CustomerOrderStatus() {
               <div className="space-y-6 px-2 w-full">
                 <h2 className="text-2xl font-extrabold text-[#1e3d58] mb-4">Delivery Status</h2>
 
-                {/* TODO: BACKEND - [REAL-TIME] Real-time Status Tracker
-                  Gamitin ang supabase.channel() para mag-subscribe sa 'UPDATE' events ng 'orders' table.
-                  I-filter ang subscription para sa selectedOrder.id lang.
-                  I-update ang selectedOrder.currentStep gamit ang state kapag may pumasok na update.
-                */}
                 <div className="relative border-l-4 border-gray-200 ml-5 space-y-10">
                   {STATUSES.map((step, index) => {
                     const isCompleted = index < selectedOrder.currentStep;

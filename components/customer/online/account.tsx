@@ -21,6 +21,7 @@ export default function CustomerAccount() {
   const userData = useUser();
   const [view, setView] = useState<"menu" | "name" | "location" | "number" | "password">("menu");
 
+  // DINAGDAG: Loading state para sa Skeletons
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   interface LocationItem { location_id: string; location_name: string; }
@@ -28,6 +29,12 @@ export default function CustomerAccount() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Simulation para makita mo yung Skeleton. Aalisin rin kapag mabilis na mag-fetch si useUser()
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoadingProfile(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoadingProfile(false), 1200);
@@ -91,12 +98,6 @@ export default function CustomerAccount() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [locationPassword, setLocationPassword] = useState("");
-  const [showLocationPassword, setShowLocationPassword] = useState(false);
-
-  const [numberPassword, setNumberPassword] = useState("");
-  const [showNumberPassword, setShowNumberPassword] = useState(false);
-
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -105,6 +106,7 @@ export default function CustomerAccount() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // HELPER: Real-time Error Clearer
   const clearError = (field: string) => {
     setErrors((prev) => {
       const newErrors = { ...prev };
@@ -131,6 +133,7 @@ export default function CustomerAccount() {
     if (view === "location") {
       const locRegex = /^[A-Za-z0-9\s,\.-]*$/;
 
+      // INAYOS: Tinanggal ang required check para sa House No. (Optional na siya)
       if (tempHouseNo && !locRegex.test(tempHouseNo)) newErrors.houseNo = "Invalid symbols used.";
 
       if (!tempStreetName.trim()) newErrors.streetName = "Street name is required.";
@@ -182,9 +185,9 @@ export default function CustomerAccount() {
       }
 
       if (view === "location") {
+        // INAYOS: Smart string concatenation kapag walang House No.
         const fullAddress = [tempHouseNo.trim(), tempStreetName.trim()].filter(Boolean).join(", ");
-        const res = await updateCustomerLocation(fullAddress, tempZoneId, locationPassword); 
-
+        const res = await updateCustomerLocation(fullAddress, tempZoneId);
         if (res.success) {
           setHouseNo(tempHouseNo);
           setStreetName(tempStreetName);
@@ -252,10 +255,6 @@ export default function CustomerAccount() {
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    
-    setLocationPassword("");
-    setNumberPassword("");
-
     setShowOldPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
@@ -294,6 +293,7 @@ export default function CustomerAccount() {
 
               <h2 className="text-[#1e3d58] font-black text-2xl tracking-tight ml-2 mb-2">Profile Details</h2>
 
+              {/* PROFILE DETAILS WITH SKELETONS */}
               <button onClick={() => setView("name")} className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/60 hover:bg-[#e8eef1] transition-colors border-2 border-transparent hover:border-[#43b0f1]/30 shadow-sm gap-3">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#43b0f1] shadow-sm shrink-0"><User size={24} /></div>
@@ -564,52 +564,20 @@ export default function CustomerAccount() {
             )}
 
             {view === "number" && (
-              <div className="space-y-4 w-full">
-                <div className="w-full">
-                  <label className="block text-lg font-bold mb-2 ml-2 text-[#1e3d58]">New Mobile Number:</label>
-                  <input
-                    type="tel"
-                    placeholder="09XXXXXXXXX"
-                    value={tempMobileNo}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 11);
-                      setTempMobileNo(val);
-                      if (/^(09)\d{9}$/.test(val)) clearError("mobileNo");
-                    }}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
-                  />
-                  {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.mobileNo}</p>}
-                </div>
-
-                {/* SECURITY VERIFICATION PARA SA NUMBER */}
-                <div className="border-t-2 border-dashed border-gray-200 mt-6 pt-4">
-                  <h3 className="text-lg font-black text-[#1e3d58] mb-3 flex items-center gap-2">
-                    <Lock size={20} className="text-[#43b0f1]" /> Security Verification
-                  </h3>
-                  <div className="w-full">
-                    <label className="block text-sm font-bold text-gray-500 mb-1 ml-2">Enter password to change number:</label>
-                    <div className="relative w-full">
-                      <input
-                        type={showNumberPassword ? "text" : "password"}
-                        placeholder="Current password"
-                        value={numberPassword}
-                        onChange={(e) => {
-                          setNumberPassword(e.target.value);
-                          if (e.target.value) clearError("numberPassword");
-                        }}
-                        className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.numberPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNumberPassword(!showNumberPassword)}
-                        className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
-                      >
-                        {showNumberPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
-                      </button>
-                    </div>
-                    {errors.numberPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.numberPassword}</p>}
-                  </div>
-                </div>
+              <div className="w-full">
+                <label className="block text-lg font-bold mb-2 ml-2 text-[#1e3d58]">Mobile Number:</label>
+                <input
+                  type="tel"
+                  placeholder="09XXXXXXXXX"
+                  value={tempMobileNo}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    setTempMobileNo(val);
+                    if (/^(09)\d{9}$/.test(val)) clearError("mobileNo");
+                  }}
+                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                />
+                {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.mobileNo}</p>}
               </div>
             )}
 
