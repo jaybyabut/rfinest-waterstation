@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ArrowUp } from "lucide-react";
 
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
+import { getCurrentOrder } from "@/app/actions/getCurrentOrder";
 
 export default function CustomerHome({
   className,
@@ -15,20 +16,24 @@ export default function CustomerHome({
   const userData = useUser();
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  const [activeOrder, setActiveOrder] = useState<any>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(true);
 
   const lastKnownScrollPosition = useRef(0);
   const ticking = useRef(false);
 
-  const hasActiveOrder = true;
-
-  // SIMULATION LANG ITO PARA MAKITA MO YUNG SKELETON
-  // TODO: Tanggalin ito kapag ikakabit na yung totoong database fetch
   useEffect(() => {
-    const timer = setTimeout(() => {
+    async function fetchOrder() {
+      setIsLoadingOrder(true);
+      const res = await getCurrentOrder();
+      if (res && !('error' in res)) {
+        setActiveOrder(res);
+      } else {
+        setActiveOrder(null);
+      }
       setIsLoadingOrder(false);
-    }, 1500); 
-    return () => clearTimeout(timer);
+    }
+    fetchOrder();
   }, []);
 
   useEffect(() => {
@@ -91,22 +96,29 @@ export default function CustomerHome({
                   </div>
                 </div>
               </div>
-            ) : hasActiveOrder ? (
+            ) : activeOrder ? (
               <div className="mb-8 p-4 rounded-[25px] bg-[#e8eef1]/50 border-2 border-[#1e3d58]/10 flex flex-col gap-2 text-left shadow-sm w-full overflow-hidden">
                 <div className="flex justify-between items-start sm:items-center gap-2 flex-wrap sm:flex-nowrap">
                   <span className="text-sm font-black text-[#1e3d58] uppercase tracking-wider flex-1 min-w-0 break-words leading-tight">Current Order</span>
                   <span className="text-xs font-black px-3 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200 animate-pulse shrink-0">
-                    Refilled 💧
+                    {activeOrder.current_status} 💧
                   </span>
                 </div>
                 <div className="flex justify-between items-end mt-1">
                   <div className="flex-1 min-w-0">
-                    <p className="text-lg font-black text-[#1e3d58] break-words">ORD-1025</p>
-                    <p className="text-xs text-gray-500 font-semibold break-words">2 Slim • 1 Round</p>
+                    <p className="text-lg font-black text-[#1e3d58] break-words">ORD-{activeOrder.order_id.split('-')[0].toUpperCase()}</p>
+                    <p className="text-xs text-gray-500 font-semibold break-words">
+                      {activeOrder.order_items.map((item: any) => `${item.quantity} ${item.products.product_name}`).join(' • ')}
+                    </p>
                   </div>
                 </div>
               </div>
-            ) : null}
+            ) : (
+              <div className="mb-8 p-6 rounded-[25px] bg-[#e8eef1]/30 border-2 border-dashed border-[#1e3d58]/10 flex flex-col items-center justify-center gap-1 text-center w-full">
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Current Order</p>
+                <p className="text-lg font-black text-[#1e3d58]/40 italic">No current order</p>
+              </div>
+            )}
 
             <div className="flex flex-col gap-4 w-full">
               <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all whitespace-normal break-words leading-tight shadow-sm">
