@@ -53,6 +53,9 @@ export default function CustomerAccount() {
   const [mobileVerifyPassword, setMobileVerifyPassword] = useState("");
   const [showMobileVerifyPassword, setShowMobileVerifyPassword] = useState(false);
 
+  const [locationVerifyPassword, setLocationVerifyPassword] = useState("");
+  const [showLocationVerifyPassword, setShowLocationVerifyPassword] = useState(false);
+
   const [tempFirstName, setTempFirstName] = useState(firstName);
   const [tempLastName, setTempLastName] = useState(lastName);
   const [tempMI, setTempMI] = useState(middleInitial);
@@ -101,6 +104,8 @@ export default function CustomerAccount() {
       else if (!locRegex.test(tempStreetName)) newErrors.streetName = "Invalid symbols used.";
 
       if (!tempZoneId) newErrors.zoneId = "Please select a zone.";
+
+      if (!locationVerifyPassword) newErrors.locationVerifyPassword = "Current password is required to save changes.";
     }
 
     if (view === "number") {
@@ -144,7 +149,7 @@ export default function CustomerAccount() {
 
       if (view === "location") {
         const fullAddress = `${tempHouseNo}, ${tempStreetName}`;
-        const res = await updateCustomerLocation(fullAddress, tempZoneId);
+        const res = await updateCustomerLocation(fullAddress, tempZoneId, locationVerifyPassword);
         if (res.success) {
           setHouseNo(tempHouseNo);
           setStreetName(tempStreetName);
@@ -207,11 +212,13 @@ export default function CustomerAccount() {
     setNewPassword("");
     setConfirmPassword("");
     setMobileVerifyPassword("");
+    setLocationVerifyPassword("");
     // DINAGDAG: Reset show password toggles pag nag-back
     setShowOldPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
     setShowMobileVerifyPassword(false);
+    setShowLocationVerifyPassword(false);
     setErrors({});
   };
 
@@ -423,6 +430,27 @@ export default function CustomerAccount() {
                     </div>
                   </div>
                   {errors.zoneId && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.zoneId}</p>}
+                </div>
+
+                <div className="w-full">
+                  <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Current Password:</label>
+                  <div className="relative w-full">
+                    <input
+                      type={showLocationVerifyPassword ? "text" : "password"}
+                      placeholder="Enter password to verify"
+                      value={locationVerifyPassword}
+                      onChange={(e) => setLocationVerifyPassword(e.target.value)}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.locationVerifyPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationVerifyPassword(!showLocationVerifyPassword)}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                    >
+                      {showLocationVerifyPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
+                    </button>
+                  </div>
+                  {errors.locationVerifyPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.locationVerifyPassword}</p>}
                 </div>
               </div>
             )}
