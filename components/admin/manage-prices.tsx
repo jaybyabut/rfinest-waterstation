@@ -40,7 +40,7 @@ export default function ManagePricesPage() {
     setInitialLoading(true);
     try {
       // TODO: BACKEND - Fetch actual Walk-in price here from your DB
-      setWalkInPrice(30); 
+      setWalkInPrice(30);
 
       const data = await getLocations();
       if (Array.isArray(data)) {
@@ -95,7 +95,7 @@ export default function ManagePricesPage() {
       ...p,
       price: typeof p.price === "number" ? p.price + amount : amount
     })));
-    
+
     setWalkInPrice(typeof walkInPrice === "number" ? walkInPrice + amount : amount);
     setIncreaseAmount("");
   };
@@ -245,24 +245,22 @@ export default function ManagePricesPage() {
                     onChange={(e) => setWalkInPrice(e.target.value === "" ? "" : parseInt(e.target.value))}
                     readOnly={!editingWalkIn}
                     onBlur={() => setEditingWalkIn(false)}
-                    className={`w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${
-                      isWalkInInvalid
-                      ? "text-red-600 border-b-2 border-red-500"
-                      : editingWalkIn
-                        ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
-                        : "text-[#1e3d58]"
-                    }`}
+                    className={`w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isWalkInInvalid
+                        ? "text-red-600 border-b-2 border-red-500"
+                        : editingWalkIn
+                          ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
+                          : "text-[#1e3d58]"
+                      }`}
                   />
                   <SquarePen
                     onClick={handleEditWalkInClick}
                     size={24}
-                    className={`ml-2 cursor-pointer transition-all shrink-0 ${
-                      isWalkInInvalid
-                      ? "text-red-400 hover:text-red-600"
-                      : editingWalkIn
-                        ? "text-[#43b0f1] scale-110"
-                        : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
-                    }`}
+                    className={`ml-2 cursor-pointer transition-all shrink-0 ${isWalkInInvalid
+                        ? "text-red-400 hover:text-red-600"
+                        : editingWalkIn
+                          ? "text-[#43b0f1] scale-110"
+                          : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
+                      }`}
                   />
                 </div>
               </div>
@@ -290,10 +288,19 @@ export default function ManagePricesPage() {
 
             <div className="space-y-3 pb-2">
               {initialLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 opacity-50">
-                  <RefreshCw className="animate-spin text-[#1e3d58] mb-2" size={40} />
-                  <p className="font-bold text-[#1e3d58]">Fetching prices...</p>
+                // ================= SKELETON LOADER =================
+                <div className="space-y-3 w-full animate-pulse">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex justify-between items-center p-4 border-2 border-gray-100 rounded-[20px] bg-white gap-3">
+                      <div className="h-6 w-32 sm:w-48 bg-slate-200 rounded"></div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-16 bg-slate-200 rounded"></div>
+                        <div className="h-6 w-6 bg-slate-200 rounded"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+                // ================= END SKELETON LOADER =================
               ) : filteredPrices.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 font-bold italic">
                   No locations found.
@@ -321,20 +328,20 @@ export default function ManagePricesPage() {
                           readOnly={editingId !== location.id}
                           onBlur={() => setEditingId(null)}
                           className={`w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isInvalid
-                            ? "text-red-600 border-b-2 border-red-500"
-                            : editingId === location.id
-                              ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
-                              : "text-[#1e3d58]"
+                              ? "text-red-600 border-b-2 border-red-500"
+                              : editingId === location.id
+                                ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
+                                : "text-[#1e3d58]"
                             }`}
                         />
                         <SquarePen
                           onClick={() => handleEditClick(location.id)}
                           size={24}
                           className={`ml-2 cursor-pointer transition-all shrink-0 ${isInvalid
-                            ? "text-red-400 hover:text-red-600"
-                            : editingId === location.id
-                              ? "text-[#43b0f1] scale-110"
-                              : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
+                              ? "text-red-400 hover:text-red-600"
+                              : editingId === location.id
+                                ? "text-[#43b0f1] scale-110"
+                                : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
                             }`}
                         />
                       </div>

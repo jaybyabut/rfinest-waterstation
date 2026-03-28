@@ -92,7 +92,6 @@ export default function OrderStatus() {
 
             let statusString = order.current_status || "Pending";
 
-
             let receipt_url = undefined;
             if (order.proof_payment) {
               const { data: signedUrlData, error } = await supabase.storage.from('proof_payment').createSignedUrl(order.proof_payment, 60 * 60 * 24);
@@ -288,9 +287,29 @@ export default function OrderStatus() {
             {/* Order List - Natural Scroll (No max-h) */}
             <div className="space-y-4 pb-4">
               {loading ? (
-                <div className="text-center py-10 text-gray-400 font-bold animate-pulse">
-                  Loading orders...
+                
+                // ================= SKELETON LOADER (MIMICS ORDER CARD) =================
+                <div className="space-y-4 w-full animate-pulse">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="border-2 border-gray-100 rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1">
+                          <div className="h-6 w-32 bg-slate-200 rounded mb-2"></div>
+                          <div className="h-4 w-48 bg-slate-200 rounded"></div>
+                        </div>
+                        {/* Fake Status Button */}
+                        <div className="h-6 w-20 bg-slate-200 rounded-full shrink-0"></div>
+                      </div>
+                      {/* Fake Gray Box */}
+                      <div className="flex justify-between items-center bg-slate-50 p-3 rounded-[15px] gap-2 mt-1">
+                        <div className="h-4 w-32 bg-slate-200 rounded"></div>
+                        <div className="h-6 w-16 bg-slate-200 rounded"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+                // ================= END SKELETON LOADER =================
+
               ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-bold italic">
                   {globalError ? "Cannot load data." : `No orders found.`}
