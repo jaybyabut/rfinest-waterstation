@@ -92,6 +92,21 @@ export default function CustomerPlaceOrder() {
     setIsModalOpen(true);
   };
 
+  const handleCopyNumber = () => {
+    navigator.clipboard.writeText("09553466544");
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000); 
+  };
+
+  const handlePreSubmit = () => {
+    if (paymentMethod === 'G-Cash' && !receipt) {
+      setError("Please upload your G-Cash receipt to proceed.");
+      return;
+    }
+    setError(null);
+    setIsModalOpen(true);
+  };
+
   const handlePlaceOrder = async () => {
     setLoading(true);
     setIsModalOpen(false);

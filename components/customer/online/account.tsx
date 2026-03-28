@@ -9,11 +9,12 @@ import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
 import { updateCustomerName } from "@/app/actions/updateCustomerName";
 import { updateCustomerLocation } from "@/app/actions/updateCustomerLocation";
+// Siguraduhin na ang file na ito ay nasa app/actions/updateCustomerNumber.ts
+import { updateCustomerNumber } from "@/app/actions/updateCustomerNumber"; 
 import { updateCustomerPassword } from "@/app/actions/updateCustomerPassword";
 import { getLocations } from "@/app/actions/locations";
 import { createClient } from "@/lib/supabase/client";
 import { getPasswordChecks, validatePasswordStrength } from "@/lib/validatePassword";
-
 
 export default function CustomerAccount() {
   const router = useRouter();
@@ -26,6 +27,8 @@ export default function CustomerAccount() {
   interface LocationItem { location_id: string; location_name: string; }
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Simulation para makita mo yung Skeleton. Aalisin rin kapag mabilis na mag-fetch si useUser()
   useEffect(() => {
@@ -34,9 +37,28 @@ export default function CustomerAccount() {
   }, []);
 
   useEffect(() => {
-    getLocations().then((res) => {
-      if (Array.isArray(res)) setLocations(res as LocationItem[]);
-    });
+    const timer = setTimeout(() => setIsLoadingProfile(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // INAYOS: Tinanggal ang 'any' at ginawang type-safe
+  useEffect(() => {
+    const fetchLocs = async () => {
+      try {
+        const res = await getLocations();
+        if (Array.isArray(res)) {
+          setLocations(res as LocationItem[]);
+        } else if (res && typeof res === 'object' && 'data' in res) {
+          const resData = (res as { data: unknown }).data;
+          if (Array.isArray(resData)) {
+            setLocations(resData as LocationItem[]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load locations", err);
+      }
+    };
+    fetchLocs();
   }, []);
 
   const [firstName, setFirstName] = useState(userData?.first_name || "");
@@ -58,7 +80,9 @@ export default function CustomerAccount() {
   const [zoneId, setZoneId] = useState(defaultZoneId);
   const [zoneName, setZoneName] = useState(defaultZoneName);
 
-  const [mobileNo, setMobileNo] = useState("09610123193");
+  // INAYOS: Ligtas na pagkuha sa mobile_no gamit ang type assertion
+  const userMobile = (userData as { mobile_no?: string } | null)?.mobile_no;
+  const [mobileNo, setMobileNo] = useState(userMobile || "09610123193");
 
   const [tempFirstName, setTempFirstName] = useState(firstName);
   const [tempLastName, setTempLastName] = useState(lastName);
@@ -116,12 +140,16 @@ export default function CustomerAccount() {
       else if (!locRegex.test(tempStreetName)) newErrors.streetName = "Invalid symbols used.";
 
       if (!tempZoneId) newErrors.zoneId = "Please select a zone.";
+
+      if (!locationPassword) newErrors.locationPassword = "Password is required to change location.";
     }
 
     if (view === "number") {
       const phoneRegex = /^(09)\d{9}$/;
       if (!tempMobileNo.trim()) newErrors.mobileNo = "Mobile number is required.";
       else if (!phoneRegex.test(tempMobileNo)) newErrors.mobileNo = "Must be an 11-digit number starting with 09.";
+      
+      if (!numberPassword) newErrors.numberPassword = "Password is required to change your mobile number.";
     }
 
     if (view === "password") {
@@ -149,6 +177,7 @@ export default function CustomerAccount() {
           setLastName(tempLastName);
           setMiddleInitial(tempMI);
           router.refresh();
+          setSuccessMessage("Your profile name has been updated successfully."); 
           setView("menu");
         } else {
           setErrors({ submit: res.error || "Failed to update name" });
@@ -165,16 +194,28 @@ export default function CustomerAccount() {
           setZoneId(tempZoneId);
           const chosenLoc = locations.find(l => l.location_id === tempZoneId);
           if (chosenLoc) setZoneName(chosenLoc.location_name);
+          
+          setLocationPassword(""); 
           router.refresh();
+          setSuccessMessage("Your delivery location has been updated successfully."); 
           setView("menu");
         } else {
-          setErrors({ submit: res.error || "Failed to update location" });
+          setErrors({ submit: res.error || "Incorrect password or failed to update location." });
         }
       }
 
       if (view === "number") {
-        setMobileNo(tempMobileNo);
-        setView("menu");
+        const res = await updateCustomerNumber(tempMobileNo, numberPassword); 
+        
+        if (res.success) {
+          setMobileNo(tempMobileNo);
+          setNumberPassword(""); 
+          router.refresh();
+          setSuccessMessage("Your mobile number has been updated successfully."); 
+          setView("menu");
+        } else {
+          setErrors({ submit: res.error || "Incorrect password or failed to update mobile number." });
+        }
       }
 
       if (view === "password") {
@@ -183,6 +224,7 @@ export default function CustomerAccount() {
           setOldPassword("");
           setNewPassword("");
           setConfirmPassword("");
+          setSuccessMessage("Your password has been changed successfully."); 
           setView("menu");
         } else {
           setErrors({ submit: res.error || "Failed to update password" });
@@ -216,6 +258,9 @@ export default function CustomerAccount() {
     setShowOldPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
+    setShowLocationPassword(false);
+    setShowNumberPassword(false);
+
     setErrors({});
   };
 
@@ -326,6 +371,7 @@ export default function CustomerAccount() {
           </div>
         </div>
 
+        {/* LOGOUT CONFIRMATION MODAL */}
         <ConfirmationModal
           isOpen={isLogoutModalOpen}
           onClose={() => setIsLogoutModalOpen(false)}
@@ -334,6 +380,25 @@ export default function CustomerAccount() {
           message="Are you sure you want to log out of your account?"
           confirmText="Yes, Log Out"
         />
+
+        {/* SUCCESS MODAL POP-UP */}
+        {successMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-[40px] p-8 max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-500 shadow-inner">
+                <Check size={40} strokeWidth={4} />
+              </div>
+              <h3 className="text-3xl font-black text-[#1e3d58] mb-2 tracking-tight">Success!</h3>
+              <p className="text-gray-600 font-medium mb-8 leading-relaxed px-2">{successMessage}</p>
+              <Button 
+                onClick={() => setSuccessMessage(null)} 
+                className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
+              >
+                Awesome
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -464,6 +529,36 @@ export default function CustomerAccount() {
                     </div>
                   </div>
                   {errors.zoneId && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.zoneId}</p>}
+                </div>
+
+                {/* SECURITY VERIFICATION PARA SA LOCATION */}
+                <div className="border-t-2 border-dashed border-gray-200 mt-6 pt-4">
+                  <h3 className="text-lg font-black text-[#1e3d58] mb-3 flex items-center gap-2">
+                    <Lock size={20} className="text-[#43b0f1]" /> Security Verification
+                  </h3>
+                  <div className="w-full">
+                    <label className="block text-sm font-bold text-gray-500 mb-1 ml-2">Enter password to confirm changes:</label>
+                    <div className="relative w-full">
+                      <input
+                        type={showLocationPassword ? "text" : "password"}
+                        placeholder="Current password"
+                        value={locationPassword}
+                        onChange={(e) => {
+                          setLocationPassword(e.target.value);
+                          if (e.target.value) clearError("locationPassword");
+                        }}
+                        className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.locationPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLocationPassword(!showLocationPassword)}
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                      >
+                        {showLocationPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
+                      </button>
+                    </div>
+                    {errors.locationPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.locationPassword}</p>}
+                  </div>
                 </div>
               </div>
             )}
