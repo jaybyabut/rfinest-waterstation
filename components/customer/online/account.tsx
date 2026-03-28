@@ -3,16 +3,16 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff, Check, X as XIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff } from "lucide-react"; // DINAGDAG: Eye, EyeOff
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
 import { updateCustomerName } from "@/app/actions/updateCustomerName";
 import { updateCustomerLocation } from "@/app/actions/updateCustomerLocation";
 import { updateCustomerPassword } from "@/app/actions/updateCustomerPassword";
+import { updateCustomerNumber } from "@/app/actions/updateCustomerNumber";
 import { getLocations } from "@/app/actions/locations";
 import { createClient } from "@/lib/supabase/client";
-import { getPasswordChecks, validatePasswordStrength } from "@/lib/validatePassword";
 
 
 export default function CustomerAccount() {
@@ -49,7 +49,12 @@ export default function CustomerAccount() {
   const [zoneId, setZoneId] = useState(defaultZoneId);
   const [zoneName, setZoneName] = useState(defaultZoneName);
 
-  const [mobileNo, setMobileNo] = useState("09610123193");
+  const [mobileNo, setMobileNo] = useState(userData?.mobile_no || "");
+  const [mobileVerifyPassword, setMobileVerifyPassword] = useState("");
+  const [showMobileVerifyPassword, setShowMobileVerifyPassword] = useState(false);
+
+  const [locationVerifyPassword, setLocationVerifyPassword] = useState("");
+  const [showLocationVerifyPassword, setShowLocationVerifyPassword] = useState(false);
 
   const [tempFirstName, setTempFirstName] = useState(firstName);
   const [tempLastName, setTempLastName] = useState(lastName);
@@ -99,19 +104,23 @@ export default function CustomerAccount() {
       else if (!locRegex.test(tempStreetName)) newErrors.streetName = "Invalid symbols used.";
 
       if (!tempZoneId) newErrors.zoneId = "Please select a zone.";
+
+      if (!locationVerifyPassword) newErrors.locationVerifyPassword = "Current password is required to save changes.";
     }
 
     if (view === "number") {
       const phoneRegex = /^(09)\d{9}$/;
       if (!tempMobileNo.trim()) newErrors.mobileNo = "Mobile number is required.";
       else if (!phoneRegex.test(tempMobileNo)) newErrors.mobileNo = "Must be an 11-digit number starting with 09.";
+      
+      if (!mobileVerifyPassword) newErrors.mobileVerifyPassword = "Current password is required to save changes.";
     }
 
     if (view === "password") {
       if (!oldPassword) newErrors.oldPassword = "Old password is required.";
 
-      const pwError = validatePasswordStrength(newPassword);
-      if (pwError) newErrors.newPassword = pwError;
+      if (!newPassword) newErrors.newPassword = "New password is required.";
+      else if (newPassword.length < 8) newErrors.newPassword = "Must be at least 8 characters.";
 
       if (newPassword !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
     }
@@ -140,7 +149,7 @@ export default function CustomerAccount() {
 
       if (view === "location") {
         const fullAddress = `${tempHouseNo}, ${tempStreetName}`;
-        const res = await updateCustomerLocation(fullAddress, tempZoneId);
+        const res = await updateCustomerLocation(fullAddress, tempZoneId, locationVerifyPassword);
         if (res.success) {
           setHouseNo(tempHouseNo);
           setStreetName(tempStreetName);
@@ -155,8 +164,15 @@ export default function CustomerAccount() {
       }
 
       if (view === "number") {
-        setMobileNo(tempMobileNo);
-        setView("menu");
+        const res = await updateCustomerNumber(tempMobileNo, mobileVerifyPassword);
+        if (res.success) {
+          setMobileNo(tempMobileNo);
+          setMobileVerifyPassword("");
+          router.refresh();
+          setView("menu");
+        } else {
+          setErrors({ submit: res.error || "Failed to update mobile number" });
+        }
       }
 
       if (view === "password") {
@@ -195,10 +211,14 @@ export default function CustomerAccount() {
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
+    setMobileVerifyPassword("");
+    setLocationVerifyPassword("");
     // DINAGDAG: Reset show password toggles pag nag-back
     setShowOldPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
+    setShowMobileVerifyPassword(false);
+    setShowLocationVerifyPassword(false);
     setErrors({});
   };
 
@@ -411,20 +431,64 @@ export default function CustomerAccount() {
                   </div>
                   {errors.zoneId && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.zoneId}</p>}
                 </div>
+
+                <div className="w-full">
+                  <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Current Password:</label>
+                  <div className="relative w-full">
+                    <input
+                      type={showLocationVerifyPassword ? "text" : "password"}
+                      placeholder="Enter password to verify"
+                      value={locationVerifyPassword}
+                      onChange={(e) => setLocationVerifyPassword(e.target.value)}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.locationVerifyPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationVerifyPassword(!showLocationVerifyPassword)}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                    >
+                      {showLocationVerifyPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
+                    </button>
+                  </div>
+                  {errors.locationVerifyPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.locationVerifyPassword}</p>}
+                </div>
               </div>
             )}
 
             {view === "number" && (
-              <div className="w-full">
-                <label className="block text-lg font-bold mb-2 ml-2 text-[#1e3d58]">Mobile Number:</label>
-                <input
-                  type="tel"
-                  placeholder="09XXXXXXXXX"
-                  value={tempMobileNo}
-                  onChange={(e) => setTempMobileNo(e.target.value)}
-                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
-                />
-                {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.mobileNo}</p>}
+              <div className="space-y-4 w-full">
+                <div className="w-full">
+                  <label className="block text-lg font-bold mb-2 ml-2 text-[#1e3d58]">New Mobile Number:</label>
+                  <input
+                    type="tel"
+                    placeholder="09XXXXXXXXX"
+                    value={tempMobileNo}
+                    onChange={(e) => setTempMobileNo(e.target.value)}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                  />
+                  {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.mobileNo}</p>}
+                </div>
+
+                <div className="w-full">
+                  <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Current Password:</label>
+                  <div className="relative w-full">
+                    <input
+                      type={showMobileVerifyPassword ? "text" : "password"}
+                      placeholder="Enter password to verify"
+                      value={mobileVerifyPassword}
+                      onChange={(e) => setMobileVerifyPassword(e.target.value)}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.mobileVerifyPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowMobileVerifyPassword(!showMobileVerifyPassword)}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
+                    >
+                      {showMobileVerifyPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
+                    </button>
+                  </div>
+                  {errors.mobileVerifyPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.mobileVerifyPassword}</p>}
+                </div>
               </div>
             )}
 
@@ -473,24 +537,6 @@ export default function CustomerAccount() {
                     </button>
                   </div>
                   {errors.newPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.newPassword}</p>}
-                  
-                  {/* Password Strength Checklist */}
-                  {newPassword.length > 0 && (
-                    <div className="mt-3 ml-2 space-y-1">
-                      {getPasswordChecks(newPassword).map((check) => (
-                        <div key={check.label} className="flex items-center gap-2">
-                          {check.pass ? (
-                            <Check size={14} className="text-green-500 shrink-0" strokeWidth={3} />
-                          ) : (
-                            <XIcon size={14} className="text-red-400 shrink-0" strokeWidth={3} />
-                          )}
-                          <span className={`text-xs font-bold ${check.pass ? 'text-green-600' : 'text-gray-400'}`}>
-                            {check.label}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* CONFIRM PASSWORD */}
