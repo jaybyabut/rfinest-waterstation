@@ -20,9 +20,18 @@ export default function CustomerAccount() {
   const userData = useUser();
   const [view, setView] = useState<"menu" | "name" | "location" | "number" | "password">("menu");
 
+  // DINAGDAG: Loading state para sa Skeletons
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
   interface LocationItem { location_id: string; location_name: string; }
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Simulation para makita mo yung Skeleton. Aalisin rin kapag mabilis na mag-fetch si useUser()
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoadingProfile(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     getLocations().then((res) => {
@@ -65,7 +74,6 @@ export default function CustomerAccount() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // DINAGDAG: States for showing passwords
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -73,6 +81,15 @@ export default function CustomerAccount() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // HELPER: Real-time Error Clearer
+  const clearError = (field: string) => {
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -92,8 +109,8 @@ export default function CustomerAccount() {
     if (view === "location") {
       const locRegex = /^[A-Za-z0-9\s,\.-]*$/;
 
-      if (!tempHouseNo.trim()) newErrors.houseNo = "House number is required.";
-      else if (!locRegex.test(tempHouseNo)) newErrors.houseNo = "Invalid symbols used.";
+      // INAYOS: Tinanggal ang required check para sa House No. (Optional na siya)
+      if (tempHouseNo && !locRegex.test(tempHouseNo)) newErrors.houseNo = "Invalid symbols used.";
 
       if (!tempStreetName.trim()) newErrors.streetName = "Street name is required.";
       else if (!locRegex.test(tempStreetName)) newErrors.streetName = "Invalid symbols used.";
@@ -139,7 +156,8 @@ export default function CustomerAccount() {
       }
 
       if (view === "location") {
-        const fullAddress = `${tempHouseNo}, ${tempStreetName}`;
+        // INAYOS: Smart string concatenation kapag walang House No.
+        const fullAddress = [tempHouseNo.trim(), tempStreetName.trim()].filter(Boolean).join(", ");
         const res = await updateCustomerLocation(fullAddress, tempZoneId);
         if (res.success) {
           setHouseNo(tempHouseNo);
@@ -195,7 +213,6 @@ export default function CustomerAccount() {
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    // DINAGDAG: Reset show password toggles pag nag-back
     setShowOldPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
@@ -209,6 +226,8 @@ export default function CustomerAccount() {
 
   const fullName = [firstName, middleInitial ? middleInitial + '.' : '', lastName].filter(Boolean).join(" ");
   const fullAddress = [houseNo, streetName, zoneName].filter(Boolean).join(", ");
+
+  const isDataFetching = isLoadingProfile || !userData;
 
   if (view === "menu") {
     return (
@@ -229,12 +248,17 @@ export default function CustomerAccount() {
 
               <h2 className="text-[#1e3d58] font-black text-2xl tracking-tight ml-2 mb-2">Profile Details</h2>
 
+              {/* PROFILE DETAILS WITH SKELETONS */}
               <button onClick={() => setView("name")} className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/60 hover:bg-[#e8eef1] transition-colors border-2 border-transparent hover:border-[#43b0f1]/30 shadow-sm gap-3">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#43b0f1] shadow-sm shrink-0"><User size={24} /></div>
                   <div className="text-left flex-1 min-w-0">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">Name</p>
-                    <p className="text-lg font-black text-[#1e3d58] truncate">{fullName}</p>
+                    {isDataFetching ? (
+                      <div className="h-6 w-3/4 bg-slate-300 rounded animate-pulse mt-1"></div>
+                    ) : (
+                      <p className="text-lg font-black text-[#1e3d58] truncate">{fullName}</p>
+                    )}
                   </div>
                 </div>
                 <ChevronRight size={24} className="text-gray-400 shrink-0" />
@@ -245,7 +269,14 @@ export default function CustomerAccount() {
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#43b0f1] shadow-sm shrink-0"><MapPin size={24} /></div>
                   <div className="text-left flex-1 min-w-0">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">Location</p>
-                    <p className="text-sm font-black text-[#1e3d58] line-clamp-2 leading-tight">{fullAddress}</p>
+                    {isDataFetching ? (
+                      <div className="flex flex-col gap-1.5 mt-1">
+                        <div className="h-4 w-full bg-slate-200 rounded animate-pulse"></div>
+                        <div className="h-4 w-2/3 bg-slate-200 rounded animate-pulse"></div>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-black text-[#1e3d58] line-clamp-2 leading-tight">{fullAddress}</p>
+                    )}
                   </div>
                 </div>
                 <ChevronRight size={24} className="text-gray-400 shrink-0" />
@@ -256,7 +287,11 @@ export default function CustomerAccount() {
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#43b0f1] shadow-sm shrink-0"><Phone size={24} /></div>
                   <div className="text-left flex-1 min-w-0">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">Mobile Number</p>
-                    <p className="text-lg font-black text-[#1e3d58] truncate">{mobileNo}</p>
+                    {isDataFetching ? (
+                      <div className="h-6 w-32 bg-slate-300 rounded animate-pulse mt-1"></div>
+                    ) : (
+                      <p className="text-lg font-black text-[#1e3d58] truncate">{mobileNo}</p>
+                    )}
                   </div>
                 </div>
                 <ChevronRight size={24} className="text-gray-400 shrink-0" />
@@ -320,7 +355,7 @@ export default function CustomerAccount() {
           <div className="bg-white rounded-[40px] p-5 sm:p-8 shadow-inner border border-gray-100 text-left space-y-5 w-full overflow-hidden">
 
             {errors.submit && (
-              <div className="bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm break-words">
+              <div className="bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm break-words animate-in fade-in zoom-in">
                 {errors.submit}
               </div>
             )}
@@ -334,7 +369,10 @@ export default function CustomerAccount() {
                       type="text"
                       placeholder="e.g. Juan"
                       value={tempFirstName}
-                      onChange={(e) => setTempFirstName(e.target.value)}
+                      onChange={(e) => {
+                        setTempFirstName(e.target.value);
+                        if (e.target.value.trim()) clearError("firstName");
+                      }}
                       className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.firstName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
                     {errors.firstName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.firstName}</p>}
@@ -346,7 +384,10 @@ export default function CustomerAccount() {
                       maxLength={1}
                       placeholder="A"
                       value={tempMI}
-                      onChange={(e) => setTempMI(e.target.value)}
+                      onChange={(e) => {
+                        setTempMI(e.target.value);
+                        clearError("mi");
+                      }}
                       className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mi ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
                     {errors.mi && <p className="text-red-500 text-xs font-bold mt-1 text-center break-words">{errors.mi}</p>}
@@ -358,7 +399,10 @@ export default function CustomerAccount() {
                     type="text"
                     placeholder="e.g. Dela Cruz"
                     value={tempLastName}
-                    onChange={(e) => setTempLastName(e.target.value)}
+                    onChange={(e) => {
+                      setTempLastName(e.target.value);
+                      if (e.target.value.trim()) clearError("lastName");
+                    }}
                     className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.lastName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                   />
                   {errors.lastName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.lastName}</p>}
@@ -369,15 +413,19 @@ export default function CustomerAccount() {
             {view === "location" && (
               <div className="space-y-4 w-full">
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
-                  <div className="flex-1 min-w-0">
+                  <div className="w-full sm:w-1/3 shrink-0">
                     <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">House No.:</label>
                     <input
                       type="text"
                       placeholder="e.g. Blk 1 Lot 8"
                       value={tempHouseNo}
-                      onChange={(e) => setTempHouseNo(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.houseNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      onChange={(e) => {
+                        setTempHouseNo(e.target.value);
+                        clearError("houseNo");
+                      }}
+                      className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.houseNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
+                    <p className="text-gray-400 text-xs font-semibold mt-1 ml-2 text-center sm:text-left">Leave blank if none</p>
                     {errors.houseNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.houseNo}</p>}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -386,7 +434,10 @@ export default function CustomerAccount() {
                       type="text"
                       placeholder="e.g. San Juan St."
                       value={tempStreetName}
-                      onChange={(e) => setTempStreetName(e.target.value)}
+                      onChange={(e) => {
+                        setTempStreetName(e.target.value);
+                        if (e.target.value.trim()) clearError("streetName");
+                      }}
                       className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.streetName ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
                     {errors.streetName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.streetName}</p>}
@@ -397,7 +448,10 @@ export default function CustomerAccount() {
                   <div className="relative w-full">
                     <select
                       value={tempZoneId}
-                      onChange={(e) => setTempZoneId(e.target.value)}
+                      onChange={(e) => {
+                        setTempZoneId(e.target.value);
+                        if (e.target.value) clearError("zoneId");
+                      }}
                       className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer min-w-0 pr-10 ${errors.zoneId ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     >
                       <option value="" disabled>Select a valid zone</option>
@@ -421,7 +475,11 @@ export default function CustomerAccount() {
                   type="tel"
                   placeholder="09XXXXXXXXX"
                   value={tempMobileNo}
-                  onChange={(e) => setTempMobileNo(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 11);
+                    setTempMobileNo(val);
+                    if (/^(09)\d{9}$/.test(val)) clearError("mobileNo");
+                  }}
                   className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
                 />
                 {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.mobileNo}</p>}
@@ -439,7 +497,10 @@ export default function CustomerAccount() {
                       type={showOldPassword ? "text" : "password"}
                       placeholder="Enter current password"
                       value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
+                      onChange={(e) => {
+                        setOldPassword(e.target.value);
+                        if (e.target.value) clearError("oldPassword");
+                      }}
                       className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.oldPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
                     <button
@@ -461,7 +522,11 @@ export default function CustomerAccount() {
                       type={showNewPassword ? "text" : "password"}
                       placeholder="Min. 8 characters"
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value);
+                        if (!validatePasswordStrength(e.target.value)) clearError("newPassword");
+                        if (confirmPassword === e.target.value) clearError("confirmPassword");
+                      }}
                       className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.newPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
                     <button
@@ -501,7 +566,10 @@ export default function CustomerAccount() {
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Re-enter new password"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                        if (e.target.value === newPassword) clearError("confirmPassword");
+                      }}
                       className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.confirmPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
                     />
                     <button
