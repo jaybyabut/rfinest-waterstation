@@ -17,7 +17,7 @@ interface Location {
 export default function PlaceOrderForm() {
   const [locations, setLocations] = useState<Location[]>([]);
   
-  // SPLIT NAME STATES (Para uniform sa Sign Up)
+  // SPLIT NAME STATES
   const [firstName, setFirstName] = useState("");
   const [mi, setMi] = useState("");
   const [lastName, setLastName] = useState("");
@@ -102,32 +102,49 @@ export default function PlaceOrderForm() {
 
     let hasError = false;
     const newErrors: typeof fieldErrors = {};
+    
+    // THE ULTIMATE TS FIX: Kukunin agad natin yung HTMLDivElement, hindi yung ref object.
+    let firstErrorElement: HTMLDivElement | null = null;
 
-    // VALIDATION
-    if (!firstName.trim()) { newErrors.firstName = true; hasError = true; }
-    if (!lastName.trim()) { newErrors.lastName = true; hasError = true; }
-    if (!selectedLocation) { newErrors.zone = true; hasError = true; }
-    if (!streetName.trim()) { newErrors.streetName = true; hasError = true; }
-    if (!mobileNumber.trim() || mobileNumber.length < 11) { newErrors.mobileNumber = true; hasError = true; }
-    if (slimCount === 0 && roundCount === 0) { newErrors.items = true; hasError = true; }
+    if (!firstName.trim()) {
+      newErrors.firstName = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = nameRef.current;
+    }
+    if (!lastName.trim()) {
+      newErrors.lastName = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = nameRef.current;
+    }
+    if (!selectedLocation) {
+      newErrors.zone = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = zoneRef.current;
+    }
+    if (!streetName.trim()) {
+      newErrors.streetName = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = locationRef.current;
+    }
+    if (!mobileNumber.trim() || mobileNumber.length < 11) {
+      newErrors.mobileNumber = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = numberRef.current;
+    }
+    if (slimCount === 0 && roundCount === 0) {
+      newErrors.items = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = itemsRef.current;
+    }
 
     if (hasError) {
       setFieldErrors(newErrors);
       setGlobalError("Please fill in all required fields highlighted in red.");
       
-      // AUTO-SCROLL TO ERROR (100% Type-Safe, no TS Errors)
-      if (newErrors.firstName || newErrors.lastName) {
-        nameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (newErrors.zone) {
-        zoneRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (newErrors.streetName) {
-        locationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (newErrors.mobileNumber) {
-        numberRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (newErrors.items) {
-        itemsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Auto scroll papunta sa nakuhang element
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
       }
-      
       return;
     }
 
@@ -139,7 +156,6 @@ export default function PlaceOrderForm() {
     setLoading(true);
     setGlobalError(null);
 
-    // Pinagdudugtong ang mga inputs bago i-save sa database
     const fullName = [firstName.trim(), mi.trim() ? mi.trim() + '.' : '', lastName.trim()].filter(Boolean).join(" ");
     const fullAddress = [houseNo.trim(), streetName.trim()].filter(Boolean).join(", ");
 
@@ -339,34 +355,26 @@ export default function PlaceOrderForm() {
                 />
               </div>
 
-              {/* ================= DETAILS SECTION ================= */}
-              <div className="w-full" ref={itemsRef}>
+              {/* ================= EXACT COPY DETAILS ================= */}
+              <div className="pt-2 w-full" ref={itemsRef}>
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
                 <div className={`w-full p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-4 transition-colors ${fieldErrors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
 
                   <div className={`flex justify-between items-center text-xl font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
                     <span className="flex-1 whitespace-normal leading-tight break-words">Slim Gallon:</span>
                     <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-                      <button type="button" onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
-                        <Minus size={24} strokeWidth={3} />
-                      </button>
+                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Minus size={24} strokeWidth={3} /></button>
                       <span className="w-6 sm:w-8 text-center text-2xl font-black">{slimCount}</span>
-                      <button type="button" onClick={() => { setSlimCount(slimCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
-                        <Plus size={24} strokeWidth={3} />
-                      </button>
+                      <button onClick={() => { setSlimCount(slimCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Plus size={24} strokeWidth={3} /></button>
                     </div>
                   </div>
 
                   <div className={`flex justify-between items-center text-xl font-bold border-t border-white/60 pt-3 gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
                     <span className="flex-1 whitespace-normal leading-tight break-words">Round Gallon:</span>
                     <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-                      <button type="button" onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
-                        <Minus size={24} strokeWidth={3} />
-                      </button>
+                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Minus size={24} strokeWidth={3} /></button>
                       <span className="w-6 sm:w-8 text-center text-2xl font-black">{roundCount}</span>
-                      <button type="button" onClick={() => { setRoundCount(roundCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
-                        <Plus size={24} strokeWidth={3} />
-                      </button>
+                      <button onClick={() => { setRoundCount(roundCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Plus size={24} strokeWidth={3} /></button>
                     </div>
                   </div>
 
@@ -420,7 +428,7 @@ export default function PlaceOrderForm() {
         onClose={() => setIsModalOpen(false)}
         onConfirm={confirmAndProcessOrder}
         title="Confirm Order"
-        message={`Are you sure you want to place this order? Total amount is ₱${totalAmount}.`}
+        message={`Are you sure you want to place this order for ${firstName} ${lastName}? Total amount is ₱${totalAmount}.`}
         confirmText={loading ? "Processing..." : "Yes, Place Order"}
       />
 
