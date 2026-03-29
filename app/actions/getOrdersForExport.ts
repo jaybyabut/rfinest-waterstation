@@ -15,7 +15,7 @@ export async function getOrdersForExport(selectedMonth: string) {
     // Kukunin ang pinaka-last millisecond ng buwan
     const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999).toISOString(); 
 
-    // 2. I-query ang database, isama yung related tables na kailangan sa CSV
+    // 2. I-query ang database, isama yung related tables na kailangan sa CSV (Inalis na ang current_status)
     const { data: orders, error } = await supabase
       .from('orders')
       .select(`
@@ -25,7 +25,6 @@ export async function getOrdersForExport(selectedMonth: string) {
         total_amount,
         transaction_type,
         payment_mode,
-        current_status,
         location_pricing ( location_name ),
         order_items (
           quantity,
@@ -67,6 +66,7 @@ export async function getOrdersForExport(selectedMonth: string) {
       const dateObj = new Date(order.order_dt);
       const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 
+      // Inalis na ang status field dito para match sa frontend
       return {
         id: `ORD-${order.order_id}`,
         date: formattedDate,
@@ -76,8 +76,7 @@ export async function getOrdersForExport(selectedMonth: string) {
         round: roundCount,
         total: order.total_amount || 0,
         type: order.transaction_type || "N/A",
-        payment: order.payment_mode || "Cash",
-        status: order.current_status || "Pending"
+        payment: order.payment_mode || "Cash"
       };
     });
 

@@ -116,12 +116,11 @@ export default function AnalyticsAndReports() {
   };
 
   // ================= EXPORT TO CSV LOGIC =================
- const handleExportToCSV = async () => {
+  const handleExportToCSV = async () => {
     if (!selectedMonth) return;
     setIsExporting(true);
 
     try {
-      // TINAWAG NA NATIN YUNG TOTOONG DATABASE DATA!
       const orders = await getOrdersForExport(selectedMonth);
       
       if (!orders || orders.length === 0) {
@@ -130,30 +129,50 @@ export default function AnalyticsAndReports() {
         return;
       }
 
-      // 1. Setup the CSV Header
-      const headers = ["Order ID", "Date", "Customer Name", "Zone", "Slim Gallons", "Round Gallons", "Total Amount (PHP)", "Type", "Payment Mode", "Status"];
+      // 1. Setup the CSV Header (Status removed)
+      const headers = [
+        "Order ID", 
+        "Date", 
+        "Customer Name", 
+        "Zone", 
+        "Slim Gallons", 
+        "Round Gallons", 
+        "Total Amount (PHP)", 
+        "Type", 
+        "Payment Mode"
+      ];
       
-      // 2. Map the data rows
-      const rows = orders.map((order: any) => [
-        order.id,
-        order.date,
-        `"${order.name}"`, // Encapsulate in quotes in case of commas in names
-        order.zone,
-        order.slim,
-        order.round,
-        order.total,
-        order.type,
-        order.payment,
-        order.status
-      ]);
+      let grandTotal = 0;
 
-      // 3. Combine headers and rows with newlines
+      // 2. Map the data rows and compute grand total
+      const rows = orders.map((order: any) => {
+        const orderTotal = Number(order.total) || 0;
+        grandTotal += orderTotal;
+
+        return [
+          order.id,
+          order.date,
+          `"${order.name}"`, // Encapsulate in quotes for safe CSV formatting
+          order.zone,
+          order.slim,
+          order.round,
+          orderTotal,
+          order.type,
+          order.payment
+        ];
+      });
+
+      // 3. Add spacer and Grand Total at the bottom
+      rows.push(["", "", "", "", "", "", "", "", ""]);
+      rows.push(["", "", "", "", "", "GRAND TOTAL:", grandTotal, "", ""]);
+
+      // 4. Combine headers and rows
       const csvContent = [
         headers.join(","),
         ...rows.map(row => row.join(","))
       ].join("\n");
 
-      // 4. Create a Blob and trigger download
+      // 5. Trigger download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -238,9 +257,9 @@ export default function AnalyticsAndReports() {
                     <div className="border border-gray-300 rounded-[20px] bg-white py-3 flex justify-center"><div className="h-8 w-32 bg-slate-200 rounded"></div></div>
                   </div>
 
-                  <div className="flex flex-col gap-3 justify-center w-full">
-                    <div className="w-full h-14 bg-slate-300 rounded-full"></div>
-                    <div className="w-full h-14 bg-slate-300 rounded-full"></div>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center w-full">
+                    <div className="w-full sm:flex-1 h-14 bg-slate-300 rounded-full"></div>
+                    <div className="w-full sm:flex-1 h-14 bg-slate-300 rounded-full"></div>
                   </div>
                 </div>
               </div>
