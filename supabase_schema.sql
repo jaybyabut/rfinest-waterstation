@@ -1,11 +1,11 @@
--- Add idempotency key for offline sync deduplication
+-- idempotency key for offline sync deduplication
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS idempotency_key UUID UNIQUE;
 CREATE INDEX IF NOT EXISTS idx_orders_idempotency ON orders(idempotency_key);
 
--- Ensure updated_at column exists for conflict resolution
+-- ensure updated_at column exists for conflict resolution
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
--- Function to automatically update the updated_at column
+-- function to automatically update the updated_at column
 CREATE OR REPLACE FUNCTION update_order_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -14,7 +14,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger to call the function on every update
+-- trigger to call the function on every update
 DROP TRIGGER IF EXISTS tr_update_order_updated_at ON orders;
 CREATE TRIGGER tr_update_order_updated_at
 BEFORE UPDATE ON orders
