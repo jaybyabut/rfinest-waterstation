@@ -136,7 +136,7 @@ export default function CustomerPlaceOrder() {
             <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 break-words leading-tight">
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 leading-tight">
               Place Order
             </h1>
           </div>
