@@ -241,7 +241,7 @@ export default function CustomerAccount() {
                 <ChevronLeft size={44} strokeWidth={3} />
               </Link>
               <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 break-words leading-tight">
-                Account
+                Account Settings
               </h1>
             </div>
 
