@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
+import { CacheInitializer } from "@/components/offline/CacheInitializer";
+import { ConnectionStatus } from "@/components/ui/connection-status";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -33,6 +35,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <CacheInitializer />
+          <ConnectionStatus />
         </ThemeProvider>
       </body>
     </html>

@@ -13,7 +13,7 @@ import {
   Minimize, 
   History, 
   Clock, 
-  Image as ImageIcon, 
+  Image as ImageIcon,
   Loader2 
 } from 'lucide-react';
 import { getWalkInOrders } from "@/app/actions/getWalkInOrders";
@@ -21,6 +21,17 @@ import { getOnlineOrders } from "@/app/actions/getOnlineOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
 import { getActivityLogs } from "@/app/actions/getActivityLogs";
 import { createClient } from "@/lib/supabase/client";
+import { cacheWalkInOrders, getCachedWalkInOrders, cacheOnlineOrders, getCachedOnlineOrders } from "@/lib/offline/orderCacheService";
+import { queueStatusUpdate } from "@/lib/offline/offlineStatusService";
+
+const mapWalkIn = (data: any[]) => data.map(o => ({
+  id: o.order_id.toString(),
+  status: o.current_status,
+  items: o.order_items.map((i: any) => ({
+    type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
+    quantity: i.quantity
+  }))
+}));
 
 type OrderItem = { type: string; quantity: number };
 type WalkInOrder = { id: string; items: OrderItem[]; status: string };
@@ -61,16 +72,22 @@ export default function EmployeeTablet() {
 
   const fetchWalkIn = async () => {
     try {
-      const data = await getWalkInOrders();
-      if (Array.isArray(data)) {
-        setWalkInOrders(data.map(o => ({
-          id: o.order_id.toString(),
-          status: o.current_status,
-          items: o.order_items.map((i: any) => ({
-            type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
-            quantity: i.quantity
-          }))
-        })));
+      if (navigator.onLine) {
+        const data = await getWalkInOrders();
+        if (Array.isArray(data)) {
+          setWalkInOrders(mapWalkIn(data));
+          await cacheWalkInOrders(data);
+        }
+      } else {
+        const cached = await getCachedWalkInOrders();
+        if (cached.length > 0) {
+          // Re-map cached items back to component state format
+          setWalkInOrders(cached.map(o => ({
+            id: o.id,
+            status: o.current_status,
+            items: o.items || []
+          })));
+        }
       }
     } catch (error) {
       console.error("Failed to fetch walk-in orders:", error);
@@ -91,36 +108,48 @@ export default function EmployeeTablet() {
   const fetchOnline = async () => {
     const supabase = createClient();
     try {
-      const data = await getOnlineOrders();
-      if (Array.isArray(data)) {
-        const mappedData = await Promise.all(
-          data.map(async (o) => {
-            let receipt_url = undefined;
-            if (o.proof_payment) {
-              const { data: signedUrlData, error } = await supabase.storage.from('proof_payment').createSignedUrl(o.proof_payment, 60 * 60 * 24); // valid for 24 hours
-              if (signedUrlData) {
-                receipt_url = signedUrlData.signedUrl;
-              } else {
-                console.error("Failed to generate signed url:", error);
+      if (navigator.onLine) {
+        const data = await getOnlineOrders();
+        if (Array.isArray(data)) {
+          const mappedData = await Promise.all(
+            data.map(async (o) => {
+              let receipt_url = undefined;
+              if (o.proof_payment) {
+                const { data: signedUrlData } = await supabase.storage.from('proof_payment').createSignedUrl(o.proof_payment, 60 * 60 * 24);
+                if (signedUrlData) receipt_url = signedUrlData.signedUrl;
               }
-            }
 
-            return {
-              id: o.order_id.toString(),
-              status: o.current_status.toLowerCase(),
-              name: o.name,
-              address: o.address,
-              notes: o.note,
-              payment_method: o.payment_mode,
-              receipt_url: receipt_url,
-              items: o.order_items.map((i: any) => ({
-                type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
-                quantity: i.quantity
-              }))
-            };
-          })
-        );
-        setOnlineOrders(mappedData);
+              return {
+                id: o.order_id.toString(),
+                status: o.current_status.toLowerCase(),
+                name: o.name,
+                address: o.address,
+                notes: o.note,
+                payment_method: o.payment_mode,
+                receipt_url: receipt_url,
+                items: o.order_items.map((i: any) => ({
+                  type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
+                  quantity: i.quantity
+                }))
+              };
+            })
+          );
+          setOnlineOrders(mappedData);
+          await cacheOnlineOrders(data);
+        }
+      } else {
+        const cached = await getCachedOnlineOrders();
+        if (cached.length > 0) {
+          setOnlineOrders(cached.map(o => ({
+            id: o.id,
+            status: o.current_status.toLowerCase(),
+            name: o.customer_name,
+            address: o.address || 'N/A',
+            notes: o.notes,
+            payment_method: o.payment_mode || 'N/A',
+            items: o.items || []
+          })));
+        }
       }
     } catch (error) {
       console.error("Failed to fetch online orders:", error);
@@ -150,8 +179,15 @@ export default function EmployeeTablet() {
   };
 
   const handleRefill = async (id: any) => {
-    const res = await updateOrderStatus(id, 'Delivered');
-    if (res.success) {
+    if (navigator.onLine) {
+      const res = await updateOrderStatus(id, 'Delivered');
+      if (res.success) {
+        setWalkInOrders(prev => prev.filter(o => o.id !== id));
+        setConfirmingId(null);
+      }
+    } else {
+      // Offline Flow
+      await queueStatusUpdate(id, 'Delivered');
       setWalkInOrders(prev => prev.filter(o => o.id !== id));
       setConfirmingId(null);
     }
@@ -169,8 +205,18 @@ export default function EmployeeTablet() {
     else if (currentOrder.status === 'out for delivery') nextStatus = 'Delivered';
 
     if (nextStatus) {
-      const res = await updateOrderStatus(id, nextStatus);
-      if (res.success) {
+      if (navigator.onLine) {
+        const res = await updateOrderStatus(id, nextStatus);
+        if (res.success) {
+          setOnlineOrders(prev => prev.map(o => o.id === id ? { ...o, status: nextStatus.toLowerCase() } : o));
+          if (nextStatus === 'Delivered') {
+            setOnlineOrders(prev => prev.filter(o => o.id !== id));
+          }
+          setConfirmingId(null);
+        }
+      } else {
+        // Offline Flow
+        await queueStatusUpdate(id, nextStatus);
         setOnlineOrders(prev => prev.map(o => o.id === id ? { ...o, status: nextStatus.toLowerCase() } : o));
         if (nextStatus === 'Delivered') {
           setOnlineOrders(prev => prev.filter(o => o.id !== id));
