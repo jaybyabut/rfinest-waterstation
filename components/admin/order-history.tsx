@@ -160,22 +160,75 @@ export default function OrderHistory() {
               ))}
             </div>
 
+            {/* ================= BAGONG RESPONSIVE DATE PICKER ================= */}
             {activeFilter === "Custom" && (
-              <div className={`flex items-center justify-between gap-2 mb-4 bg-gray-50 p-3 rounded-2xl border-2 transition-colors ${globalError ? 'border-red-400' : 'border-gray-200'}`}>
-                <Calendar size={20} className="text-[#1e3d58] shrink-0" />
-                <input type="date" value={startDate} onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()} onKeyDown={(e) => e.preventDefault()} onChange={(e) => setStartDate(e.target.value)}
-                  className={`w-full min-w-0 bg-transparent text-center text-sm font-bold focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden ${globalError ? 'text-red-600' : 'text-[#1e3d58]'}`}
-                />
-                <span className="font-bold text-gray-400 shrink-0">-</span>
-                <input type="date" value={endDate} onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()} onKeyDown={(e) => e.preventDefault()} onChange={(e) => setEndDate(e.target.value)}
-                  className={`w-full min-w-0 bg-transparent text-center text-sm font-bold focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden ${globalError ? 'text-red-600' : 'text-[#1e3d58]'}`}
-                />
+              <div className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4 bg-[#f8fbfd] p-4 rounded-[20px] border-2 transition-colors ${globalError ? 'border-red-400' : 'border-[#1e3d58]/10'}`}>
+                
+                <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 mb-1 sm:mb-0">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100">
+                    <Calendar size={20} className="text-[#43b0f1]" />
+                  </div>
+                  <span className="text-sm font-black text-[#1e3d58] uppercase tracking-widest sm:hidden">Select Date</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
+                  
+                  {/* Start Date Input */}
+                  <div className="flex items-center w-full bg-white h-12 px-4 rounded-full border border-gray-200 shadow-sm focus-within:border-[#43b0f1] transition-colors">
+                    <span className="text-[10px] font-black text-gray-400 uppercase mr-3 shrink-0">From</span>
+                    <input 
+                      type="date" 
+                      value={startDate} 
+                      onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()} 
+                      onKeyDown={(e) => e.preventDefault()} 
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className={`w-full min-w-0 bg-transparent text-sm font-bold focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden ${globalError ? 'text-red-600' : 'text-[#1e3d58]'}`}
+                    />
+                  </div>
+                  
+                  {/* Dash (Lilitaw lang sa malaking screen) */}
+                  <span className="hidden sm:block font-black text-gray-300">-</span>
+                  
+                  {/* End Date Input */}
+                  <div className="flex items-center w-full bg-white h-12 px-4 rounded-full border border-gray-200 shadow-sm focus-within:border-[#43b0f1] transition-colors">
+                    <span className="text-[10px] font-black text-gray-400 uppercase mr-3 shrink-0">To</span>
+                    <input 
+                      type="date" 
+                      value={endDate} 
+                      onClick={(e) => e.currentTarget.showPicker && e.currentTarget.showPicker()} 
+                      onKeyDown={(e) => e.preventDefault()} 
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className={`w-full min-w-0 bg-transparent text-sm font-bold focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden ${globalError ? 'text-red-600' : 'text-[#1e3d58]'}`}
+                    />
+                  </div>
+
+                </div>
               </div>
             )}
+            {/* ================= END NG BAGONG DATE PICKER ================= */}
 
             <div className="space-y-4 pb-4 w-full">
               {loading ? (
-                <div className="text-center py-10 text-gray-400 font-bold animate-pulse">Loading history...</div>
+                // ================= SKELETON LOADER =================
+                <div className="space-y-4 w-full animate-pulse">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="border-2 border-gray-100 rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3 w-full overflow-hidden">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0 flex-1 pt-0.5">
+                          <div className="h-6 w-32 bg-slate-200 rounded mb-1"></div>
+                          <div className="h-4 w-48 bg-slate-200 rounded mb-1"></div>
+                          <div className="h-3 w-24 bg-slate-200 rounded mt-2"></div>
+                        </div>
+                        <div className="h-6 w-16 bg-slate-200 rounded-full mt-0.5 shrink-0"></div>
+                      </div>
+                      <div className="flex justify-between items-center bg-[#e8eef1] p-3 rounded-[15px] gap-2 w-full mt-1">
+                        <div className="h-4 w-40 bg-slate-200 rounded flex-1"></div>
+                        <div className="h-6 w-16 bg-slate-200 rounded shrink-0"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                // ================= END SKELETON LOADER =================
               ) : orders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-bold italic">{globalError ? "Invalid date range." : "No orders found."}</div>
               ) : (

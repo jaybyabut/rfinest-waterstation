@@ -28,6 +28,10 @@ export default function EditOrderForm() {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loadingSave, setLoadingSave] = useState(false);
+    
+    // DINAGDAG: Bagong state para sa Skeleton Loader
+    const [isFetching, setIsFetching] = useState(false);
+    
     const [showScrollTop, setShowScrollTop] = useState(false);
 
     const newTotal = (slimCount + roundCount) * pricePerUnit;
@@ -46,7 +50,9 @@ export default function EditOrderForm() {
         setSuccessMessage(null);
         setErrors({});
         setViewState("editing");
-        setLoadingSave(true);
+        
+        // Gagamitin natin ito para i-trigger ang Skeleton Loader
+        setIsFetching(true);
 
         try {
             const result = await getOrderForEdit(id);
@@ -70,7 +76,8 @@ export default function EditOrderForm() {
             setGlobalError("Failed to fetch order details.");
             setViewState("selection");
         } finally {
-            setLoadingSave(false);
+            // Papatayin ang Skeleton Loader kapag tapos na
+            setIsFetching(false);
         }
     };
 
@@ -149,7 +156,8 @@ export default function EditOrderForm() {
                         </h1>
                     </div>
 
-                    <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left relative min-h-[400px] w-full overflow-hidden">
+                    {/* INAYOS: Tinanggal ang overflow-hidden dito para hindi ma-trap ang scroll sa loob */}
+                    <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left relative min-h-[400px] w-full">
 
                         {globalError && (
                             <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200 break-words">⚠️ {globalError}</div>
@@ -160,6 +168,42 @@ export default function EditOrderForm() {
 
                         {viewState === "selection" ? (
                             <OrderSelection onSelectOrder={loadOrderDetails} />
+                        ) : isFetching ? (
+                            
+                            // ================= SKELETON LOADER =================
+                            <div className="space-y-5 w-full animate-pulse">
+                                <div className="grid grid-cols-1 gap-4 w-full">
+                                    <div className="w-full">
+                                        <div className="h-6 w-24 bg-slate-200 rounded mb-2 ml-2"></div>
+                                        <div className="h-14 w-full bg-slate-200 rounded-full"></div>
+                                    </div>
+                                    <div className="w-full">
+                                        <div className="h-6 w-20 bg-slate-200 rounded mb-2 ml-2"></div>
+                                        <div className="h-14 w-full bg-slate-200 rounded-full"></div>
+                                    </div>
+                                    <div className="w-full">
+                                        <div className="h-6 w-24 bg-slate-200 rounded mb-2 ml-2"></div>
+                                        <div className="h-14 w-full bg-slate-200 rounded-full"></div>
+                                    </div>
+                                </div>
+
+                                <hr className="border-dashed border-gray-200" />
+
+                                <div className="pt-2 w-full">
+                                    <div className="h-6 w-24 bg-slate-200 rounded mb-2 ml-2"></div>
+                                    <div className="w-full h-32 bg-slate-200 rounded-[30px]"></div>
+                                </div>
+
+                                <div className="flex flex-col items-center pt-2 w-full">
+                                    <div className="h-10 w-48 bg-slate-200 rounded-full"></div>
+                                </div>
+
+                                <div className="pt-4 flex justify-center w-full">
+                                    <div className="w-full h-16 bg-slate-300 rounded-full"></div>
+                                </div>
+                            </div>
+                            // ================= END SKELETON LOADER =================
+
                         ) : (
                             <div className={`space-y-5 animate-in slide-in-from-right-4 duration-300 w-full ${loadingSave ? "opacity-50 pointer-events-none" : ""}`}>
 

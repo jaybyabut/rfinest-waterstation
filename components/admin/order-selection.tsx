@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, RefreshCw, ShoppingBag, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
-// FIX: Ginawan ng strict Interface imbes na 'any'
 interface PendingOrder {
     order_id: string;
     name: string;
@@ -19,7 +18,6 @@ interface OrderSelectionProps {
 }
 
 export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
-    // FIX: Best practice para hindi nagre-render nang paulit-ulit
     const [supabase] = useState(() => createClient());
 
     const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
@@ -27,7 +25,6 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [error, setError] = useState<string | null>(null);
 
-    // FIX: Ginamit natin ang useCallback para pumasa nang 100% sa strict linter
     const fetchPendingOrders = useCallback(async () => {
         setLoadingList(true);
         setError(null);
@@ -47,7 +44,6 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
                 .order("order_dt", { ascending: false });
 
             if (fetchError) throw fetchError;
-            // FIX: Force natin as PendingOrder[] gamit ang unknown technique
             setPendingOrders((data as unknown as PendingOrder[]) || []);
         } catch (e) {
             console.error(e);
@@ -59,7 +55,6 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
 
     useEffect(() => {
         fetchPendingOrders();
-        // FIX: Wala nang eslint-disable-next-line comment! Malinis na malinis na.
     }, [fetchPendingOrders]);
 
     const filteredOrders = pendingOrders.filter((order) => {
@@ -90,19 +85,38 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
 
             <div className="flex justify-between items-center px-2 mb-2">
                 <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Pending Orders</span>
-                <button onClick={fetchPendingOrders} className="text-[#43b0f1] hover:text-[#1e3d58] transition-colors">
-                    <RefreshCw size={16} className={loadingList ? "animate-spin" : ""} />
+                <button onClick={fetchPendingOrders} className="text-[#43b0f1] hover:text-[#1e3d58] transition-colors outline-none">
+                    <RefreshCw size={16} className={loadingList ? "animate-spin" : ""} strokeWidth={3} />
                 </button>
             </div>
 
-            <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar pb-4">
+            {/* INAYOS: Tinanggal ang max-h-[450px], overflow-y-auto, at custom-scrollbar para humaba ito naturally */}
+            <div className="space-y-3 pb-4 w-full">
                 {loadingList ? (
-                    <div className="flex flex-col items-center justify-center py-10 opacity-50">
-                        <RefreshCw className="animate-spin text-[#1e3d58] mb-2" size={32} />
-                        <p className="font-bold text-sm text-[#1e3d58]">Loading orders...</p>
+                    
+                    // ================= SKELETON LOADER =================
+                    <div className="space-y-3 w-full animate-pulse">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="w-full bg-[#f8fbfd] border-2 border-[#1e3d58]/5 rounded-[20px] p-4">
+                                <div className="flex justify-between items-start mb-2 border-b border-gray-100 pb-2">
+                                    <div className="h-6 w-24 bg-slate-200 rounded"></div>
+                                    <div className="h-5 w-16 bg-orange-100 rounded-full"></div>
+                                </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-4 h-4 rounded-full bg-slate-200 shrink-0"></div>
+                                    <div className="h-4 w-1/2 bg-slate-200 rounded"></div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 rounded-full bg-slate-200 shrink-0"></div>
+                                    <div className="h-3 w-1/3 bg-slate-200 rounded"></div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
+                    // ================= END SKELETON LOADER =================
+
                 ) : filteredOrders.length === 0 ? (
-                    <div className="text-center py-10 text-gray-400 font-bold italic">
+                    <div className="text-center py-10 text-gray-400 font-bold italic bg-gray-50 rounded-[20px] border-2 border-dashed border-gray-200">
                         No pending orders found.
                     </div>
                 ) : (
