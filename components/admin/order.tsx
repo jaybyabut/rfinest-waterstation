@@ -357,24 +357,32 @@ export default function PlaceOrderForm() {
 
               {/* ================= EXACT COPY DETAILS ================= */}
               <div className="pt-2 w-full" ref={itemsRef}>
-                <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
-                <div className={`w-full p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-4 transition-colors ${fieldErrors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
+                <label className="block text-base sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
+                <div className={`w-full p-3 sm:p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-3 sm:space-y-4 transition-colors ${fieldErrors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
 
-                  <div className={`flex justify-between items-center text-xl font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="flex-1 whitespace-normal leading-tight break-words">Slim Gallon:</span>
-                    <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Minus size={24} strokeWidth={3} /></button>
-                      <span className="w-6 sm:w-8 text-center text-2xl font-black">{slimCount}</span>
-                      <button onClick={() => { setSlimCount(slimCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Plus size={24} strokeWidth={3} /></button>
+                  <div className={`flex justify-between items-center font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="flex-1 text-base sm:text-xl whitespace-normal leading-tight break-words">Slim Gallon:</span>
+                    <div className="flex items-center gap-2 sm:gap-5 shrink-0">
+                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                        <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
+                      </button>
+                      <span className="w-5 sm:w-8 text-center text-lg sm:text-2xl font-black">{slimCount}</span>
+                      <button onClick={() => { setSlimCount(slimCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                        <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
+                      </button>
                     </div>
                   </div>
 
-                  <div className={`flex justify-between items-center text-xl font-bold border-t border-white/60 pt-3 gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="flex-1 whitespace-normal leading-tight break-words">Round Gallon:</span>
-                    <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Minus size={24} strokeWidth={3} /></button>
-                      <span className="w-6 sm:w-8 text-center text-2xl font-black">{roundCount}</span>
-                      <button onClick={() => { setRoundCount(roundCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Plus size={24} strokeWidth={3} /></button>
+                  <div className={`flex justify-between items-center border-t border-white/60 pt-3 font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="flex-1 text-base sm:text-xl whitespace-normal leading-tight break-words">Round Gallon:</span>
+                    <div className="flex items-center gap-2 sm:gap-5 shrink-0">
+                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                        <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
+                      </button>
+                      <span className="w-5 sm:w-8 text-center text-lg sm:text-2xl font-black">{roundCount}</span>
+                      <button onClick={() => { setRoundCount(roundCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                        <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
+                      </button>
                     </div>
                   </div>
 
