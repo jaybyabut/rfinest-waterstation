@@ -207,27 +207,40 @@ export default function WalkInInterface() {
 
   const executeTransaction = async () => {
     setLoading(true);
-    try {
-      const result = await createOrder({
-        name: "Walk-in",
-        mobileNumber: "N/A",
-        location: "Bulaon", // Default for walk-in/kiosk
-        locationId: 1, // Bulaon
-        selectedZone: "Bulaon",
-        slimCount: slimGallons,
-        roundCount: roundGallons,
-        pricePerUnit: PRICE_PER_GALLON,
-        transaction_type: "Walk-in",
-        payment_mode: paymentMethod === "CASH" ? "Cash" : "E-Bank",
-        note: "Ordered via Kiosk"
-      });
+    const orderParams = {
+      name: "Walk-in",
+      mobileNumber: "N/A",
+      location: "Bulaon", // Default for walk-in/kiosk
+      locationId: 1, // Bulaon
+      selectedZone: "Bulaon",
+      slimCount: slimGallons,
+      roundCount: roundGallons,
+      pricePerUnit: PRICE_PER_GALLON,
+      transaction_type: "Walk-in",
+      payment_mode: paymentMethod === "CASH" ? "Cash" : "E-Bank",
+      note: "Ordered via Kiosk"
+    };
 
-      if (result?.error) {
-        console.error("Error creating walk-in order:", result.error);
-        alert("Something went wrong. Please try again or call for assistance.");
+    try {
+      if (navigator.onLine) {
+        const result = await createOrder(orderParams);
+
+        if (result?.error) {
+          console.error("Error creating walk-in order:", result.error);
+          alert("Something went wrong. Please try again or call for assistance.");
+        } else {
+          setShowOrderConfirmation(false);
+          setShowSuccessModal(true);
+        }
       } else {
+        // Offline Flow
+        const { createOfflineOrder } = await import('@/lib/offline/offlineOrderService');
+        await createOfflineOrder(orderParams);
+        
         setShowOrderConfirmation(false);
         setShowSuccessModal(true);
+        // Note: SuccessModal will show "ORDER PLACED!" which is fine.
+        // We could add a toast or indicator that it will sync later.
       }
     } catch (err) {
       console.error("Transaction failed:", err);
