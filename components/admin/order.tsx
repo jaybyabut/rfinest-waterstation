@@ -6,7 +6,7 @@ import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Minus, Plus } from "lucide-react";
 
 interface Location {
   location_id: number;
@@ -16,10 +16,19 @@ interface Location {
 
 export default function PlaceOrderForm() {
   const [locations, setLocations] = useState<Location[]>([]);
-  const [name, setName] = useState("");
+  
+  // SPLIT NAME STATES
+  const [firstName, setFirstName] = useState("");
+  const [mi, setMi] = useState("");
+  const [lastName, setLastName] = useState("");
+
   const [mobileNumber, setMobileNumber] = useState("");
-  const [location, setLocation] = useState("");
+  
+  // SPLIT LOCATION STATES
+  const [houseNo, setHouseNo] = useState("");
+  const [streetName, setStreetName] = useState("");
   const [selectedZone, setSelectedZone] = useState<string>("");
+  
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
   const [note, setNote] = useState("");
@@ -28,17 +37,25 @@ export default function PlaceOrderForm() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Use a ref to prevent excessive rerendering during scroll checks
   const lastKnownScrollPosition = useRef(0);
   const ticking = useRef(false);
 
-  // Error handling states
+  // REFS PARA SA AUTO-SCROLL
+  const nameRef = useRef<HTMLDivElement>(null);
+  const zoneRef = useRef<HTMLDivElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
+  const numberRef = useRef<HTMLDivElement>(null);
+  const itemsRef = useRef<HTMLDivElement>(null);
+
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
   const [fieldErrors, setFieldErrors] = useState<{
-    name?: boolean;
-    location?: boolean;
+    firstName?: boolean;
+    lastName?: boolean;
+    streetName?: boolean;
     zone?: boolean;
+    mobileNumber?: boolean;
     items?: boolean;
   }>({});
 
@@ -61,14 +78,9 @@ export default function PlaceOrderForm() {
 
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
-          if (lastKnownScrollPosition.current > 300) {
-            setShowScrollTop(true);
-          } else {
-            setShowScrollTop(false);
-          }
+          setShowScrollTop(lastKnownScrollPosition.current > 300);
           ticking.current = false;
         });
-
         ticking.current = true;
       }
     };
@@ -90,30 +102,49 @@ export default function PlaceOrderForm() {
 
     let hasError = false;
     const newErrors: typeof fieldErrors = {};
+    
+    // THE ULTIMATE TS FIX: Kukunin agad natin yung HTMLDivElement, hindi yung ref object.
+    let firstErrorElement: HTMLDivElement | null = null;
 
+    if (!firstName.trim()) {
+      newErrors.firstName = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = nameRef.current;
+    }
+    if (!lastName.trim()) {
+      newErrors.lastName = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = nameRef.current;
+    }
     if (!selectedLocation) {
       newErrors.zone = true;
       hasError = true;
+      if (!firstErrorElement) firstErrorElement = zoneRef.current;
     }
-    if (!name.trim()) {
-      newErrors.name = true;
+    if (!streetName.trim()) {
+      newErrors.streetName = true;
       hasError = true;
+      if (!firstErrorElement) firstErrorElement = locationRef.current;
     }
-    if (!location.trim()) {
-      newErrors.location = true;
+    if (!mobileNumber.trim() || mobileNumber.length < 11) {
+      newErrors.mobileNumber = true;
       hasError = true;
+      if (!firstErrorElement) firstErrorElement = numberRef.current;
     }
-
     if (slimCount === 0 && roundCount === 0) {
       newErrors.items = true;
       hasError = true;
+      if (!firstErrorElement) firstErrorElement = itemsRef.current;
     }
 
     if (hasError) {
       setFieldErrors(newErrors);
       setGlobalError("Please fill in all required fields highlighted in red.");
-      // We do not need a smooth scroll here as the page will naturally be long, 
-      // but we will keep it simple as it was not the source of the main issue.
+      
+      // Auto scroll papunta sa nakuhang element
+      if (firstErrorElement) {
+        firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
 
@@ -125,11 +156,14 @@ export default function PlaceOrderForm() {
     setLoading(true);
     setGlobalError(null);
 
+    const fullName = [firstName.trim(), mi.trim() ? mi.trim() + '.' : '', lastName.trim()].filter(Boolean).join(" ");
+    const fullAddress = [houseNo.trim(), streetName.trim()].filter(Boolean).join(", ");
+
     try {
       const result = await createOrder({
-        name: name,
+        name: fullName,
         mobileNumber: mobileNumber,
-        location: location,
+        location: fullAddress,
         locationId: selectedLocation?.location_id,
         slimCount,
         roundCount,
@@ -146,9 +180,13 @@ export default function PlaceOrderForm() {
         setSuccessMessage("Order placed successfully!");
         window.scrollTo({ top: 0, behavior: "smooth" });
 
-        setName("");
+        // Reset states
+        setFirstName("");
+        setMi("");
+        setLastName("");
         setMobileNumber("");
-        setLocation("");
+        setHouseNo("");
+        setStreetName("");
         setSlimCount(0);
         setRoundCount(0);
         setNote("");
@@ -177,40 +215,73 @@ export default function PlaceOrderForm() {
           <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left w-full overflow-hidden">
 
             {globalError && (
-              <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200 break-words">
+              <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200 break-words animate-in fade-in zoom-in">
                 ⚠️ {globalError}
               </div>
             )}
 
             {successMessage && (
-              <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200 break-words">
+              <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200 break-words animate-in fade-in zoom-in">
                 ✅ {successMessage}
               </div>
             )}
 
             <div className="space-y-5 w-full">
 
-              <div className="w-full">
-                <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Name:</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (/^[a-zA-ZñÑ\s]*$/.test(val)) {
-                      setName(val);
-                      if (val) setFieldErrors(prev => ({ ...prev, name: false }));
-                    }
-                  }}
-                  placeholder="e.g. Juan Dela Cruz"
-                  className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.name
-                    ? "border-red-400 bg-red-50 text-red-700"
-                    : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
-                    }`}
-                />
+              {/* ================= NAME FIELD ================= */}
+              <div className="space-y-3 w-full" ref={nameRef}>
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">First Name:</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Juan"
+                      value={firstName}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^[a-zA-ZñÑ\s]*$/.test(val)) {
+                          setFirstName(val);
+                          if (val) setFieldErrors(prev => ({ ...prev, firstName: false }));
+                        }
+                      }}
+                      className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.firstName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                    />
+                  </div>
+                  <div className="w-full sm:w-24 shrink-0">
+                    <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">M.I.:</label>
+                    <input
+                      type="text"
+                      maxLength={1}
+                      placeholder="A"
+                      value={mi}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^[a-zA-ZñÑ\s]*$/.test(val)) setMi(val);
+                      }}
+                      className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors"
+                    />
+                  </div>
+                </div>
+                <div className="w-full">
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Last Name:</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Dela Cruz"
+                    value={lastName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^[a-zA-ZñÑ\s]*$/.test(val)) {
+                        setLastName(val);
+                        if (val) setFieldErrors(prev => ({ ...prev, lastName: false }));
+                      }
+                    }}
+                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.lastName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                  />
+                </div>
               </div>
 
-              <div className="w-full">
+              {/* ================= ZONE FIELD ================= */}
+              <div className="w-full" ref={zoneRef}>
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Zone:</label>
                 <div className="relative w-full">
                   <select
@@ -238,23 +309,35 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              <div className="w-full">
-                <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Location:</label>
-                <textarea
-                  value={location}
-                  onChange={(e) => {
-                    setLocation(e.target.value);
-                    if (e.target.value) setFieldErrors(prev => ({ ...prev, location: false }));
-                  }}
-                  placeholder="Block, Lot, Street, etc."
-                  className={`w-full h-28 p-4 px-6 rounded-[30px] border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] resize-none transition-colors ${fieldErrors.location
-                    ? "border-red-400 bg-red-50 text-red-700"
-                    : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"
-                    }`}
-                />
+              {/* ================= LOCATION FIELD ================= */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full" ref={locationRef}>
+                <div className="w-full sm:w-1/3 shrink-0">
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">House No.:</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Blk 1 Lot 8"
+                    value={houseNo}
+                    onChange={(e) => setHouseNo(e.target.value)}
+                    className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Street Name:</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. San Juan St."
+                    value={streetName}
+                    onChange={(e) => {
+                      setStreetName(e.target.value);
+                      if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, streetName: false }));
+                    }}
+                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.streetName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                  />
+                </div>
               </div>
 
-              <div className="w-full">
+              {/* ================= MOBILE NUMBER ================= */}
+              <div className="w-full" ref={numberRef}>
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Mobile Number:</label>
                 <input
                   type="tel"
@@ -264,38 +347,50 @@ export default function PlaceOrderForm() {
                     const val = e.target.value;
                     if (/^[0-9]*$/.test(val)) {
                       setMobileNumber(val);
+                      if (val.length === 11) setFieldErrors(prev => ({ ...prev, mobileNumber: false }));
                     }
                   }}
                   placeholder="09..."
-                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1]"
+                  className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.mobileNumber ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
                 />
               </div>
 
-              <div className="w-full">
-                <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
-                <div className={`w-full p-4 rounded-[30px] border-2 bg-white space-y-4 transition-colors overflow-hidden ${fieldErrors.items
-                  ? "border-red-400 bg-red-50 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
-                  : "border-[#1e3d58]"
-                  }`}>
-                  <div className={`flex justify-between items-center text-xl font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="flex-1 whitespace-normal break-words leading-tight">Slim Gallon:</span>
+              {/* ================= EXACT COPY DETAILS ================= */}
+              <div className="pt-2 w-full" ref={itemsRef}>
+                <label className="block text-base sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
+                <div className={`w-full p-3 sm:p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-3 sm:space-y-4 transition-colors ${fieldErrors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
+
+                  <div className={`flex justify-between items-center font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="flex-1 text-base sm:text-xl whitespace-normal leading-tight break-words">Slim Gallon:</span>
                     <div className="flex items-center gap-2 sm:gap-5 shrink-0">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors w-8 h-8 flex items-center justify-center shrink-0">-</button>
-                      <span className="w-8 text-center text-2xl font-black">{slimCount}</span>
-                      <button onClick={() => { setSlimCount(slimCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors w-8 h-8 flex items-center justify-center shrink-0">+</button>
+                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                        <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
+                      </button>
+                      <span className="w-5 sm:w-8 text-center text-lg sm:text-2xl font-black">{slimCount}</span>
+                      <button onClick={() => { setSlimCount(slimCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                        <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
+                      </button>
                     </div>
                   </div>
-                  <div className={`flex justify-between items-center text-xl font-bold border-t border-gray-100 pt-3 gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="flex-1 whitespace-normal break-words leading-tight">Round Gallon:</span>
+
+                  <div className={`flex justify-between items-center border-t border-white/60 pt-3 font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="flex-1 text-base sm:text-xl whitespace-normal leading-tight break-words">Round Gallon:</span>
                     <div className="flex items-center gap-2 sm:gap-5 shrink-0">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors w-8 h-8 flex items-center justify-center shrink-0">-</button>
-                      <span className="w-8 text-center text-2xl font-black">{roundCount}</span>
-                      <button onClick={() => { setRoundCount(roundCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors w-8 h-8 flex items-center justify-center shrink-0">+</button>
+                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                        <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
+                      </button>
+                      <span className="w-5 sm:w-8 text-center text-lg sm:text-2xl font-black">{roundCount}</span>
+                      <button onClick={() => { setRoundCount(roundCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                        <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
+                      </button>
                     </div>
                   </div>
+
                 </div>
+                {fieldErrors.items && <p className="text-red-500 text-sm font-bold mt-2 ml-2 text-center break-words">Order must have at least one item.</p>}
               </div>
 
+              {/* ================= NOTE ================= */}
               <div className="w-full">
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Note: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
                 <textarea
@@ -328,7 +423,6 @@ export default function PlaceOrderForm() {
         </div>
       </div>
 
-      {/* Floating Scroll to Top Button */}
       <button
         onClick={scrollToTop}
         className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
@@ -342,7 +436,7 @@ export default function PlaceOrderForm() {
         onClose={() => setIsModalOpen(false)}
         onConfirm={confirmAndProcessOrder}
         title="Confirm Order"
-        message={`Are you sure you want to place this order for ${name}? Total amount is ₱${totalAmount}.`}
+        message={`Are you sure you want to place this order for ${firstName} ${lastName}? Total amount is ₱${totalAmount}.`}
         confirmText={loading ? "Processing..." : "Yes, Place Order"}
       />
 

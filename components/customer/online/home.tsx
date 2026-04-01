@@ -9,6 +9,9 @@ import { ArrowUp } from "lucide-react";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
 import { getCurrentOrder } from "@/app/actions/getCurrentOrder";
 
+// Siguraduhing tama ang import path ng banner mo
+import StoreHoursBanner from "@/components/StoreHoursBanner"; 
+
 export default function CustomerHome({
   className,
   ...props
@@ -70,17 +73,18 @@ export default function CustomerHome({
             {/* ================= GREETING WITH SKELETON ================= */}
             <h2 className="text-4xl font-extrabold mb-2 text-[#1e3d58] break-words leading-tight">
               Hello, {userData === undefined ? (
-                // SKELETON PARA SA PANGALAN (Naka-inline block na para pumagitna)
                 <span className="h-9 w-32 bg-slate-200 rounded-xl animate-pulse inline-block align-middle mb-1"></span>
               ) : (
-                // [GET] User Profile
                 `${userData?.first_name || 'user'}!`
               )}
             </h2>
 
-            <p className="text-gray-600 font-medium mb-8 px-2 sm:px-0 leading-relaxed text-sm break-words">
+            <p className="text-gray-600 font-medium mb-6 px-2 sm:px-0 leading-relaxed text-sm break-words">
               Stay hydrated! We are ready to deliver fresh water to your doorstep.
             </p>
+
+            {/* ================= BINALIK YUNG BANNER DITO ================= */}
+            <StoreHoursBanner />
 
             {/* ================= CURRENT ORDER WITH SKELETON ================= */}
             {isLoadingOrder ? (
@@ -131,6 +135,11 @@ export default function CustomerHome({
 
               <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all whitespace-normal break-words leading-tight shadow-sm">
                 <Link href="/home/account" className="w-full text-center">Account Settings</Link>
+              </Button>
+
+              {/* ================= BAGONG BUTTON PARA SA STORE HOURS ================= */}
+              <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all whitespace-normal break-words leading-tight shadow-sm">
+                <Link href="/home/store-hours" className="w-full text-center">Store Hours</Link>
               </Button>
             </div>
 

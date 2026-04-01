@@ -97,27 +97,54 @@ export default function CustomerPlaceOrder() {
     setIsModalOpen(false);
     setError(null);
 
+    const isOnline = navigator.onLine;
+
+    // Offline Validation
+    if (!isOnline && paymentMethod === 'G-Cash') {
+      setError("G-Cash requires internet for receipt upload. Please use COD or restore connectivity.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const formData = new FormData();
-      formData.append('slimCount', slimCount.toString());
-      formData.append('roundCount', roundCount.toString());
-      formData.append('paymentMethod', paymentMethod);
-      formData.append('userZone', userZone);
-      formData.append('pricePerGallon', pricePerGallon.toString());
-      formData.append('totalAmount', totalAmount.toString());
-      formData.append('transaction_type', "Online");
-      formData.append('payment_mode', paymentMethod);
+      if (isOnline) {
+        const formData = new FormData();
+        formData.append('slimCount', slimCount.toString());
+        formData.append('roundCount', roundCount.toString());
+        formData.append('paymentMethod', paymentMethod);
+        formData.append('userZone', userZone);
+        formData.append('pricePerGallon', pricePerGallon.toString());
+        formData.append('totalAmount', totalAmount.toString());
+        formData.append('transaction_type', "Online");
+        formData.append('payment_mode', paymentMethod);
 
-      if (receipt) {
-        formData.append('receipt', receipt);
-      }
+        if (receipt) {
+          formData.append('receipt', receipt);
+        }
 
-      const data = await createOnlineOrder(formData);
+        const data = await createOnlineOrder(formData);
 
-      if (data.success === true) {
-        window.location.href = '/home';
+        if (data.success === true) {
+          window.location.href = '/home';
+        } else {
+          setError(data.error || "An unexpected error occurred. Please try again.");
+        }
       } else {
-        setError(data.error || "An unexpected error occurred. Please try again.");
+        // Offline COD Flow
+        const { createOfflineOrder } = await import('@/lib/offline/offlineOrderService');
+        await createOfflineOrder({
+          name: userData ? `${userData.first_name} ${userData.last_name}` : "Customer",
+          mobileNumber: userData?.mobile_no || "N/A",
+          location: userZone,
+          selectedZone: userZone,
+          slimCount,
+          roundCount,
+          transaction_type: "Online",
+          payment_mode: "COD",
+          userId: null
+        }, "Online");
+        
+        window.location.href = '/home';
       }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred. Please try again.");
@@ -136,7 +163,7 @@ export default function CustomerPlaceOrder() {
             <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
               <ChevronLeft size={44} strokeWidth={3} />
             </Link>
-            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 break-words leading-tight">
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-10 leading-tight">
               Place Order
             </h1>
           </div>

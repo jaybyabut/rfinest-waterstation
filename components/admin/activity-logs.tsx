@@ -78,14 +78,37 @@ export default function ActivityLogs() {
               </div>
             )}
 
-            {loading && !globalError && (
-              <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-[40px]">
-                <span className="text-[#1e3d58] font-black text-lg animate-pulse">Loading logs...</span>
-              </div>
-            )}
-
             <div className="space-y-4 pb-4">
-              {!loading && logs.length === 0 ? (
+              {loading ? (
+                // ================= SKELETON LOADER =================
+                <div className="space-y-4 w-full animate-pulse">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-[#e8eef1] rounded-[25px] p-4 sm:p-5 border border-[#1e3d58]/10 shadow-sm">
+                      <div className="flex justify-between items-start mb-3 border-b border-white/50 pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full bg-slate-300"></div>
+                          <div className="h-3 w-32 bg-slate-300 rounded"></div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded-full bg-slate-300"></div>
+                          <div className="h-5 w-20 bg-slate-300 rounded"></div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded-full bg-slate-300"></div>
+                          <div className="h-4 w-24 bg-slate-300 rounded"></div>
+                        </div>
+                      </div>
+                      <div className="mt-4 border-2 border-[#cdd9e0] rounded-[15px] bg-white p-3 shadow-sm h-[72px] w-full flex flex-col gap-2 justify-center">
+                        <div className="h-3 w-full bg-slate-200 rounded"></div>
+                        <div className="h-3 w-2/3 bg-slate-200 rounded"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                // ================= END SKELETON LOADER =================
+              ) : logs.length === 0 ? (
                 <div className="text-center py-20 font-bold text-gray-400 italic">
                   No logs found.
                 </div>
