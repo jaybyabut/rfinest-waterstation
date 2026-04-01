@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff } from "lucide-react"; // DINAGDAG: Eye, EyeOff
+import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
@@ -70,7 +70,6 @@ export default function CustomerAccount() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // DINAGDAG: States for showing passwords
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -78,6 +77,10 @@ export default function CustomerAccount() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // DINAGDAG KO: States para sa Completion / Success Modal
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successText, setSuccessText] = useState("");
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -100,8 +103,8 @@ export default function CustomerAccount() {
       if (!tempHouseNo.trim()) newErrors.houseNo = "House number is required.";
       else if (!locRegex.test(tempHouseNo)) newErrors.houseNo = "Invalid symbols used.";
 
-      if (!tempStreetName.trim()) newErrors.streetName = "Street name is required.";
-      else if (!locRegex.test(tempStreetName)) newErrors.streetName = "Invalid symbols used.";
+      // Inalis ko na ang required checker dito (Gaya nung request mo kanina)
+      if (tempStreetName.trim() && !locRegex.test(tempStreetName)) newErrors.streetName = "Invalid symbols used.";
 
       if (!tempZoneId) newErrors.zoneId = "Please select a zone.";
 
@@ -141,6 +144,9 @@ export default function CustomerAccount() {
           setLastName(tempLastName);
           setMiddleInitial(tempMI);
           router.refresh();
+          // DINAGDAG KO: Trigger ang Success Modal
+          setSuccessText("Profile name has been updated successfully!");
+          setIsSuccessModalOpen(true);
           setView("menu");
         } else {
           setErrors({ submit: res.error || "Failed to update name" });
@@ -157,6 +163,9 @@ export default function CustomerAccount() {
           const chosenLoc = locations.find(l => l.location_id === tempZoneId);
           if (chosenLoc) setZoneName(chosenLoc.location_name);
           router.refresh();
+          // DINAGDAG KO: Trigger ang Success Modal
+          setSuccessText("Delivery location has been updated successfully!");
+          setIsSuccessModalOpen(true);
           setView("menu");
         } else {
           setErrors({ submit: res.error || "Failed to update location" });
@@ -169,6 +178,9 @@ export default function CustomerAccount() {
           setMobileNo(tempMobileNo);
           setMobileVerifyPassword("");
           router.refresh();
+          // DINAGDAG KO: Trigger ang Success Modal
+          setSuccessText("Mobile number has been updated successfully!");
+          setIsSuccessModalOpen(true);
           setView("menu");
         } else {
           setErrors({ submit: res.error || "Failed to update mobile number" });
@@ -181,6 +193,9 @@ export default function CustomerAccount() {
           setOldPassword("");
           setNewPassword("");
           setConfirmPassword("");
+          // DINAGDAG KO: Trigger ang Success Modal
+          setSuccessText("Password has been changed successfully!");
+          setIsSuccessModalOpen(true);
           setView("menu");
         } else {
           setErrors({ submit: res.error || "Failed to update password" });
@@ -213,7 +228,6 @@ export default function CustomerAccount() {
     setConfirmPassword("");
     setMobileVerifyPassword("");
     setLocationVerifyPassword("");
-    // DINAGDAG: Reset show password toggles pag nag-back
     setShowOldPassword(false);
     setShowNewPassword(false);
     setShowConfirmPassword(false);
@@ -319,6 +333,25 @@ export default function CustomerAccount() {
           message="Are you sure you want to log out of your account?"
           confirmText="Yes, Log Out"
         />
+
+        {/* DINAGDAG KO: SUCCESS MODAL UI */}
+        {isSuccessModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1e3d58]/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-[35px] p-6 sm:p-8 w-full max-w-sm text-center shadow-2xl animate-in zoom-in-95 duration-200 border-2 border-white/50">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-black text-[#1e3d58] mb-2">Success!</h2>
+              <p className="text-gray-500 font-bold mb-6 text-sm leading-snug">{successText}</p>
+              <Button onClick={() => setIsSuccessModalOpen(false)} className="w-full h-14 rounded-full font-bold text-lg bg-[#43b0f1] hover:bg-[#1e3d58] text-white transition-colors shadow-md">
+                Awesome
+              </Button>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }

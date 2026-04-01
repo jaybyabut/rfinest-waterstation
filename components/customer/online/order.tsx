@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, Upload, ArrowUp, Copy, Check } from "lucide-react";
+import { ChevronLeft, Upload, ArrowUp, Copy, Check, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createOnlineOrder } from "@/app/actions/createOnlineOrder";
@@ -18,7 +18,6 @@ export default function CustomerPlaceOrder() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
 
-  // Default to empty strings/0 instead of "Loading..." text
   const [userZone, setUserZone] = useState<string>("");
   const [pricePerGallon, setPricePerGallon] = useState<number>(0);
   const [loading, setLoading] = useState(false);
@@ -30,8 +29,12 @@ export default function CustomerPlaceOrder() {
   const ticking = useRef(false);
 
   const [isCopied, setIsCopied] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  // CHECKER KUNG NAGLO-LOAD PA YUNG DATA
+  const [fieldErrors, setFieldErrors] = useState<{
+    items?: boolean;
+  }>({});
+
   const isFetchingData = !userData || pricePerGallon === 0;
 
   useEffect(() => {
@@ -88,6 +91,9 @@ export default function CustomerPlaceOrder() {
       setError("Please upload your E-Bank receipt to proceed.");
       return;
     }
+    
+    if(hasError) return;
+
     setError(null);
     setIsModalOpen(true);
   };
@@ -125,12 +131,11 @@ export default function CustomerPlaceOrder() {
         const data = await createOnlineOrder(formData);
 
         if (data.success === true) {
-          window.location.href = '/home';
+          setIsSuccessModalOpen(true);
         } else {
           setError(data.error || "An unexpected error occurred. Please try again.");
         }
       } else {
-        // Offline COD Flow
         const { createOfflineOrder } = await import('@/lib/offline/offlineOrderService');
         await createOfflineOrder({
           name: userData ? `${userData.first_name} ${userData.last_name}` : "Customer",
@@ -144,7 +149,7 @@ export default function CustomerPlaceOrder() {
           userId: null
         }, "Online");
         
-        window.location.href = '/home';
+        setIsSuccessModalOpen(true);
       }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred. Please try again.");
@@ -171,7 +176,6 @@ export default function CustomerPlaceOrder() {
           <div className="bg-white rounded-[40px] p-5 sm:p-8 shadow-inner border border-gray-100 text-left w-full overflow-hidden">
             <div className="space-y-5 w-full">
 
-              {/* ================= ZONE & PRICE WITH SKELETON LOADERS ================= */}
               <div className="w-full">
                 <label className="block text-lg sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Deliver to:</label>
                 <div className="w-full p-4 rounded-3xl bg-[#e8eef1] border-2 border-transparent text-[#1e3d58] font-bold text-base sm:text-lg break-words leading-tight flex items-center min-h-[60px]">
@@ -193,29 +197,59 @@ export default function CustomerPlaceOrder() {
               </div>
 
               {/* ================= DETAILS ================= */}
-              <div className="w-full">
-                <label className="block text-lg sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
-                <div className="w-full p-4 rounded-[24px] sm:rounded-[30px] border-2 border-[#1e3d58] bg-white space-y-4 shadow-sm">
-                  <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-[#1e3d58] gap-2">
-                    <span className="flex-1 whitespace-normal break-words leading-tight">Slim Gallon:</span>
-                    <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors shrink-0 w-8 h-8 flex items-center justify-center">-</button>
-                      <span className="w-6 sm:w-8 text-center text-2xl font-black">{slimCount}</span>
-                      <button onClick={() => setSlimCount(slimCount + 1)} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors shrink-0 w-8 h-8 flex items-center justify-center">+</button>
+              <div className="pt-2 w-full">
+                <label className="block text-base sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
+                <div className={`w-full p-4 rounded-[24px] sm:rounded-[30px] border-2 bg-[#e8eef1] space-y-4 transition-colors ${fieldErrors?.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
+
+                  {/* SLIM GALLON */}
+                  <div className={`flex flex-wrap justify-between items-center font-bold gap-y-2 gap-x-2 ${fieldErrors?.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="text-base sm:text-xl whitespace-nowrap leading-tight">Slim Gallon:</span>
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0 bg-white p-1 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] transition-colors shadow-sm ml-auto">
+                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:bg-[#e8eef1] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shrink-0">
+                        <Minus className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                      </button>
+                      <input 
+                        type="number" 
+                        value={slimCount.toString()} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setSlimCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                        }} 
+                        className="w-10 sm:w-12 min-w-[2.5rem] text-center text-lg sm:text-xl font-black bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      />
+                      <button onClick={() => { setSlimCount(Math.min(999, slimCount + 1)); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:bg-[#e8eef1] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shrink-0">
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-[#1e3d58] border-t border-gray-100 pt-3 gap-2">
-                    <span className="flex-1 whitespace-normal break-words leading-tight">Round Gallon:</span>
-                    <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors shrink-0 w-8 h-8 flex items-center justify-center">-</button>
-                      <span className="w-6 sm:w-8 text-center text-2xl font-black">{roundCount}</span>
-                      <button onClick={() => setRoundCount(roundCount + 1)} className="text-3xl font-bold hover:text-[#43b0f1] transition-colors shrink-0 w-8 h-8 flex items-center justify-center">+</button>
+
+                  <hr className="border-white/60 border-dashed" />
+
+                  {/* ROUND GALLON */}
+                  <div className={`flex flex-wrap justify-between items-center font-bold gap-y-2 gap-x-2 ${fieldErrors?.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="text-base sm:text-xl whitespace-nowrap leading-tight">Round Gallon:</span>
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0 bg-white p-1 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] transition-colors shadow-sm ml-auto">
+                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:bg-[#e8eef1] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shrink-0">
+                        <Minus className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                      </button>
+                      <input 
+                        type="number" 
+                        value={roundCount.toString()} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setRoundCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                        }} 
+                        className="w-10 sm:w-12 min-w-[2.5rem] text-center text-lg sm:text-xl font-black bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      />
+                      <button onClick={() => { setRoundCount(Math.min(999, roundCount + 1)); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:bg-[#e8eef1] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shrink-0">
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                      </button>
                     </div>
                   </div>
+
                 </div>
               </div>
 
-              {/* ================= PAYMENT METHOD ================= */}
               <div className="w-full">
                 <label className="block text-lg sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Payment Method:</label>
                 <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2 w-full">
@@ -279,7 +313,6 @@ export default function CustomerPlaceOrder() {
                 )}
               </div>
 
-              {/* ================= TOTAL AMOUNT WITH SKELETON ================= */}
               <div className="flex justify-between items-center pt-2 px-2 flex-wrap gap-2 w-full border-t-2 border-dashed border-gray-100 mt-2 min-h-[50px]">
                 <span className="text-lg sm:text-xl font-bold text-[#1e3d58] flex-1 whitespace-nowrap pt-2">Total Amount:</span>
                 <span className="text-3xl sm:text-5xl font-black text-[#43b0f1] shrink-0 pt-2 flex items-center h-full">
@@ -291,7 +324,6 @@ export default function CustomerPlaceOrder() {
                 </span>
               </div>
 
-              {/* ================= ACTIONS ================= */}
               <div className="pt-2 w-full">
                 {error && (
                   <p className="text-sm font-bold text-red-500 text-center px-4 py-3 bg-red-50 rounded-xl border border-red-200 mb-4 animate-in fade-in zoom-in duration-300">
@@ -301,8 +333,7 @@ export default function CustomerPlaceOrder() {
 
                 <Button
                   onClick={handlePreSubmit}
-                  // BUTTON IS NOW DISABLED IF DATA IS FETCHING
-                  disabled={loading || isFetchingData || (slimCount === 0 && roundCount === 0)}
+                  disabled={loading || isFetchingData}
                   className="w-full h-14 sm:h-16 text-xl sm:text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? "Placing Order..." : "Place Order"}
@@ -330,6 +361,23 @@ export default function CustomerPlaceOrder() {
         message={`Are you sure you want to place this order for ${userZone}? The total amount is ₱${totalAmount}.`}
         confirmText={loading ? "Processing..." : "Yes, Proceed"}
       />
+
+      {isSuccessModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1e3d58]/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[35px] p-6 sm:p-8 w-full max-w-sm text-center shadow-2xl animate-in zoom-in-95 duration-200 border-2 border-white/50">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-black text-[#1e3d58] mb-2">Success!</h2>
+            <p className="text-gray-500 font-bold mb-6 text-sm leading-snug">Order placed successfully!</p>
+            <Button onClick={() => window.location.href = '/home'} className="w-full h-14 rounded-full font-bold text-lg bg-[#43b0f1] hover:bg-[#1e3d58] text-white transition-colors shadow-md">
+              Awesome
+            </Button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

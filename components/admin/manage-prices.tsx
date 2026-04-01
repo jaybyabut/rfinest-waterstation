@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp } from "lucide-react";
+import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check } from "lucide-react"; // DINAGDAG: Check icon
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { getLocations, batchUpdatePrices } from "@/app/actions/locations";
 
@@ -32,10 +32,15 @@ export default function ManagePricesPage() {
   const [editingWalkIn, setEditingWalkIn] = useState(false);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
+  // Tinanggal natin ang paggamit sa lumang successMessage dahil modal na ang gagamitin natin
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // DINAGDAG: State para sa Success Modal
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const fetchPrices = async () => {
     setInitialLoading(true);
@@ -165,8 +170,8 @@ export default function ManagePricesPage() {
       const result = await batchUpdatePrices(updates);
 
       if (result.success) {
-        setSuccessMessage("Prices updated successfully!");
-        setTimeout(() => setSuccessMessage(null), 5000);
+        // DINAGDAG: Imbes na green text, Success Modal na ang tatawagin natin
+        setIsSuccessModalOpen(true);
       } else {
         setGlobalError(result.error || "Failed to update prices.");
       }
@@ -207,6 +212,7 @@ export default function ManagePricesPage() {
               </div>
             )}
 
+            {/* Pwede na 'to tanggalin since may modal na, pero iniwan ko muna in case */}
             {successMessage && (
               <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200">
                 ✅ {successMessage}
@@ -391,6 +397,29 @@ export default function ManagePricesPage() {
         message="Are you sure you want to apply these new prices? This will reflect on all future orders."
         confirmText={loading ? "Saving..." : "Save Prices"}
       />
+
+      {/* DINAGDAG KO: SUCCESS MODAL UI */}
+      {isSuccessModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+              <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
+                  <div className="bg-white rounded-[30px] p-8 text-center border border-gray-100 flex flex-col items-center">
+                      <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                          <Check size={40} strokeWidth={4} />
+                      </div>
+                      <h2 className="text-3xl font-black text-[#1e3d58] mb-3 tracking-tight">Success!</h2>
+                      <p className="mb-8 text-gray-500 font-bold text-base leading-snug">
+                          Prices updated successfully!
+                      </p>
+                      <Button 
+                          onClick={() => setIsSuccessModalOpen(false)} 
+                          className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
+                      >
+                          Continue
+                      </Button>
+                  </div>
+              </div>
+          </div>
+      )}
 
     </div>
   );
