@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, Minus, Plus, RefreshCw, ArrowUp } from "lucide-react";
+import { ChevronLeft, Minus, Plus, RefreshCw, ArrowUp, Check } from "lucide-react"; // DINAGDAG: Check icon
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { getOrderForEdit } from "@/app/actions/getOrderForEdit";
@@ -33,6 +33,9 @@ export default function EditOrderForm() {
     const [isFetching, setIsFetching] = useState(false);
     
     const [showScrollTop, setShowScrollTop] = useState(false);
+
+    // DINAGDAG: State para sa Success Modal
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
     const newTotal = (slimCount + roundCount) * pricePerUnit;
 
@@ -116,12 +119,9 @@ export default function EditOrderForm() {
             if ('error' in result) {
                 setGlobalError(result.error || "Failed to update order.");
             } else {
-                setSuccessMessage("Order updated successfully!");
                 setErrors({});
-                setTimeout(() => {
-                    setSuccessMessage(null);
-                    setViewState("selection");
-                }, 3000);
+                // DINAGDAG: Trigger the Success Modal instead of setTimeout
+                setIsSuccessModalOpen(true);
             }
         } catch (e) {
             console.error("An error occurred", e);
@@ -130,6 +130,12 @@ export default function EditOrderForm() {
             setLoadingSave(false);
             setIsModalOpen(false);
         }
+    };
+
+    // DINAGDAG: Function para isara yung Success Modal at bumalik sa selection
+    const handleSuccessClose = () => {
+        setIsSuccessModalOpen(false);
+        setViewState("selection");
     };
 
     return (
@@ -290,6 +296,30 @@ export default function EditOrderForm() {
                 message={`Are you sure you want to update ${orderId}? The new total amount will be ₱${newTotal}.`}
                 confirmText={loadingSave ? "Saving..." : "Save Changes"}
             />
+
+            {/* DINAGDAG KO: SUCCESS MODAL UI */}
+            {isSuccessModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+                    <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
+                        <div className="bg-white rounded-[30px] p-8 text-center border border-gray-100 flex flex-col items-center">
+                            <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                                <Check size={40} strokeWidth={4} />
+                            </div>
+                            <h2 className="text-3xl font-black text-[#1e3d58] mb-3 tracking-tight">Success!</h2>
+                            <p className="mb-8 text-gray-500 font-bold text-base leading-snug">
+                                Order updated successfully!
+                            </p>
+                            <Button 
+                                onClick={handleSuccessClose} 
+                                className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
+                            >
+                                Continue
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

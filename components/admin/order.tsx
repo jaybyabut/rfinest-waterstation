@@ -6,7 +6,7 @@ import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { ArrowUp, Minus, Plus } from "lucide-react";
+import { ArrowUp, Minus, Plus, Check } from "lucide-react"; 
 
 interface Location {
   location_id: number;
@@ -37,6 +37,9 @@ export default function PlaceOrderForm() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  // DINAGDAG: State para sa Success Modal
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
   const lastKnownScrollPosition = useRef(0);
   const ticking = useRef(false);
 
@@ -48,7 +51,6 @@ export default function PlaceOrderForm() {
   const itemsRef = useRef<HTMLDivElement>(null);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const [fieldErrors, setFieldErrors] = useState<{
     firstName?: boolean;
@@ -98,7 +100,6 @@ export default function PlaceOrderForm() {
 
   const handlePlaceOrderClick = () => {
     setGlobalError(null);
-    setSuccessMessage(null);
 
     let hasError = false;
     const newErrors: typeof fieldErrors = {};
@@ -177,7 +178,6 @@ export default function PlaceOrderForm() {
         setGlobalError("Error creating order: " + result.error);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        setSuccessMessage("Order placed successfully!");
         window.scrollTo({ top: 0, behavior: "smooth" });
 
         // Reset states
@@ -191,7 +191,8 @@ export default function PlaceOrderForm() {
         setRoundCount(0);
         setNote("");
 
-        setTimeout(() => setSuccessMessage(null), 5000);
+        // DINAGDAG KO: Trigger the Success Modal
+        setIsSuccessModalOpen(true);
       }
     } catch (e) {
       console.error(e);
@@ -217,12 +218,6 @@ export default function PlaceOrderForm() {
             {globalError && (
               <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200 break-words animate-in fade-in zoom-in">
                 ⚠️ {globalError}
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200 break-words animate-in fade-in zoom-in">
-                ✅ {successMessage}
               </div>
             )}
 
@@ -311,18 +306,20 @@ export default function PlaceOrderForm() {
 
               {/* ================= LOCATION FIELD ================= */}
               <div className="flex flex-col sm:flex-row gap-3 w-full" ref={locationRef}>
-                <div className="w-full sm:w-1/3 shrink-0">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">House No.:</label>
+                <div className="w-full sm:w-1/3 shrink-0 flex flex-col justify-end">
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight">
+                    House No.: <span className="text-[11px] sm:text-xs font-normal text-gray-400 block mt-0.5">(Leave blank if none)</span>
+                  </label>
                   <input
                     type="text"
-                    placeholder="e.g. Blk 1 Lot 8"
+                    placeholder="e.g. Blk 1"
                     value={houseNo}
                     onChange={(e) => setHouseNo(e.target.value)}
-                    className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors"
+                    className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto"
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Street Name:</label>
+                <div className="flex-1 min-w-0 flex flex-col justify-end">
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name:</label>
                   <input
                     type="text"
                     placeholder="e.g. San Juan St."
@@ -331,7 +328,7 @@ export default function PlaceOrderForm() {
                       setStreetName(e.target.value);
                       if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, streetName: false }));
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.streetName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto ${fieldErrors.streetName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
                   />
                 </div>
               </div>
@@ -439,6 +436,29 @@ export default function PlaceOrderForm() {
         message={`Are you sure you want to place this order for ${firstName} ${lastName}? Total amount is ₱${totalAmount}.`}
         confirmText={loading ? "Processing..." : "Yes, Place Order"}
       />
+
+      {/* DINAGDAG KO: SUCCESS MODAL UI */}
+      {isSuccessModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+              <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
+                  <div className="bg-white rounded-[30px] p-8 text-center border border-gray-100 flex flex-col items-center">
+                      <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                          <Check size={40} strokeWidth={4} />
+                      </div>
+                      <h2 className="text-3xl font-black text-[#1e3d58] mb-3 tracking-tight">Success!</h2>
+                      <p className="mb-8 text-gray-500 font-bold text-base leading-snug">
+                          Order placed successfully!
+                      </p>
+                      <Button 
+                          onClick={() => setIsSuccessModalOpen(false)} 
+                          className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
+                      >
+                          Continue
+                      </Button>
+                  </div>
+              </div>
+          </div>
+      )}
 
     </div>
   );
