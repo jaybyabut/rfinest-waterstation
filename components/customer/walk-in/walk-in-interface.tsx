@@ -154,6 +154,8 @@ export default function WalkInInterface() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pricePerGallon, setPricePerGallon] = useState<number>(30);
+  const [walkInLocationId, setWalkInLocationId] = useState<number>(1);
+  const [walkInLocationName, setWalkInLocationName] = useState<string>("Walk-in");
 
   // New State for "SURE?" confirmation
   const [confirmClear, setConfirmClear] = useState<boolean>(false);
@@ -169,6 +171,8 @@ export default function WalkInInterface() {
           const walkIn = locations.find(l => l.location_name.toLowerCase() === 'walk-in');
           if (walkIn) {
             setPricePerGallon(walkIn.location_price);
+            setWalkInLocationId(walkIn.location_id);
+            setWalkInLocationName(walkIn.location_name);
           }
         }
       } catch (err) {
@@ -226,9 +230,9 @@ export default function WalkInInterface() {
     const orderParams = {
       name: "Walk-in",
       mobileNumber: "N/A",
-      location: "Bulaon", // Default for walk-in/kiosk
-      locationId: 1, // Bulaon
-      selectedZone: "Bulaon",
+      location: walkInLocationName,
+      locationId: walkInLocationId,
+      selectedZone: walkInLocationName,
       slimCount: slimGallons,
       roundCount: roundGallons,
       pricePerUnit: pricePerGallon,
