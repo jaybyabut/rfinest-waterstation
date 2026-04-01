@@ -28,6 +28,7 @@ export default function ManagePricesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [walkInPrice, setWalkInPrice] = useState<number | "">("");
+  const [walkInId, setWalkInId] = useState<number | null>(null);
   const [editingWalkIn, setEditingWalkIn] = useState(false);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -44,12 +45,18 @@ export default function ManagePricesPage() {
   const fetchPrices = async () => {
     setInitialLoading(true);
     try {
-      // TODO: BACKEND - Fetch actual Walk-in price here from your DB
-      setWalkInPrice(30);
-
       const data = await getLocations();
       if (Array.isArray(data)) {
-        setPrices(data.map((l: DBLocation) => ({
+        const walkInLocation = data.find(l => l.location_name.toLowerCase() === 'walk-in');
+        if (walkInLocation) {
+          setWalkInPrice(walkInLocation.location_price);
+          setWalkInId(walkInLocation.location_id);
+        } else {
+          setWalkInPrice(30);
+        }
+
+        const filteredData = data.filter(l => l.location_name.toLowerCase() !== 'walk-in');
+        setPrices(filteredData.map((l: DBLocation) => ({
           id: l.location_id,
           name: l.location_name,
           price: l.location_price
@@ -151,12 +158,16 @@ export default function ManagePricesPage() {
     setGlobalError(null);
 
     try {
-      const result = await batchUpdatePrices(prices.map(p => ({
+      const updates = prices.map(p => ({
         id: p.id,
         price: Number(p.price)
-      })));
+      }));
 
-      // TODO: BACKEND - Update the Walk-in price to the DB here!
+      if (walkInId !== null && walkInPrice !== "") {
+        updates.push({ id: walkInId, price: Number(walkInPrice) });
+      }
+
+      const result = await batchUpdatePrices(updates);
 
       if (result.success) {
         // DINAGDAG: Imbes na green text, Success Modal na ang tatawagin natin
