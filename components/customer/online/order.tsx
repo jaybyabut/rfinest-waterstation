@@ -13,7 +13,7 @@ export default function CustomerPlaceOrder() {
   const userData = useUser();
   const [slimCount, setSlimCount] = useState(0);
   const [roundCount, setRoundCount] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState<"COD" | "G-Cash">("COD");
+  const [paymentMethod, setPaymentMethod] = useState<"COD" | "E-Bank">("COD");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
@@ -84,8 +84,8 @@ export default function CustomerPlaceOrder() {
   };
 
   const handlePreSubmit = () => {
-    if (paymentMethod === 'G-Cash' && !receipt) {
-      setError("Please upload your G-Cash receipt to proceed.");
+    if (paymentMethod === 'E-Bank' && !receipt) {
+      setError("Please upload your E-Bank receipt to proceed.");
       return;
     }
     setError(null);
@@ -100,8 +100,8 @@ export default function CustomerPlaceOrder() {
     const isOnline = navigator.onLine;
 
     // Offline Validation
-    if (!isOnline && paymentMethod === 'G-Cash') {
-      setError("G-Cash requires internet for receipt upload. Please use COD or restore connectivity.");
+    if (!isOnline && paymentMethod === 'E-Bank') {
+      setError("E-Bank requires internet for receipt upload. Please use COD or restore connectivity.");
       setLoading(false);
       return;
     }
@@ -231,15 +231,15 @@ export default function CustomerPlaceOrder() {
                   >COD</button>
                   <span className="text-xl sm:text-2xl font-black text-[#1e3d58] shrink-0">|</span>
                   <button
-                    onClick={() => setPaymentMethod("G-Cash")}
+                    onClick={() => setPaymentMethod("E-Bank")}
                     className={cn(
                       "flex-1 h-12 sm:h-14 rounded-full text-base sm:text-xl font-bold transition-all border-2 min-w-0 break-words",
-                      paymentMethod === "G-Cash" ? "bg-[#1e3d58] text-white border-[#1e3d58]" : "bg-[#e8eef1] text-[#1e3d58] border-transparent shadow-sm"
+                      paymentMethod === "E-Bank" ? "bg-[#1e3d58] text-white border-[#1e3d58]" : "bg-[#e8eef1] text-[#1e3d58] border-transparent shadow-sm"
                     )}
-                  >G-Cash</button>
+                  >E-Bank</button>
                 </div>
 
-                {paymentMethod === "G-Cash" && (
+                {paymentMethod === "E-Bank" && (
                   <div className="mt-3 animate-in slide-in-from-top-2 duration-300 w-full space-y-3">
                     
                     <div className="w-full p-3 sm:p-4 rounded-[20px] bg-[#e8eef1] border-2 border-[#43b0f1]/30 flex flex-col items-center justify-center gap-2">
@@ -270,7 +270,7 @@ export default function CustomerPlaceOrder() {
                       <div className="flex flex-col items-center justify-center pt-3 pb-4 px-2 w-full">
                         <Upload className={cn("w-6 h-6 sm:w-8 sm:h-8 mb-1 sm:mb-2 shrink-0", error && !receipt ? "text-red-500" : "text-[#43b0f1]")} />
                         <p className={cn("text-xs sm:text-sm font-bold px-2 text-center break-words whitespace-normal line-clamp-2 w-full", error && !receipt ? "text-red-600" : "text-[#1e3d58]")}>
-                          {receipt ? receipt.name : "Upload G-Cash Receipt"}
+                          {receipt ? receipt.name : "Upload E-Bank Receipt"}
                         </p>
                       </div>
                       <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />

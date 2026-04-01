@@ -12,7 +12,7 @@ export async function createOnlineOrder(formData: FormData) {
     const paymentMethod = formData.get('paymentMethod') as string;
     const transaction_type = formData.get('transaction_type') as string;
     const payment_mode = formData.get('payment_mode') as string;
-    
+
     // Get receipt file
     const receipt = formData.get('receipt') as File | null;
     let proof_payment_url = null;
@@ -21,7 +21,7 @@ export async function createOnlineOrder(formData: FormData) {
     if (slimCount < 0 || roundCount < 0) {
         return { error: "Quantities cannot be negative." };
     }
-    
+
     if (slimCount === 0 && roundCount === 0) {
         return { error: "Order must contain at least one item." };
     }
@@ -136,8 +136,6 @@ export async function createOnlineOrder(formData: FormData) {
         return { error: error.message };
     }
 
-    // Log the activity
-    await logActivity(`Placed an online order (${transaction_type})`);
 
     return { success: true, data: rpcData };
 }
