@@ -91,8 +91,13 @@ export default function CustomerPlaceOrder() {
       setError("Please upload your E-Bank receipt to proceed.");
       return;
     }
-    
-    if(hasError) return;
+
+    const hasNoItems = (slimCount + roundCount) === 0;
+    if (hasNoItems) {
+      setFieldErrors({ items: true });
+      setError("Please add at least one gallon to your order.");
+      return;
+    }
 
     setError(null);
     setIsModalOpen(true);
