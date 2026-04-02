@@ -9,7 +9,7 @@ import { getAllOrders } from "@/app/actions/getAllOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
 import { createClient } from "@/lib/supabase/client";
 
-const status_options = ["Pending", "Pick-up", "Processing", "Refilled", "Out for Delivery", "Delivered", "Cancelled"];
+const status_options = ["Pending", "Pickup", "Processing", "Refilled", "Out for Delivery", "Delivered", "Cancelled"];
 const FILTERS = ["All", ...status_options];
 
 interface OrderItem {
