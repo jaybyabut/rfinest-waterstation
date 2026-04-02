@@ -150,32 +150,29 @@ export default function OrderHistory() {
               <div className="mb-4 bg-red-100 text-red-700 p-3 rounded-xl text-center font-bold text-sm border-2 border-red-200 break-words">⚠️ {globalError}</div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 pb-4">
+            <div className="grid grid-cols-2 gap-3 pb-6">
               {FILTERS.map((filter) => (
                 <button key={filter} onClick={() => { setActiveFilter(filter); if (filter !== "Custom") { setStartDate(""); setEndDate(""); } }}
-                  className={`w-full px-2 py-2.5 rounded-full text-sm sm:text-base font-bold border-2 transition-all leading-tight break-words ${activeFilter === filter ? "bg-[#1e3d58] text-white border-[#1e3d58]" : "bg-[#e8eef1] text-[#1e3d58] border-transparent hover:border-[#1e3d58]"}`}
+                  className={`w-full px-2 py-3 rounded-full text-sm sm:text-base font-bold border-2 transition-all leading-tight break-words ${activeFilter === filter ? "bg-[#1e3d58] text-white border-[#1e3d58] shadow-md" : "bg-[#e8eef1] text-[#1e3d58] border-transparent hover:border-[#1e3d58]"}`}
                 >
                   {filter}
                 </button>
               ))}
             </div>
 
-            {/* ================= BAGONG RESPONSIVE DATE PICKER ================= */}
             {activeFilter === "Custom" && (
-              <div className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4 bg-[#f8fbfd] p-4 rounded-[20px] border-2 transition-colors ${globalError ? 'border-red-400' : 'border-[#1e3d58]/10'}`}>
+              <div className={`flex flex-col sm:flex-row items-center gap-4 mb-6 bg-[#f8fbfd] p-4 sm:p-5 rounded-[24px] border-2 transition-colors ${globalError ? 'border-red-400' : 'border-[#1e3d58]/10'}`}>
                 
-                <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 mb-1 sm:mb-0">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100">
-                    <Calendar size={20} className="text-[#43b0f1]" />
+                <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-center sm:justify-start border-b-2 sm:border-b-0 sm:border-r-2 border-gray-200 pb-3 sm:pb-0 sm:pr-4">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-sm border border-gray-100">
+                    <Calendar size={22} className="text-[#43b0f1]" />
                   </div>
-                  <span className="text-sm font-black text-[#1e3d58] uppercase tracking-widest sm:hidden">Select Date</span>
+                  <span className="text-sm font-black text-[#1e3d58] uppercase tracking-widest sm:hidden">Custom Range</span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
-                  
-                  {/* Start Date Input */}
+                <div className="flex flex-col w-full gap-3">
                   <div className="flex items-center w-full bg-white h-12 px-4 rounded-full border border-gray-200 shadow-sm focus-within:border-[#43b0f1] transition-colors">
-                    <span className="text-[10px] font-black text-gray-400 uppercase mr-3 shrink-0">From</span>
+                    <span className="text-[10px] sm:text-xs font-black text-gray-400 uppercase w-10 shrink-0">From</span>
                     <input 
                       type="date" 
                       value={startDate} 
@@ -186,12 +183,8 @@ export default function OrderHistory() {
                     />
                   </div>
                   
-                  {/* Dash (Lilitaw lang sa malaking screen) */}
-                  <span className="hidden sm:block font-black text-gray-300">-</span>
-                  
-                  {/* End Date Input */}
                   <div className="flex items-center w-full bg-white h-12 px-4 rounded-full border border-gray-200 shadow-sm focus-within:border-[#43b0f1] transition-colors">
-                    <span className="text-[10px] font-black text-gray-400 uppercase mr-3 shrink-0">To</span>
+                    <span className="text-[10px] sm:text-xs font-black text-gray-400 uppercase w-10 shrink-0">To</span>
                     <input 
                       type="date" 
                       value={endDate} 
@@ -201,15 +194,12 @@ export default function OrderHistory() {
                       className={`w-full min-w-0 bg-transparent text-sm font-bold focus:outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden ${globalError ? 'text-red-600' : 'text-[#1e3d58]'}`}
                     />
                   </div>
-
                 </div>
               </div>
             )}
-            {/* ================= END NG BAGONG DATE PICKER ================= */}
 
             <div className="space-y-4 pb-4 w-full">
               {loading ? (
-                // ================= SKELETON LOADER =================
                 <div className="space-y-4 w-full animate-pulse">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="border-2 border-gray-100 rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3 w-full overflow-hidden">
@@ -228,14 +218,12 @@ export default function OrderHistory() {
                     </div>
                   ))}
                 </div>
-                // ================= END SKELETON LOADER =================
               ) : orders.length === 0 ? (
                 <div className="text-center py-10 text-gray-400 font-bold italic">{globalError ? "Invalid date range." : "No orders found."}</div>
               ) : (
                 orders.map((order) => (
                   <div key={order.id} className="border-2 border-[#1e3d58] rounded-[25px] p-4 bg-white shadow-sm flex flex-col gap-3 w-full overflow-hidden">
 
-                    {/* Top Row: Flexbox logic to prevent badge/text overflow */}
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0 flex-1 pt-0.5">
                         <h3 className="text-lg font-black text-[#1e3d58] break-words leading-tight">{order.id}</h3>
@@ -247,7 +235,6 @@ export default function OrderHistory() {
                       </div>
                     </div>
 
-                    {/* Bottom Row: Flexbox logic to keep prices aligned securely */}
                     <div className="flex justify-between items-center bg-[#e8eef1] p-3 rounded-[15px] gap-2 w-full">
                       <div className="text-sm font-bold text-[#1e3d58] min-w-0 flex-1 whitespace-normal break-words leading-tight">
                         Slim: <span className="text-[#43b0f1] font-black">{order.slim}</span> | Round: <span className="text-[#43b0f1] font-black">{order.round}</span>

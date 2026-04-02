@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check } from "lucide-react"; // DINAGDAG: Check icon
+import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { getLocations, batchUpdatePrices } from "@/app/actions/locations";
 
@@ -32,14 +32,13 @@ export default function ManagePricesPage() {
   const [editingWalkIn, setEditingWalkIn] = useState(false);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
-  // Tinanggal natin ang paggamit sa lumang successMessage dahil modal na ang gagamitin natin
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkIncreaseModalOpen, setIsBulkIncreaseModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // DINAGDAG: State para sa Success Modal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const fetchPrices = async () => {
@@ -52,7 +51,7 @@ export default function ManagePricesPage() {
           setWalkInPrice(walkInLocation.location_price);
           setWalkInId(walkInLocation.location_id);
         } else {
-          setWalkInPrice(30);
+          setWalkInPrice(35);
         }
 
         const filteredData = data.filter(l => l.location_name.toLowerCase() !== 'walk-in');
@@ -82,7 +81,7 @@ export default function ManagePricesPage() {
     return () => window.removeEventListener("scroll", handleWindowScroll);
   }, []);
 
-  const applyGlobalIncrease = () => {
+  const handleBulkIncreaseClick = () => {
     setGlobalError(null);
     setSuccessMessage(null);
 
@@ -103,6 +102,12 @@ export default function ManagePricesPage() {
       return;
     }
 
+    setIsBulkIncreaseModalOpen(true);
+  };
+
+  const confirmBulkIncrease = () => {
+    const amount = parseInt(increaseAmount);
+    
     setPrices(prices.map((p) => ({
       ...p,
       price: typeof p.price === "number" ? p.price + amount : amount
@@ -110,6 +115,7 @@ export default function ManagePricesPage() {
 
     setWalkInPrice(typeof walkInPrice === "number" ? walkInPrice + amount : amount);
     setIncreaseAmount("");
+    setIsBulkIncreaseModalOpen(false);
   };
 
   const updatePrice = (id: number, newPrice: string) => {
@@ -170,7 +176,6 @@ export default function ManagePricesPage() {
       const result = await batchUpdatePrices(updates);
 
       if (result.success) {
-        // DINAGDAG: Imbes na green text, Success Modal na ang tatawagin natin
         setIsSuccessModalOpen(true);
       } else {
         setGlobalError(result.error || "Failed to update prices.");
@@ -212,7 +217,6 @@ export default function ManagePricesPage() {
               </div>
             )}
 
-            {/* Pwede na 'to tanggalin since may modal na, pero iniwan ko muna in case */}
             {successMessage && (
               <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200">
                 ✅ {successMessage}
@@ -235,7 +239,7 @@ export default function ManagePricesPage() {
                   />
                 </div>
                 <Button
-                  onClick={applyGlobalIncrease}
+                  onClick={handleBulkIncreaseClick}
                   className="h-10 w-10 rounded-lg bg-[#43b0f1] text-white hover:bg-[#1e3d58] p-0 flex items-center justify-center transition-colors shadow-sm shrink-0"
                 >
                   <Plus size={20} strokeWidth={4} />
@@ -243,15 +247,14 @@ export default function ManagePricesPage() {
               </div>
             </div>
 
-            {/* ADDED WALK-IN SECTION - Copied exactly from the location list */}
             <div className="mb-6">
-              <div className={`flex justify-between items-start p-4 border-2 rounded-[20px] bg-white transition-colors gap-3 ${isWalkInInvalid ? 'border-red-400 bg-red-50' : 'border-[#43b0f1] bg-[#e8eef1]/30'}`}>
-                <div className="flex-1 min-w-0 pt-1">
-                  <span className={`text-xl sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isWalkInInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
+              <div className={`flex flex-row justify-between items-center p-4 border-2 rounded-[20px] bg-white transition-colors gap-2 sm:gap-3 ${isWalkInInvalid ? 'border-red-400 bg-red-50' : 'border-[#43b0f1] bg-[#e8eef1]/30'}`}>
+                <div className="flex-1 min-w-0 pr-2">
+                  <span className={`text-lg sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isWalkInInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
                     Walk-in
                   </span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                <div className="flex items-center gap-1 shrink-0">
                   <span className={`text-xl sm:text-2xl font-bold ${isWalkInInvalid ? 'text-red-500' : editingWalkIn ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
                     ₱
                   </span>
@@ -262,7 +265,7 @@ export default function ManagePricesPage() {
                     onChange={(e) => setWalkInPrice(e.target.value === "" ? "" : parseInt(e.target.value))}
                     readOnly={!editingWalkIn}
                     onBlur={() => setEditingWalkIn(false)}
-                    className={`w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isWalkInInvalid
+                    className={`w-12 sm:w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isWalkInInvalid
                         ? "text-red-600 border-b-2 border-red-500"
                         : editingWalkIn
                           ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
@@ -271,8 +274,8 @@ export default function ManagePricesPage() {
                   />
                   <SquarePen
                     onClick={handleEditWalkInClick}
-                    size={24}
-                    className={`ml-2 cursor-pointer transition-all shrink-0 ${isWalkInInvalid
+                    size={22}
+                    className={`ml-1 sm:ml-2 cursor-pointer transition-all shrink-0 ${isWalkInInvalid
                         ? "text-red-400 hover:text-red-600"
                         : editingWalkIn
                           ? "text-[#43b0f1] scale-110"
@@ -305,7 +308,6 @@ export default function ManagePricesPage() {
 
             <div className="space-y-3 pb-2">
               {initialLoading ? (
-                // ================= SKELETON LOADER =================
                 <div className="space-y-3 w-full animate-pulse">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="flex justify-between items-center p-4 border-2 border-gray-100 rounded-[20px] bg-white gap-3">
@@ -317,7 +319,6 @@ export default function ManagePricesPage() {
                     </div>
                   ))}
                 </div>
-                // ================= END SKELETON LOADER =================
               ) : filteredPrices.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 font-bold italic">
                   No locations found.
@@ -327,13 +328,13 @@ export default function ManagePricesPage() {
                   const isInvalid = location.price === "" || location.price <= 0;
 
                   return (
-                    <div key={location.id} className={`flex justify-between items-start p-4 border-2 rounded-[20px] bg-white transition-colors gap-3 ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
-                      <div className="flex-1 min-w-0 pt-1">
-                        <span className={`text-xl sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
+                    <div key={location.id} className={`flex flex-row justify-between items-center p-4 border-2 rounded-[20px] bg-white transition-colors gap-2 sm:gap-3 ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
+                      <div className="flex-1 min-w-0 pr-2">
+                        <span className={`text-lg sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
                           {location.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                      <div className="flex items-center gap-1 shrink-0">
                         <span className={`text-xl sm:text-2xl font-bold ${isInvalid ? 'text-red-500' : editingId === location.id ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
                           ₱
                         </span>
@@ -344,7 +345,7 @@ export default function ManagePricesPage() {
                           onChange={(e) => updatePrice(location.id, e.target.value)}
                           readOnly={editingId !== location.id}
                           onBlur={() => setEditingId(null)}
-                          className={`w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isInvalid
+                          className={`w-12 sm:w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isInvalid
                               ? "text-red-600 border-b-2 border-red-500"
                               : editingId === location.id
                                 ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
@@ -353,8 +354,8 @@ export default function ManagePricesPage() {
                         />
                         <SquarePen
                           onClick={() => handleEditClick(location.id)}
-                          size={24}
-                          className={`ml-2 cursor-pointer transition-all shrink-0 ${isInvalid
+                          size={22}
+                          className={`ml-1 sm:ml-2 cursor-pointer transition-all shrink-0 ${isInvalid
                               ? "text-red-400 hover:text-red-600"
                               : editingId === location.id
                                 ? "text-[#43b0f1] scale-110"
@@ -398,7 +399,15 @@ export default function ManagePricesPage() {
         confirmText={loading ? "Saving..." : "Save Prices"}
       />
 
-      {/* DINAGDAG KO: SUCCESS MODAL UI */}
+      <ConfirmationModal
+        isOpen={isBulkIncreaseModalOpen}
+        onClose={() => setIsBulkIncreaseModalOpen(false)}
+        onConfirm={confirmBulkIncrease}
+        title="Confirm Bulk Update"
+        message={`Are you sure you want to apply a bulk update of ₱${increaseAmount} to all items? You still need to click "Save Changes" afterwards to update the database.`}
+        confirmText="Yes, Apply"
+      />
+
       {isSuccessModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
               <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">

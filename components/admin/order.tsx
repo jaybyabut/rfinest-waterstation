@@ -17,14 +17,12 @@ interface Location {
 export default function PlaceOrderForm() {
   const [locations, setLocations] = useState<Location[]>([]);
   
-  // SPLIT NAME STATES
   const [firstName, setFirstName] = useState("");
   const [mi, setMi] = useState("");
   const [lastName, setLastName] = useState("");
 
   const [mobileNumber, setMobileNumber] = useState("");
   
-  // SPLIT LOCATION STATES
   const [houseNo, setHouseNo] = useState("");
   const [streetName, setStreetName] = useState("");
   const [selectedZone, setSelectedZone] = useState<string>("");
@@ -37,13 +35,11 @@ export default function PlaceOrderForm() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // DINAGDAG: State para sa Success Modal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const lastKnownScrollPosition = useRef(0);
   const ticking = useRef(false);
 
-  // REFS PARA SA AUTO-SCROLL
   const nameRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
@@ -104,7 +100,6 @@ export default function PlaceOrderForm() {
     let hasError = false;
     const newErrors: typeof fieldErrors = {};
     
-    // THE ULTIMATE TS FIX: Kukunin agad natin yung HTMLDivElement, hindi yung ref object.
     let firstErrorElement: HTMLDivElement | null = null;
 
     if (!firstName.trim()) {
@@ -142,7 +137,6 @@ export default function PlaceOrderForm() {
       setFieldErrors(newErrors);
       setGlobalError("Please fill in all required fields highlighted in red.");
       
-      // Auto scroll papunta sa nakuhang element
       if (firstErrorElement) {
         firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -180,7 +174,6 @@ export default function PlaceOrderForm() {
       } else {
         window.scrollTo({ top: 0, behavior: "smooth" });
 
-        // Reset states
         setFirstName("");
         setMi("");
         setLastName("");
@@ -191,7 +184,6 @@ export default function PlaceOrderForm() {
         setRoundCount(0);
         setNote("");
 
-        // DINAGDAG KO: Trigger the Success Modal
         setIsSuccessModalOpen(true);
       }
     } catch (e) {
@@ -223,7 +215,6 @@ export default function PlaceOrderForm() {
 
             <div className="space-y-5 w-full">
 
-              {/* ================= NAME FIELD ================= */}
               <div className="space-y-3 w-full" ref={nameRef}>
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <div className="flex-1 min-w-0">
@@ -275,7 +266,6 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              {/* ================= ZONE FIELD ================= */}
               <div className="w-full" ref={zoneRef}>
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Zone:</label>
                 <div className="relative w-full">
@@ -304,7 +294,6 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              {/* ================= LOCATION FIELD ================= */}
               <div className="flex flex-col sm:flex-row gap-3 w-full" ref={locationRef}>
                 <div className="w-full sm:w-1/3 shrink-0 flex flex-col justify-end">
                   <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight">
@@ -333,7 +322,6 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              {/* ================= MOBILE NUMBER ================= */}
               <div className="w-full" ref={numberRef}>
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Mobile Number:</label>
                 <input
@@ -352,32 +340,77 @@ export default function PlaceOrderForm() {
                 />
               </div>
 
-              {/* ================= EXACT COPY DETAILS ================= */}
               <div className="pt-2 w-full" ref={itemsRef}>
                 <label className="block text-base sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
                 <div className={`w-full p-3 sm:p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-3 sm:space-y-4 transition-colors ${fieldErrors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
 
-                  <div className={`flex justify-between items-center font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="flex-1 text-base sm:text-xl whitespace-normal leading-tight break-words">Slim Gallon:</span>
-                    <div className="flex items-center gap-2 sm:gap-5 shrink-0">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                  <div className={`flex flex-row justify-between items-center font-bold gap-1 sm:gap-2 w-full ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="text-sm sm:text-xl leading-tight">Slim Gallon:</span>
+                    <div className="flex items-center justify-between w-[110px] sm:w-[160px] shrink-0 bg-white p-1 sm:p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] shadow-sm transition-colors">
+                      <button 
+                        onClick={() => setSlimCount(Math.max(0, slimCount - 1))} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
                         <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
-                      <span className="w-5 sm:w-8 text-center text-lg sm:text-2xl font-black">{slimCount}</span>
-                      <button onClick={() => { setSlimCount(slimCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                      <input 
+                        type="number" 
+                        value={slimCount.toString()} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setSlimCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                          if (!isNaN(val) && (val > 0 || roundCount > 0)) {
+                            setFieldErrors(prev => ({ ...prev, items: false }));
+                          }
+                        }} 
+                        className="w-8 sm:w-12 text-center text-base sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      />
+                      <button 
+                        onClick={() => { 
+                          setSlimCount(Math.min(999, slimCount + 1)); 
+                          setFieldErrors(prev => ({ ...prev, items: false })); 
+                        }} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
                         <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
                     </div>
                   </div>
 
-                  <div className={`flex justify-between items-center border-t border-white/60 pt-3 font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="flex-1 text-base sm:text-xl whitespace-normal leading-tight break-words">Round Gallon:</span>
-                    <div className="flex items-center gap-2 sm:gap-5 shrink-0">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                  <hr className="border-white/60 border-dashed" />
+
+                  <div className={`flex flex-row justify-between items-center font-bold gap-1 sm:gap-2 w-full ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="text-sm sm:text-xl leading-tight">Round Gallon:</span>
+                    <div className="flex items-center justify-between w-[110px] sm:w-[160px] shrink-0 bg-white p-1 sm:p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] shadow-sm transition-colors">
+                      <button 
+                        onClick={() => setRoundCount(Math.max(0, roundCount - 1))} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
                         <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
-                      <span className="w-5 sm:w-8 text-center text-lg sm:text-2xl font-black">{roundCount}</span>
-                      <button onClick={() => { setRoundCount(roundCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                      <input 
+                        type="number" 
+                        value={roundCount.toString()} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setRoundCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                          if (!isNaN(val) && (val > 0 || slimCount > 0)) {
+                            setFieldErrors(prev => ({ ...prev, items: false }));
+                          }
+                        }} 
+                        className="w-8 sm:w-12 text-center text-base sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      />
+                      <button 
+                        onClick={() => { 
+                          setRoundCount(Math.min(999, roundCount + 1)); 
+                          setFieldErrors(prev => ({ ...prev, items: false })); 
+                        }} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
                         <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
                     </div>
@@ -387,7 +420,6 @@ export default function PlaceOrderForm() {
                 {fieldErrors.items && <p className="text-red-500 text-sm font-bold mt-2 ml-2 text-center break-words">Order must have at least one item.</p>}
               </div>
 
-              {/* ================= NOTE ================= */}
               <div className="w-full">
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Note: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
                 <textarea
@@ -437,7 +469,6 @@ export default function PlaceOrderForm() {
         confirmText={loading ? "Processing..." : "Yes, Place Order"}
       />
 
-      {/* DINAGDAG KO: SUCCESS MODAL UI */}
       {isSuccessModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
               <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">

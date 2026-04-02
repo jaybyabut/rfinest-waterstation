@@ -90,11 +90,8 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
                 </button>
             </div>
 
-            {/* INAYOS: Tinanggal ang max-h-[450px], overflow-y-auto, at custom-scrollbar para humaba ito naturally */}
             <div className="space-y-3 pb-4 w-full">
                 {loadingList ? (
-                    
-                    // ================= SKELETON LOADER =================
                     <div className="space-y-3 w-full animate-pulse">
                         {[1, 2, 3].map((i) => (
                             <div key={i} className="w-full bg-[#f8fbfd] border-2 border-[#1e3d58]/5 rounded-[20px] p-4">
@@ -113,8 +110,6 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
                             </div>
                         ))}
                     </div>
-                    // ================= END SKELETON LOADER =================
-
                 ) : filteredOrders.length === 0 ? (
                     <div className="text-center py-10 text-gray-400 font-bold italic bg-gray-50 rounded-[20px] border-2 border-dashed border-gray-200">
                         No pending orders found.

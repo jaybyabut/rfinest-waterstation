@@ -90,7 +90,7 @@ export default function OrderStatus() {
 
             const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
 
-            let statusString = order.current_status || "Pending";
+            const statusString = order.current_status || "Pending";
 
             let receipt_url = undefined;
             if (order.proof_payment) {
