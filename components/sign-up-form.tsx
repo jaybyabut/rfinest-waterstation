@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Check, X as XIcon, User, MapPin, Lock, ArrowUp } from "lucide-react"; 
-import { getPasswordChecks, validatePasswordStrength } from "@/lib/validatePassword"; 
 
 export default function SignUpForm({
   className,
@@ -40,6 +39,14 @@ export default function SignUpForm({
     "Lakeshore", "Golden Haven", "Hauslands", "Royal Residences", "Malpitic",
   ];
 
+  const isLengthValid = password.length >= 8;
+  const isUpperValid = /[A-Z]/.test(password);
+  const isLowerValid = /[a-z]/.test(password);
+  const isNumberValid = /[0-9]/.test(password);
+  
+  const isPasswordStrong = isLengthValid && isUpperValid && isLowerValid && isNumberValid;
+  const passwordsMatch = password.length > 0 && password === repeatPassword;
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 300) {
@@ -65,7 +72,7 @@ export default function SignUpForm({
   };
 
   const validateForm = () => {
-    let newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {};
 
     if (!firstName.trim()) newErrors.firstName = "First name is required.";
     if (!lastName.trim()) newErrors.lastName = "Last name is required.";
@@ -80,9 +87,15 @@ export default function SignUpForm({
     if (!streetName.trim()) newErrors.streetName = "Street name is required.";
     if (!barangay) newErrors.barangay = "Please select a barangay.";
 
-    const pwError = validatePasswordStrength(password);
-    if (pwError) newErrors.password = pwError;
-    else if (password !== repeatPassword) newErrors.repeatPassword = "Passwords do not match.";
+    if (!password) {
+      newErrors.password = "Password is required.";
+    } else if (!isPasswordStrong) {
+      newErrors.password = "Please complete all password requirements.";
+    }
+
+    if (password !== repeatPassword) {
+      newErrors.repeatPassword = "Passwords do not match.";
+    }
 
     if (!isConfirmed) newErrors.isConfirmed = "Please confirm your details first.";
 
@@ -111,7 +124,6 @@ export default function SignUpForm({
     setIsLoading(true);
     const supabase = createClient();
 
-    // SMART CONCATENATION: Hindi magkaka-comma sa unahan kung walang house no.
     const address = [houseNo.trim(), streetName.trim()].filter(Boolean).join(", ");
     const location_id = barangays.indexOf(barangay) + 1;
 
@@ -160,7 +172,6 @@ export default function SignUpForm({
 
           <form className="space-y-6" onSubmit={handleSignUp} noValidate>
 
-            {/* ================= SECTION 1: PERSONAL INFO ================= */}
             <div className="space-y-5">
               <div className="flex items-center gap-2 border-b-2 border-slate-100 pb-2 mb-2">
                 <User className="text-[#43b0f1] w-5 h-5" strokeWidth={2.5} />
@@ -180,7 +191,7 @@ export default function SignUpForm({
                       setFirstName(val);
                       if (val.trim()) clearError("firstName"); 
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.firstName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.firstName ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   />
                   {errors.firstName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.firstName}</p>}
                 </div>
@@ -197,7 +208,7 @@ export default function SignUpForm({
                       setMiddleInitial(val);
                       clearError("middleInitial"); 
                     }}
-                    className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.middleInitial ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.middleInitial ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   />
                   {errors.middleInitial && <p className="text-red-500 text-xs font-bold mt-1 text-center">{errors.middleInitial}</p>}
                 </div>
@@ -215,7 +226,7 @@ export default function SignUpForm({
                     setLastName(val);
                     if (val.trim()) clearError("lastName"); 
                   }}
-                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.lastName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.lastName ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                 />
                 {errors.lastName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.lastName}</p>}
               </div>
@@ -232,7 +243,7 @@ export default function SignUpForm({
                     setMobileNo(val);
                     if (/^(09)\d{9}$/.test(val)) clearError("mobileNo"); 
                   }}
-                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.mobileNo ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                 />
                 {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.mobileNo}</p>}
               </div>
@@ -249,13 +260,12 @@ export default function SignUpForm({
                     setEmail(val);
                     if (/^\S+@\S+\.\S+$/.test(val)) clearError("email"); 
                   }}
-                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.email ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.email ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                 />
                 {errors.email && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.email}</p>}
               </div>
             </div>
 
-            {/* ================= SECTION 2: ADDRESS ================= */}
             <div className="space-y-5 pt-4">
               <div className="flex items-center gap-2 border-b-2 border-slate-100 pb-2 mb-2">
                 <MapPin className="text-[#43b0f1] w-5 h-5" strokeWidth={2.5} />
@@ -264,7 +274,6 @@ export default function SignUpForm({
 
               <div className="flex flex-col sm:flex-row gap-5 sm:gap-3">
                 <div className="w-full sm:w-1/3 shrink-0">
-                  {/* BINALIK YUNG NORMAL LABEL, TINANGGAL ANG (OPTIONAL) */}
                   <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2" htmlFor="houseNo">
                     House No.:
                   </label>
@@ -279,7 +288,6 @@ export default function SignUpForm({
                     }}
                     className="w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal border-[#1e3d58]"
                   />
-                  {/* HELPER TEXT SA ILALIM */}
                   <p className="text-gray-400 text-xs font-semibold mt-1 ml-2 text-center sm:text-left">
                     Leave blank if none
                   </p>
@@ -296,7 +304,7 @@ export default function SignUpForm({
                       setStreetName(val);
                       if (val.trim()) clearError("streetName"); 
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.streetName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.streetName ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   />
                   {errors.streetName && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.streetName}</p>}
                 </div>
@@ -312,7 +320,7 @@ export default function SignUpForm({
                       setBarangay(e.target.value);
                       if (e.target.value) clearError("barangay"); 
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer ${errors.barangay ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer ${errors.barangay ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   >
                     <option value="" disabled>Select Barangay</option>
                     {barangays.map((b) => (
@@ -327,28 +335,27 @@ export default function SignUpForm({
               </div>
             </div>
 
-            {/* ================= SECTION 3: SECURITY ================= */}
             <div className="space-y-5 pt-4">
               <div className="flex items-center gap-2 border-b-2 border-slate-100 pb-2 mb-2">
                 <Lock className="text-[#43b0f1] w-5 h-5" strokeWidth={2.5} />
                 <h3 className="text-lg font-black text-[#43b0f1] tracking-widest uppercase">Security</h3>
               </div>
 
-              <div>
-                <label className="block text-xl font-bold text-[#1e3d58] mb-1 ml-2" htmlFor="password">Create Password:</label>
-                <div className="relative w-full">
+              <div className="w-full">
+                <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]" htmlFor="password">Create Password:</label>
+                <div className="relative w-full mb-3">
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Min. 8 characters"
+                    placeholder="e.g. Abcd@1234"
                     value={password}
                     onChange={(e) => {
                       const val = e.target.value;
                       setPassword(val);
-                      if (!validatePasswordStrength(val)) clearError("password"); 
-                      if (repeatPassword === val) clearError("repeatPassword"); 
+                      if (val) clearError("password");
+                      if (repeatPassword === val) clearError("repeatPassword");
                     }}
-                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all ${errors.password ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.password ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   />
                   <button
                     type="button"
@@ -356,43 +363,47 @@ export default function SignUpForm({
                     className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
                     title={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff size={24} strokeWidth={2.5} /> : <Eye size={24} strokeWidth={2.5} />}
+                    {showPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
                   </button>
                 </div>
-
+                
                 {password.length > 0 && (
-                  <div className="mt-3 ml-3 space-y-1">
-                    {getPasswordChecks(password).map((check) => (
-                      <div key={check.label} className="flex items-center gap-2">
-                        {check.pass ? (
-                          <Check size={14} className="text-green-500 shrink-0" strokeWidth={3} />
-                        ) : (
-                          <XIcon size={14} className="text-red-400 shrink-0" strokeWidth={3} />
-                        )}
-                        <span className={`text-xs font-bold ${check.pass ? 'text-green-600' : 'text-gray-400'}`}>
-                          {check.label}
-                        </span>
-                      </div>
-                    ))}
+                  <div className="pl-2 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isLengthValid ? 'text-green-600' : 'text-gray-400'}`}>
+                      {isLengthValid ? <Check size={18} strokeWidth={4} /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 ml-0.5" />}
+                      At least 8 characters
+                    </div>
+                    <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isUpperValid ? 'text-green-600' : 'text-gray-400'}`}>
+                      {isUpperValid ? <Check size={18} strokeWidth={4} /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 ml-0.5" />}
+                      One uppercase letter (A-Z)
+                    </div>
+                    <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isLowerValid ? 'text-green-600' : 'text-gray-400'}`}>
+                      {isLowerValid ? <Check size={18} strokeWidth={4} /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 ml-0.5" />}
+                      One lowercase letter (a-z)
+                    </div>
+                    <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isNumberValid ? 'text-green-600' : 'text-gray-400'}`}>
+                      {isNumberValid ? <Check size={18} strokeWidth={4} /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 ml-0.5" />}
+                      One number (0-9)
+                    </div>
                   </div>
                 )}
-                {errors.password && <p className="text-red-500 text-sm font-bold mt-2 ml-2">{errors.password}</p>}
+                {errors.password && <p className="text-red-500 text-xs sm:text-sm font-bold mt-2 ml-2 break-words leading-snug">{errors.password}</p>}
               </div>
 
-              <div>
-                <label className="block text-xl font-bold text-[#1e3d58] mb-1 ml-2" htmlFor="repeatPassword">Confirm Password:</label>
+              <div className="w-full">
+                <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]" htmlFor="repeatPassword">Confirm Password:</label>
                 <div className="relative w-full">
                   <input
                     id="repeatPassword"
                     type={showRepeatPassword ? "text" : "password"}
-                    placeholder="Re-enter password"
+                    placeholder="Re-enter new password"
                     value={repeatPassword}
                     onChange={(e) => {
                       const val = e.target.value;
                       setRepeatPassword(val);
-                      if (val === password) clearError("repeatPassword"); 
+                      if (val === password) clearError("repeatPassword");
                     }}
-                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all ${errors.repeatPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.repeatPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   />
                   <button
                     type="button"
@@ -400,14 +411,22 @@ export default function SignUpForm({
                     className="absolute right-5 top-1/2 -translate-y-1/2 text-[#1e3d58] hover:text-[#43b0f1] transition-colors outline-none"
                     title={showRepeatPassword ? "Hide password" : "Show password"}
                   >
-                    {showRepeatPassword ? <EyeOff size={24} strokeWidth={2.5} /> : <Eye size={24} strokeWidth={2.5} />}
+                    {showRepeatPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
                   </button>
                 </div>
-                {errors.repeatPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.repeatPassword}</p>}
+                
+                {repeatPassword.length > 0 && (
+                  <div className="pl-2 mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${passwordsMatch ? 'text-green-600' : 'text-red-500'}`}>
+                      {passwordsMatch ? <Check size={18} strokeWidth={4} /> : <XIcon size={18} strokeWidth={4} />}
+                      {passwordsMatch ? "Passwords match" : "Passwords do not match"}
+                    </div>
+                  </div>
+                )}
+                {errors.repeatPassword && !repeatPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.repeatPassword}</p>}
               </div>
             </div>
 
-            {/* ================= ACTIONS ================= */}
             <div className="pt-2">
               {globalError && (
                 <p className="text-sm font-bold text-red-500 text-center px-4 py-3 bg-red-50 rounded-xl border border-red-200 mb-4">
@@ -437,7 +456,7 @@ export default function SignUpForm({
               <div className="flex justify-center">
                 <Button 
                   type="submit" 
-                  disabled={isLoading}
+                  disabled={isLoading || (repeatPassword.length > 0 && !passwordsMatch) || (password.length > 0 && !isPasswordStrong)}
                   className="w-2/3 h-14 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg"
                 >
                   {isLoading ? "Signing up..." : "Register"}

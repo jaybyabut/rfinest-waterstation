@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp } from "lucide-react";
+import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { getLocations, batchUpdatePrices } from "@/app/actions/locations";
 
@@ -28,23 +28,34 @@ export default function ManagePricesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const [walkInPrice, setWalkInPrice] = useState<number | "">("");
+  const [walkInId, setWalkInId] = useState<number | null>(null);
   const [editingWalkIn, setEditingWalkIn] = useState(false);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkIncreaseModalOpen, setIsBulkIncreaseModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const fetchPrices = async () => {
     setInitialLoading(true);
     try {
-      // TODO: BACKEND - Fetch actual Walk-in price here from your DB
-      setWalkInPrice(30);
-
       const data = await getLocations();
       if (Array.isArray(data)) {
-        setPrices(data.map((l: DBLocation) => ({
+        const walkInLocation = data.find(l => l.location_name.toLowerCase() === 'walk-in');
+        if (walkInLocation) {
+          setWalkInPrice(walkInLocation.location_price);
+          setWalkInId(walkInLocation.location_id);
+        } else {
+          setWalkInPrice(35);
+        }
+
+        const filteredData = data.filter(l => l.location_name.toLowerCase() !== 'walk-in');
+        setPrices(filteredData.map((l: DBLocation) => ({
           id: l.location_id,
           name: l.location_name,
           price: l.location_price
@@ -70,7 +81,7 @@ export default function ManagePricesPage() {
     return () => window.removeEventListener("scroll", handleWindowScroll);
   }, []);
 
-  const applyGlobalIncrease = () => {
+  const handleBulkIncreaseClick = () => {
     setGlobalError(null);
     setSuccessMessage(null);
 
@@ -91,6 +102,12 @@ export default function ManagePricesPage() {
       return;
     }
 
+    setIsBulkIncreaseModalOpen(true);
+  };
+
+  const confirmBulkIncrease = () => {
+    const amount = parseInt(increaseAmount);
+    
     setPrices(prices.map((p) => ({
       ...p,
       price: typeof p.price === "number" ? p.price + amount : amount
@@ -98,6 +115,7 @@ export default function ManagePricesPage() {
 
     setWalkInPrice(typeof walkInPrice === "number" ? walkInPrice + amount : amount);
     setIncreaseAmount("");
+    setIsBulkIncreaseModalOpen(false);
   };
 
   const updatePrice = (id: number, newPrice: string) => {
@@ -146,16 +164,19 @@ export default function ManagePricesPage() {
     setGlobalError(null);
 
     try {
-      const result = await batchUpdatePrices(prices.map(p => ({
+      const updates = prices.map(p => ({
         id: p.id,
         price: Number(p.price)
-      })));
+      }));
 
-      // TODO: BACKEND - Update the Walk-in price to the DB here!
+      if (walkInId !== null && walkInPrice !== "") {
+        updates.push({ id: walkInId, price: Number(walkInPrice) });
+      }
+
+      const result = await batchUpdatePrices(updates);
 
       if (result.success) {
-        setSuccessMessage("Prices updated successfully!");
-        setTimeout(() => setSuccessMessage(null), 5000);
+        setIsSuccessModalOpen(true);
       } else {
         setGlobalError(result.error || "Failed to update prices.");
       }
@@ -218,7 +239,7 @@ export default function ManagePricesPage() {
                   />
                 </div>
                 <Button
-                  onClick={applyGlobalIncrease}
+                  onClick={handleBulkIncreaseClick}
                   className="h-10 w-10 rounded-lg bg-[#43b0f1] text-white hover:bg-[#1e3d58] p-0 flex items-center justify-center transition-colors shadow-sm shrink-0"
                 >
                   <Plus size={20} strokeWidth={4} />
@@ -226,15 +247,14 @@ export default function ManagePricesPage() {
               </div>
             </div>
 
-            {/* ADDED WALK-IN SECTION - Copied exactly from the location list */}
             <div className="mb-6">
-              <div className={`flex justify-between items-start p-4 border-2 rounded-[20px] bg-white transition-colors gap-3 ${isWalkInInvalid ? 'border-red-400 bg-red-50' : 'border-[#43b0f1] bg-[#e8eef1]/30'}`}>
-                <div className="flex-1 min-w-0 pt-1">
-                  <span className={`text-xl sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isWalkInInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
+              <div className={`flex flex-row justify-between items-center p-4 border-2 rounded-[20px] bg-white transition-colors gap-2 sm:gap-3 ${isWalkInInvalid ? 'border-red-400 bg-red-50' : 'border-[#43b0f1] bg-[#e8eef1]/30'}`}>
+                <div className="flex-1 min-w-0 pr-2">
+                  <span className={`text-lg sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isWalkInInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
                     Walk-in
                   </span>
                 </div>
-                <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                <div className="flex items-center gap-1 shrink-0">
                   <span className={`text-xl sm:text-2xl font-bold ${isWalkInInvalid ? 'text-red-500' : editingWalkIn ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
                     ₱
                   </span>
@@ -245,7 +265,7 @@ export default function ManagePricesPage() {
                     onChange={(e) => setWalkInPrice(e.target.value === "" ? "" : parseInt(e.target.value))}
                     readOnly={!editingWalkIn}
                     onBlur={() => setEditingWalkIn(false)}
-                    className={`w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isWalkInInvalid
+                    className={`w-12 sm:w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isWalkInInvalid
                         ? "text-red-600 border-b-2 border-red-500"
                         : editingWalkIn
                           ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
@@ -254,8 +274,8 @@ export default function ManagePricesPage() {
                   />
                   <SquarePen
                     onClick={handleEditWalkInClick}
-                    size={24}
-                    className={`ml-2 cursor-pointer transition-all shrink-0 ${isWalkInInvalid
+                    size={22}
+                    className={`ml-1 sm:ml-2 cursor-pointer transition-all shrink-0 ${isWalkInInvalid
                         ? "text-red-400 hover:text-red-600"
                         : editingWalkIn
                           ? "text-[#43b0f1] scale-110"
@@ -288,7 +308,6 @@ export default function ManagePricesPage() {
 
             <div className="space-y-3 pb-2">
               {initialLoading ? (
-                // ================= SKELETON LOADER =================
                 <div className="space-y-3 w-full animate-pulse">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="flex justify-between items-center p-4 border-2 border-gray-100 rounded-[20px] bg-white gap-3">
@@ -300,7 +319,6 @@ export default function ManagePricesPage() {
                     </div>
                   ))}
                 </div>
-                // ================= END SKELETON LOADER =================
               ) : filteredPrices.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 font-bold italic">
                   No locations found.
@@ -310,13 +328,13 @@ export default function ManagePricesPage() {
                   const isInvalid = location.price === "" || location.price <= 0;
 
                   return (
-                    <div key={location.id} className={`flex justify-between items-start p-4 border-2 rounded-[20px] bg-white transition-colors gap-3 ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
-                      <div className="flex-1 min-w-0 pt-1">
-                        <span className={`text-xl sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
+                    <div key={location.id} className={`flex flex-row justify-between items-center p-4 border-2 rounded-[20px] bg-white transition-colors gap-2 sm:gap-3 ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
+                      <div className="flex-1 min-w-0 pr-2">
+                        <span className={`text-lg sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
                           {location.name}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                      <div className="flex items-center gap-1 shrink-0">
                         <span className={`text-xl sm:text-2xl font-bold ${isInvalid ? 'text-red-500' : editingId === location.id ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
                           ₱
                         </span>
@@ -327,7 +345,7 @@ export default function ManagePricesPage() {
                           onChange={(e) => updatePrice(location.id, e.target.value)}
                           readOnly={editingId !== location.id}
                           onBlur={() => setEditingId(null)}
-                          className={`w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isInvalid
+                          className={`w-12 sm:w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isInvalid
                               ? "text-red-600 border-b-2 border-red-500"
                               : editingId === location.id
                                 ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
@@ -336,8 +354,8 @@ export default function ManagePricesPage() {
                         />
                         <SquarePen
                           onClick={() => handleEditClick(location.id)}
-                          size={24}
-                          className={`ml-2 cursor-pointer transition-all shrink-0 ${isInvalid
+                          size={22}
+                          className={`ml-1 sm:ml-2 cursor-pointer transition-all shrink-0 ${isInvalid
                               ? "text-red-400 hover:text-red-600"
                               : editingId === location.id
                                 ? "text-[#43b0f1] scale-110"
@@ -380,6 +398,37 @@ export default function ManagePricesPage() {
         message="Are you sure you want to apply these new prices? This will reflect on all future orders."
         confirmText={loading ? "Saving..." : "Save Prices"}
       />
+
+      <ConfirmationModal
+        isOpen={isBulkIncreaseModalOpen}
+        onClose={() => setIsBulkIncreaseModalOpen(false)}
+        onConfirm={confirmBulkIncrease}
+        title="Confirm Bulk Update"
+        message={`Are you sure you want to apply a bulk update of ₱${increaseAmount} to all items? You still need to click "Save Changes" afterwards to update the database.`}
+        confirmText="Yes, Apply"
+      />
+
+      {isSuccessModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+              <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
+                  <div className="bg-white rounded-[30px] p-8 text-center border border-gray-100 flex flex-col items-center">
+                      <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                          <Check size={40} strokeWidth={4} />
+                      </div>
+                      <h2 className="text-3xl font-black text-[#1e3d58] mb-3 tracking-tight">Success!</h2>
+                      <p className="mb-8 text-gray-500 font-bold text-base leading-snug">
+                          Prices updated successfully!
+                      </p>
+                      <Button 
+                          onClick={() => setIsSuccessModalOpen(false)} 
+                          className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
+                      >
+                          Continue
+                      </Button>
+                  </div>
+              </div>
+          </div>
+      )}
 
     </div>
   );

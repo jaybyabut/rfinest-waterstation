@@ -10,6 +10,7 @@ interface PendingOrder {
     transaction_type: string;
     total_amount: number;
     order_dt: string;
+    current_status?: string;
     location_pricing?: { location_name: string }[] | { location_name: string } | null;
 }
 
@@ -38,9 +39,10 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
                     transaction_type,
                     total_amount,
                     order_dt,
+                    current_status,
                     location_pricing ( location_name )
                 `)
-                .eq("current_status", "Pending")
+                .in("current_status", ["Pending", "Pickup"])
                 .order("order_dt", { ascending: false });
 
             if (fetchError) throw fetchError;
@@ -84,17 +86,14 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
             </div>
 
             <div className="flex justify-between items-center px-2 mb-2">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Pending Orders</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Select Order to Edit</span>
                 <button onClick={fetchPendingOrders} className="text-[#43b0f1] hover:text-[#1e3d58] transition-colors outline-none">
                     <RefreshCw size={16} className={loadingList ? "animate-spin" : ""} strokeWidth={3} />
                 </button>
             </div>
 
-            {/* INAYOS: Tinanggal ang max-h-[450px], overflow-y-auto, at custom-scrollbar para humaba ito naturally */}
             <div className="space-y-3 pb-4 w-full">
                 {loadingList ? (
-                    
-                    // ================= SKELETON LOADER =================
                     <div className="space-y-3 w-full animate-pulse">
                         {[1, 2, 3].map((i) => (
                             <div key={i} className="w-full bg-[#f8fbfd] border-2 border-[#1e3d58]/5 rounded-[20px] p-4">
@@ -113,11 +112,9 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
                             </div>
                         ))}
                     </div>
-                    // ================= END SKELETON LOADER =================
-
                 ) : filteredOrders.length === 0 ? (
                     <div className="text-center py-10 text-gray-400 font-bold italic bg-gray-50 rounded-[20px] border-2 border-dashed border-gray-200">
-                        No pending orders found.
+                        No editable orders found.
                     </div>
                 ) : (
                     filteredOrders.map((order) => {
@@ -135,8 +132,10 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
                                     <span className="text-lg font-black text-[#1e3d58] group-hover:text-[#43b0f1] transition-colors">
                                         #{shortId}
                                     </span>
-                                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-orange-100 text-orange-600">
-                                        PENDING
+                                    <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full ${
+                                        order.current_status === 'Pending' ? 'bg-orange-100 text-orange-600' : 'bg-amber-100 text-amber-700'
+                                    }`}>
+                                        {order.current_status || "PENDING"}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2 mb-1">

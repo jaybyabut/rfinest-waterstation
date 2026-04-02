@@ -6,7 +6,7 @@ import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { ArrowUp, Minus, Plus } from "lucide-react";
+import { ArrowUp, Minus, Plus, Check } from "lucide-react"; 
 
 interface Location {
   location_id: number;
@@ -17,14 +17,12 @@ interface Location {
 export default function PlaceOrderForm() {
   const [locations, setLocations] = useState<Location[]>([]);
   
-  // SPLIT NAME STATES
   const [firstName, setFirstName] = useState("");
   const [mi, setMi] = useState("");
   const [lastName, setLastName] = useState("");
 
   const [mobileNumber, setMobileNumber] = useState("");
   
-  // SPLIT LOCATION STATES
   const [houseNo, setHouseNo] = useState("");
   const [streetName, setStreetName] = useState("");
   const [selectedZone, setSelectedZone] = useState<string>("");
@@ -37,10 +35,11 @@ export default function PlaceOrderForm() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
   const lastKnownScrollPosition = useRef(0);
   const ticking = useRef(false);
 
-  // REFS PARA SA AUTO-SCROLL
   const nameRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   const locationRef = useRef<HTMLDivElement>(null);
@@ -48,7 +47,6 @@ export default function PlaceOrderForm() {
   const itemsRef = useRef<HTMLDivElement>(null);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   const [fieldErrors, setFieldErrors] = useState<{
     firstName?: boolean;
@@ -98,12 +96,10 @@ export default function PlaceOrderForm() {
 
   const handlePlaceOrderClick = () => {
     setGlobalError(null);
-    setSuccessMessage(null);
 
     let hasError = false;
     const newErrors: typeof fieldErrors = {};
     
-    // THE ULTIMATE TS FIX: Kukunin agad natin yung HTMLDivElement, hindi yung ref object.
     let firstErrorElement: HTMLDivElement | null = null;
 
     if (!firstName.trim()) {
@@ -141,7 +137,6 @@ export default function PlaceOrderForm() {
       setFieldErrors(newErrors);
       setGlobalError("Please fill in all required fields highlighted in red.");
       
-      // Auto scroll papunta sa nakuhang element
       if (firstErrorElement) {
         firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -177,10 +172,8 @@ export default function PlaceOrderForm() {
         setGlobalError("Error creating order: " + result.error);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        setSuccessMessage("Order placed successfully!");
         window.scrollTo({ top: 0, behavior: "smooth" });
 
-        // Reset states
         setFirstName("");
         setMi("");
         setLastName("");
@@ -191,7 +184,7 @@ export default function PlaceOrderForm() {
         setRoundCount(0);
         setNote("");
 
-        setTimeout(() => setSuccessMessage(null), 5000);
+        setIsSuccessModalOpen(true);
       }
     } catch (e) {
       console.error(e);
@@ -220,15 +213,8 @@ export default function PlaceOrderForm() {
               </div>
             )}
 
-            {successMessage && (
-              <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200 break-words animate-in fade-in zoom-in">
-                ✅ {successMessage}
-              </div>
-            )}
-
             <div className="space-y-5 w-full">
 
-              {/* ================= NAME FIELD ================= */}
               <div className="space-y-3 w-full" ref={nameRef}>
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <div className="flex-1 min-w-0">
@@ -280,7 +266,6 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              {/* ================= ZONE FIELD ================= */}
               <div className="w-full" ref={zoneRef}>
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Zone:</label>
                 <div className="relative w-full">
@@ -309,20 +294,21 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              {/* ================= LOCATION FIELD ================= */}
               <div className="flex flex-col sm:flex-row gap-3 w-full" ref={locationRef}>
-                <div className="w-full sm:w-1/3 shrink-0">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">House No.:</label>
+                <div className="w-full sm:w-1/3 shrink-0 flex flex-col justify-end">
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight">
+                    House No.: <span className="text-[11px] sm:text-xs font-normal text-gray-400 block mt-0.5">(Leave blank if none)</span>
+                  </label>
                   <input
                     type="text"
-                    placeholder="e.g. Blk 1 Lot 8"
+                    placeholder="e.g. Blk 1"
                     value={houseNo}
                     onChange={(e) => setHouseNo(e.target.value)}
-                    className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors"
+                    className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto"
                   />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Street Name:</label>
+                <div className="flex-1 min-w-0 flex flex-col justify-end">
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name:</label>
                   <input
                     type="text"
                     placeholder="e.g. San Juan St."
@@ -331,12 +317,11 @@ export default function PlaceOrderForm() {
                       setStreetName(e.target.value);
                       if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, streetName: false }));
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.streetName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto ${fieldErrors.streetName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
                   />
                 </div>
               </div>
 
-              {/* ================= MOBILE NUMBER ================= */}
               <div className="w-full" ref={numberRef}>
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Mobile Number:</label>
                 <input
@@ -355,32 +340,77 @@ export default function PlaceOrderForm() {
                 />
               </div>
 
-              {/* ================= EXACT COPY DETAILS ================= */}
               <div className="pt-2 w-full" ref={itemsRef}>
                 <label className="block text-base sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
                 <div className={`w-full p-3 sm:p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-3 sm:space-y-4 transition-colors ${fieldErrors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
 
-                  <div className={`flex justify-between items-center font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="flex-1 text-base sm:text-xl whitespace-normal leading-tight break-words">Slim Gallon:</span>
-                    <div className="flex items-center gap-2 sm:gap-5 shrink-0">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                  <div className={`flex flex-row justify-between items-center font-bold gap-1 sm:gap-2 w-full ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="text-sm sm:text-xl leading-tight">Slim Gallon:</span>
+                    <div className="flex items-center justify-between w-[110px] sm:w-[160px] shrink-0 bg-white p-1 sm:p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] shadow-sm transition-colors">
+                      <button 
+                        onClick={() => setSlimCount(Math.max(0, slimCount - 1))} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
                         <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
-                      <span className="w-5 sm:w-8 text-center text-lg sm:text-2xl font-black">{slimCount}</span>
-                      <button onClick={() => { setSlimCount(slimCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                      <input 
+                        type="number" 
+                        value={slimCount.toString()} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setSlimCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                          if (!isNaN(val) && (val > 0 || roundCount > 0)) {
+                            setFieldErrors(prev => ({ ...prev, items: false }));
+                          }
+                        }} 
+                        className="w-8 sm:w-12 text-center text-base sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      />
+                      <button 
+                        onClick={() => { 
+                          setSlimCount(Math.min(999, slimCount + 1)); 
+                          setFieldErrors(prev => ({ ...prev, items: false })); 
+                        }} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
                         <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
                     </div>
                   </div>
 
-                  <div className={`flex justify-between items-center border-t border-white/60 pt-3 font-bold gap-2 ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="flex-1 text-base sm:text-xl whitespace-normal leading-tight break-words">Round Gallon:</span>
-                    <div className="flex items-center gap-2 sm:gap-5 shrink-0">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                  <hr className="border-white/60 border-dashed" />
+
+                  <div className={`flex flex-row justify-between items-center font-bold gap-1 sm:gap-2 w-full ${fieldErrors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="text-sm sm:text-xl leading-tight">Round Gallon:</span>
+                    <div className="flex items-center justify-between w-[110px] sm:w-[160px] shrink-0 bg-white p-1 sm:p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] shadow-sm transition-colors">
+                      <button 
+                        onClick={() => setRoundCount(Math.max(0, roundCount - 1))} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
                         <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
-                      <span className="w-5 sm:w-8 text-center text-lg sm:text-2xl font-black">{roundCount}</span>
-                      <button onClick={() => { setRoundCount(roundCount + 1); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0">
+                      <input 
+                        type="number" 
+                        value={roundCount.toString()} 
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          setRoundCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                          if (!isNaN(val) && (val > 0 || slimCount > 0)) {
+                            setFieldErrors(prev => ({ ...prev, items: false }));
+                          }
+                        }} 
+                        className="w-8 sm:w-12 text-center text-base sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      />
+                      <button 
+                        onClick={() => { 
+                          setRoundCount(Math.min(999, roundCount + 1)); 
+                          setFieldErrors(prev => ({ ...prev, items: false })); 
+                        }} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
                         <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
                     </div>
@@ -390,7 +420,6 @@ export default function PlaceOrderForm() {
                 {fieldErrors.items && <p className="text-red-500 text-sm font-bold mt-2 ml-2 text-center break-words">Order must have at least one item.</p>}
               </div>
 
-              {/* ================= NOTE ================= */}
               <div className="w-full">
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Note: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
                 <textarea
@@ -439,6 +468,28 @@ export default function PlaceOrderForm() {
         message={`Are you sure you want to place this order for ${firstName} ${lastName}? Total amount is ₱${totalAmount}.`}
         confirmText={loading ? "Processing..." : "Yes, Place Order"}
       />
+
+      {isSuccessModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+              <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
+                  <div className="bg-white rounded-[30px] p-8 text-center border border-gray-100 flex flex-col items-center">
+                      <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                          <Check size={40} strokeWidth={4} />
+                      </div>
+                      <h2 className="text-3xl font-black text-[#1e3d58] mb-3 tracking-tight">Success!</h2>
+                      <p className="mb-8 text-gray-500 font-bold text-base leading-snug">
+                          Order placed successfully!
+                      </p>
+                      <Button 
+                          onClick={() => setIsSuccessModalOpen(false)} 
+                          className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
+                      >
+                          Continue
+                      </Button>
+                  </div>
+              </div>
+          </div>
+      )}
 
     </div>
   );

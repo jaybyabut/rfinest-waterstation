@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, CheckCircle2, QrCode, Wallet, CreditCard, RotateCcw, Maximize, Minimize, AlertCircle, X } from "lucide-react";
 import { createOrder } from "@/app/actions/createOrder";
+import { getLocations } from "@/app/actions/locations";
 
-const PRICE_PER_GALLON = 30;
 
 const CONTAINER_TYPES = {
   ROUND: 'ROUND CONTAINER',
@@ -153,14 +153,34 @@ export default function WalkInInterface() {
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pricePerGallon, setPricePerGallon] = useState<number>(30);
+  const [walkInLocationId, setWalkInLocationId] = useState<number>(1);
+  const [walkInLocationName, setWalkInLocationName] = useState<string>("Walk-in");
 
   // New State for "SURE?" confirmation
   const [confirmClear, setConfirmClear] = useState<boolean>(false);
 
-  const total = (roundGallons + slimGallons) * PRICE_PER_GALLON;
+  const total = (roundGallons + slimGallons) * pricePerGallon;
   const hasItems = total > 0;
 
   useEffect(() => {
+    async function fetchWalkInPrice() {
+      try {
+        const locations = await getLocations();
+        if (Array.isArray(locations)) {
+          const walkIn = locations.find(l => l.location_name.toLowerCase() === 'walk-in');
+          if (walkIn) {
+            setPricePerGallon(walkIn.location_price);
+            setWalkInLocationId(walkIn.location_id);
+            setWalkInLocationName(walkIn.location_name);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch walk-in price", err);
+      }
+    }
+    fetchWalkInPrice();
+
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
@@ -210,12 +230,12 @@ export default function WalkInInterface() {
     const orderParams = {
       name: "Walk-in",
       mobileNumber: "N/A",
-      location: "Bulaon", // Default for walk-in/kiosk
-      locationId: 1, // Bulaon
-      selectedZone: "Bulaon",
+      location: walkInLocationName,
+      locationId: walkInLocationId,
+      selectedZone: walkInLocationName,
       slimCount: slimGallons,
       roundCount: roundGallons,
-      pricePerUnit: PRICE_PER_GALLON,
+      pricePerUnit: pricePerGallon,
       transaction_type: "Walk-in",
       payment_mode: paymentMethod === "CASH" ? "Cash" : "E-Bank",
       note: "Ordered via Kiosk"
@@ -260,7 +280,7 @@ export default function WalkInInterface() {
       <div className="flex justify-between items-end border-b-4 border-[#e8eef1] pb-4 2xl:pb-6 shrink-0 pr-16 sm:pr-20 2xl:pr-24 w-full">
         <div className="min-w-0">
           <h1 className="text-3xl sm:text-4xl 2xl:text-5xl font-black text-[#1e3d58] tracking-tight uppercase leading-tight whitespace-normal break-words">REFILL STATION</h1>
-          <p className="text-lg sm:text-xl 2xl:text-2xl font-bold text-gray-400 uppercase mt-1 tracking-widest whitespace-normal break-words leading-tight">SELF-SERVICE KIOSK • ₱{PRICE_PER_GALLON} PER GALLON</p>
+          <p className="text-lg sm:text-xl 2xl:text-2xl font-bold text-gray-400 uppercase mt-1 tracking-widest whitespace-normal break-words leading-tight">SELF-SERVICE KIOSK • ₱{pricePerGallon} PER GALLON</p>
         </div>
       </div>
 

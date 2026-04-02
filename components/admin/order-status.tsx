@@ -9,7 +9,7 @@ import { getAllOrders } from "@/app/actions/getAllOrders";
 import { updateOrderStatus } from "@/app/actions/updateOrderStatus";
 import { createClient } from "@/lib/supabase/client";
 
-const status_options = ["Pending", "Pick-up", "Processing", "Refilled", "Out for Delivery", "Delivered", "Cancelled"];
+const status_options = ["Pending", "Pickup", "Processing", "Refilled", "Out for Delivery", "Delivered", "Cancelled"];
 const FILTERS = ["All", ...status_options];
 
 interface OrderItem {
@@ -90,7 +90,7 @@ export default function OrderStatus() {
 
             const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
 
-            let statusString = order.current_status || "Pending";
+            const statusString = order.current_status || "Pending";
 
             let receipt_url = undefined;
             if (order.proof_payment) {

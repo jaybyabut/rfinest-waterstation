@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, Minus, Plus, RefreshCw, ArrowUp } from "lucide-react";
+import { ChevronLeft, Minus, Plus, RefreshCw, ArrowUp, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { getOrderForEdit } from "@/app/actions/getOrderForEdit";
@@ -29,10 +29,14 @@ export default function EditOrderForm() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loadingSave, setLoadingSave] = useState(false);
     
-    // DINAGDAG: Bagong state para sa Skeleton Loader
     const [isFetching, setIsFetching] = useState(false);
     
     const [showScrollTop, setShowScrollTop] = useState(false);
+
+    const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
+    // DINAGDAG: Ref para mag-auto scroll kapag 0 items
+    const itemsRef = useRef<HTMLDivElement>(null);
 
     const newTotal = (slimCount + roundCount) * pricePerUnit;
 
@@ -51,7 +55,6 @@ export default function EditOrderForm() {
         setErrors({});
         setViewState("editing");
         
-        // Gagamitin natin ito para i-trigger ang Skeleton Loader
         setIsFetching(true);
 
         try {
@@ -76,7 +79,6 @@ export default function EditOrderForm() {
             setGlobalError("Failed to fetch order details.");
             setViewState("selection");
         } finally {
-            // Papatayin ang Skeleton Loader kapag tapos na
             setIsFetching(false);
         }
     };
@@ -97,7 +99,11 @@ export default function EditOrderForm() {
             setIsModalOpen(true);
         } else {
             setGlobalError("Please check the highlighted fields and fix the errors.");
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            if (itemsRef.current) {
+                itemsRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
         }
     };
 
@@ -116,12 +122,8 @@ export default function EditOrderForm() {
             if ('error' in result) {
                 setGlobalError(result.error || "Failed to update order.");
             } else {
-                setSuccessMessage("Order updated successfully!");
                 setErrors({});
-                setTimeout(() => {
-                    setSuccessMessage(null);
-                    setViewState("selection");
-                }, 3000);
+                setIsSuccessModalOpen(true);
             }
         } catch (e) {
             console.error("An error occurred", e);
@@ -130,6 +132,11 @@ export default function EditOrderForm() {
             setLoadingSave(false);
             setIsModalOpen(false);
         }
+    };
+
+    const handleSuccessClose = () => {
+        setIsSuccessModalOpen(false);
+        setViewState("selection");
     };
 
     return (
@@ -156,7 +163,6 @@ export default function EditOrderForm() {
                         </h1>
                     </div>
 
-                    {/* INAYOS: Tinanggal ang overflow-hidden dito para hindi ma-trap ang scroll sa loob */}
                     <div className="bg-white rounded-[40px] p-4 sm:p-6 shadow-inner border border-gray-100 text-left relative min-h-[400px] w-full">
 
                         {globalError && (
@@ -233,25 +239,60 @@ export default function EditOrderForm() {
 
                                 <hr className="border-dashed border-gray-200" />
 
-                                <div className="pt-2 w-full">
-                                    <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
-                                    <div className={`w-full p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-4 transition-colors ${errors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
+                                {/* ================= DETAILS (RESPONSIVE FIX) ================= */}
+                                <div className="pt-2 w-full" ref={itemsRef}>
+                                    <label className="block text-base sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
+                                    <div className={`w-full p-4 sm:p-5 rounded-[24px] sm:rounded-[30px] border-2 bg-[#e8eef1] space-y-4 transition-colors ${errors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
 
-                                        <div className={`flex justify-between items-center text-xl font-bold gap-2 ${errors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                                            <span className="flex-1 whitespace-normal leading-tight break-words">Slim Gallon:</span>
-                                            <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-                                                <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Minus size={24} strokeWidth={3} /></button>
-                                                <span className="w-6 sm:w-8 text-center text-2xl font-black">{slimCount}</span>
-                                                <button onClick={() => setSlimCount(slimCount + 1)} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Plus size={24} strokeWidth={3} /></button>
+                                        {/* SLIM GALLON */}
+                                        <div className={`flex flex-col min-[400px]:flex-row justify-between items-start min-[400px]:items-center font-bold gap-3 ${errors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                                            <span className="text-lg sm:text-xl whitespace-nowrap leading-tight">Slim Gallon:</span>
+                                            <div className="flex items-center justify-between w-full min-[400px]:w-auto gap-2 bg-white p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] transition-colors shadow-sm">
+                                                <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 bg-[#e8eef1]/50">
+                                                    <Minus className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+                                                </button>
+                                                <input 
+                                                    type="number" 
+                                                    value={slimCount.toString()} 
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value, 10);
+                                                        setSlimCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                                                        if (!isNaN(val) && (val > 0 || roundCount > 0)) {
+                                                            setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; });
+                                                        }
+                                                    }} 
+                                                    className="flex-1 min-[400px]:flex-none w-16 text-center text-xl sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                                />
+                                                <button onClick={() => { setSlimCount(Math.min(999, slimCount + 1)); setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; }); }} type="button" className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 bg-[#e8eef1]/50">
+                                                    <Plus className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+                                                </button>
                                             </div>
                                         </div>
 
-                                        <div className={`flex justify-between items-center text-xl font-bold border-t border-white/60 pt-3 gap-2 ${errors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                                            <span className="flex-1 whitespace-normal leading-tight break-words">Round Gallon:</span>
-                                            <div className="flex items-center gap-3 sm:gap-5 shrink-0">
-                                                <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Minus size={24} strokeWidth={3} /></button>
-                                                <span className="w-6 sm:w-8 text-center text-2xl font-black">{roundCount}</span>
-                                                <button onClick={() => setRoundCount(roundCount + 1)} className="text-[#1e3d58] hover:text-[#43b0f1] transition-colors w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm shrink-0"><Plus size={24} strokeWidth={3} /></button>
+                                        <hr className="border-white/60 border-dashed" />
+
+                                        {/* ROUND GALLON */}
+                                        <div className={`flex flex-col min-[400px]:flex-row justify-between items-start min-[400px]:items-center font-bold gap-3 ${errors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                                            <span className="text-lg sm:text-xl whitespace-nowrap leading-tight">Round Gallon:</span>
+                                            <div className="flex items-center justify-between w-full min-[400px]:w-auto gap-2 bg-white p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] transition-colors shadow-sm">
+                                                <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 bg-[#e8eef1]/50">
+                                                    <Minus className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+                                                </button>
+                                                <input 
+                                                    type="number" 
+                                                    value={roundCount.toString()} 
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value, 10);
+                                                        setRoundCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                                                        if (!isNaN(val) && (val > 0 || slimCount > 0)) {
+                                                            setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; });
+                                                        }
+                                                    }} 
+                                                    className="flex-1 min-[400px]:flex-none w-16 text-center text-xl sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                                />
+                                                <button onClick={() => { setRoundCount(Math.min(999, roundCount + 1)); setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; }); }} type="button" className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 bg-[#e8eef1]/50">
+                                                    <Plus className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+                                                </button>
                                             </div>
                                         </div>
 
@@ -290,6 +331,30 @@ export default function EditOrderForm() {
                 message={`Are you sure you want to update ${orderId}? The new total amount will be ₱${newTotal}.`}
                 confirmText={loadingSave ? "Saving..." : "Save Changes"}
             />
+
+            {/* DINAGDAG KO: SUCCESS MODAL UI */}
+            {isSuccessModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+                    <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
+                        <div className="bg-white rounded-[30px] p-8 text-center border border-gray-100 flex flex-col items-center">
+                            <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                                <Check size={40} strokeWidth={4} />
+                            </div>
+                            <h2 className="text-3xl font-black text-[#1e3d58] mb-3 tracking-tight">Success!</h2>
+                            <p className="mb-8 text-gray-500 font-bold text-base leading-snug">
+                                Order updated successfully!
+                            </p>
+                            <Button 
+                                onClick={handleSuccessClose} 
+                                className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
+                            >
+                                Continue
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

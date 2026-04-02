@@ -7,8 +7,6 @@ import { ChevronLeft, ChevronRight, Lock, LogOut, Eye, EyeOff, Check, X } from "
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { createClient } from "@/lib/supabase/client";
-
-// Connected na sa existing action mo!
 import { updatePassword as updatePasswordAction } from "@/app/actions/updatePassword";
 
 export default function AdminAccount() {
@@ -30,7 +28,6 @@ export default function AdminAccount() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  // ================= PASSWORD CRITERIA CHECKS =================
   const isLengthValid = newPassword.length >= 8;
   const isUpperValid = /[A-Z]/.test(newPassword);
   const isLowerValid = /[a-z]/.test(newPassword);
@@ -38,7 +35,6 @@ export default function AdminAccount() {
   
   const isPasswordStrong = isLengthValid && isUpperValid && isLowerValid && isNumberValid;
   
-  // Real-time Match Check
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
 
   const validateForm = () => {
@@ -65,7 +61,6 @@ export default function AdminAccount() {
     setErrors({});
 
     try {
-      // Tinatawag na yung totoong action mo dito
       const res = await updatePasswordAction(oldPassword, newPassword);
 
       if (res.success) {
@@ -191,7 +186,6 @@ export default function AdminAccount() {
 
             <div className="space-y-4 w-full">
               
-              {/* OLD PASSWORD */}
               <div className="w-full">
                 <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Old Password:</label>
                 <div className="relative w-full">
@@ -200,7 +194,7 @@ export default function AdminAccount() {
                     placeholder="Enter current password"
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
-                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.oldPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.oldPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]'}`}
                   />
                   <button
                     type="button"
@@ -213,7 +207,6 @@ export default function AdminAccount() {
                 {errors.oldPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.oldPassword}</p>}
               </div>
 
-              {/* NEW PASSWORD */}
               <div className="w-full">
                 <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">New Password:</label>
                 <div className="relative w-full mb-3">
@@ -222,7 +215,7 @@ export default function AdminAccount() {
                     placeholder="e.g. Abcd@1234"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.newPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.newPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]'}`}
                   />
                   <button
                     type="button"
@@ -233,7 +226,6 @@ export default function AdminAccount() {
                   </button>
                 </div>
                 
-                {/* NEW PASSWORD CRITERIA */}
                 {newPassword.length > 0 && (
                   <div className="pl-2 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isLengthValid ? 'text-green-600' : 'text-gray-400'}`}>
@@ -257,7 +249,6 @@ export default function AdminAccount() {
                 {errors.newPassword && <p className="text-red-500 text-xs sm:text-sm font-bold mt-2 ml-2 break-words leading-snug">{errors.newPassword}</p>}
               </div>
 
-              {/* CONFIRM PASSWORD */}
               <div className="w-full">
                 <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Confirm Password:</label>
                 <div className="relative w-full">
@@ -266,7 +257,7 @@ export default function AdminAccount() {
                     placeholder="Re-enter new password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.confirmPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 pl-6 pr-14 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.confirmPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]'}`}
                   />
                   <button
                     type="button"
@@ -277,7 +268,6 @@ export default function AdminAccount() {
                   </button>
                 </div>
                 
-                {/* CONFIRM PASSWORD MATCH INDICATOR */}
                 {confirmPassword.length > 0 && (
                   <div className="pl-2 mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${passwordsMatch ? 'text-green-600' : 'text-red-500'}`}>
@@ -286,7 +276,6 @@ export default function AdminAccount() {
                     </div>
                   </div>
                 )}
-                {/* Hide natin yung default error para hindi mag-doble yung warning text */}
                 {errors.confirmPassword && !confirmPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.confirmPassword}</p>}
               </div>
 
@@ -319,7 +308,6 @@ export default function AdminAccount() {
         confirmText={isSaving ? "Saving..." : "Yes, Save"}
       />
 
-      {/* Success Modal */}
       {isSuccessModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
           <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
