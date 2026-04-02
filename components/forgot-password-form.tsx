@@ -23,6 +23,7 @@ export default function ForgotPasswordForm({
     setError(null);
 
     try {
+      await supabase.auth.signOut();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `https://rfinest.vercel.app/auth/update-password`, 
       });
