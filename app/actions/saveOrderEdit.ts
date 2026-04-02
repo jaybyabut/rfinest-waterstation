@@ -28,7 +28,7 @@ export async function saveOrderEdit({ orderId, slimCount, roundCount, pricePerUn
             .from("orders")
             .update({ total_amount: newTotal })
             .eq("order_id", orderId)
-            .eq("current_status", "Pending");
+            .in("current_status", ["Pending", "Pickup"]);
 
         if (orderError) throw orderError;
 
