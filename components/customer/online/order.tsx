@@ -110,7 +110,6 @@ export default function CustomerPlaceOrder() {
 
     const isOnline = navigator.onLine;
 
-    // Offline Validation
     if (!isOnline && paymentMethod === 'E-Bank') {
       setError("E-Bank requires internet for receipt upload. Please use COD or restore connectivity.");
       setLoading(false);
@@ -156,8 +155,12 @@ export default function CustomerPlaceOrder() {
         
         setIsSuccessModalOpen(true);
       }
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred. Please try again.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "An unexpected error occurred. Please try again.");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -201,17 +204,19 @@ export default function CustomerPlaceOrder() {
                 )}
               </div>
 
-              {/* ================= DETAILS ================= */}
               <div className="pt-2 w-full">
                 <label className="block text-base sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
-                <div className={`w-full p-4 rounded-[24px] sm:rounded-[30px] border-2 bg-[#e8eef1] space-y-4 transition-colors ${fieldErrors?.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
+                <div className={`w-full p-3 sm:p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-3 sm:space-y-4 transition-colors ${fieldErrors?.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
 
-                  {/* SLIM GALLON */}
-                  <div className={`flex flex-wrap justify-between items-center font-bold gap-y-2 gap-x-2 ${fieldErrors?.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="text-base sm:text-xl whitespace-nowrap leading-tight">Slim Gallon:</span>
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0 bg-white p-1 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] transition-colors shadow-sm ml-auto">
-                      <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:bg-[#e8eef1] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shrink-0">
-                        <Minus className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                  <div className={`flex flex-row justify-between items-center font-bold gap-1 sm:gap-2 w-full ${fieldErrors?.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="text-sm sm:text-xl leading-tight">Slim Gallon:</span>
+                    <div className="flex items-center justify-between w-[110px] sm:w-[160px] shrink-0 bg-white p-1 sm:p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] shadow-sm transition-colors">
+                      <button 
+                        onClick={() => setSlimCount(Math.max(0, slimCount - 1))} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
+                        <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
                       <input 
                         type="number" 
@@ -219,23 +224,36 @@ export default function CustomerPlaceOrder() {
                         onChange={(e) => {
                           const val = parseInt(e.target.value, 10);
                           setSlimCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                          if (!isNaN(val) && (val > 0 || roundCount > 0)) {
+                            setFieldErrors(prev => { const newE = {...prev}; delete newE.items; return newE; });
+                          }
                         }} 
-                        className="w-10 sm:w-12 min-w-[2.5rem] text-center text-lg sm:text-xl font-black bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                        className="w-8 sm:w-12 text-center text-base sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                       />
-                      <button onClick={() => { setSlimCount(Math.min(999, slimCount + 1)); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:bg-[#e8eef1] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shrink-0">
-                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                      <button 
+                        onClick={() => { 
+                          setSlimCount(Math.min(999, slimCount + 1)); 
+                          setFieldErrors(prev => { const newE = {...prev}; delete newE.items; return newE; }); 
+                        }} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
+                        <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
                     </div>
                   </div>
 
                   <hr className="border-white/60 border-dashed" />
 
-                  {/* ROUND GALLON */}
-                  <div className={`flex flex-wrap justify-between items-center font-bold gap-y-2 gap-x-2 ${fieldErrors?.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                    <span className="text-base sm:text-xl whitespace-nowrap leading-tight">Round Gallon:</span>
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0 bg-white p-1 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] transition-colors shadow-sm ml-auto">
-                      <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:bg-[#e8eef1] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shrink-0">
-                        <Minus className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                  <div className={`flex flex-row justify-between items-center font-bold gap-1 sm:gap-2 w-full ${fieldErrors?.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                    <span className="text-sm sm:text-xl leading-tight">Round Gallon:</span>
+                    <div className="flex items-center justify-between w-[110px] sm:w-[160px] shrink-0 bg-white p-1 sm:p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] shadow-sm transition-colors">
+                      <button 
+                        onClick={() => setRoundCount(Math.max(0, roundCount - 1))} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
+                        <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
                       <input 
                         type="number" 
@@ -243,11 +261,21 @@ export default function CustomerPlaceOrder() {
                         onChange={(e) => {
                           const val = parseInt(e.target.value, 10);
                           setRoundCount(isNaN(val) ? 0 : Math.min(999, Math.max(0, val)));
+                          if (!isNaN(val) && (val > 0 || slimCount > 0)) {
+                            setFieldErrors(prev => { const newE = {...prev}; delete newE.items; return newE; });
+                          }
                         }} 
-                        className="w-10 sm:w-12 min-w-[2.5rem] text-center text-lg sm:text-xl font-black bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                        className="w-8 sm:w-12 text-center text-base sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                       />
-                      <button onClick={() => { setRoundCount(Math.min(999, roundCount + 1)); setFieldErrors(prev => ({ ...prev, items: false })); }} type="button" className="text-[#1e3d58] hover:bg-[#e8eef1] hover:text-[#43b0f1] transition-colors w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full shrink-0">
-                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={3} />
+                      <button 
+                        onClick={() => { 
+                          setRoundCount(Math.min(999, roundCount + 1)); 
+                          setFieldErrors(prev => { const newE = {...prev}; delete newE.items; return newE; }); 
+                        }} 
+                        type="button" 
+                        className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                      >
+                        <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                       </button>
                     </div>
                   </div>
@@ -318,7 +346,7 @@ export default function CustomerPlaceOrder() {
                 )}
               </div>
 
-              <div className="flex justify-between items-center pt-2 px-2 flex-wrap gap-2 w-full border-t-2 border-dashed border-gray-100 mt-2 min-h-[50px]">
+              <div className="flex flex-row justify-between items-center pt-2 px-2 gap-2 w-full border-t-2 border-dashed border-gray-100 mt-2 min-h-[50px]">
                 <span className="text-lg sm:text-xl font-bold text-[#1e3d58] flex-1 whitespace-nowrap pt-2">Total Amount:</span>
                 <span className="text-3xl sm:text-5xl font-black text-[#43b0f1] shrink-0 pt-2 flex items-center h-full">
                   {isFetchingData ? (
