@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, Clock } from "lucide-react";
+import { ChevronLeft, Clock, ArrowUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -17,20 +17,29 @@ const SCHEDULE = [
 
 export default function StoreHoursPage() {
   const [currentDay, setCurrentDay] = useState("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     setCurrentDay(days[new Date().getDay()]);
+
+    const handleWindowScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    window.addEventListener("scroll", handleWindowScroll);
+    return () => window.removeEventListener("scroll", handleWindowScroll);
   }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="flex flex-col items-center w-full px-4 py-6 animate-in slide-in-from-right-8 duration-300 mb-24 relative overflow-x-hidden">
       <div className="w-full max-w-md mx-auto">
         
-        {/* OUTER CONTAINER - Same as Home */}
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-white/50 shadow-xl overflow-hidden">
 
-          {/* HEADER SECTION - Matched sizing with Home & Order pages */}
           <div className="flex items-center mb-8 relative px-2">
             <Link href="/home" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
               <ChevronLeft size={44} strokeWidth={3} />
@@ -40,7 +49,6 @@ export default function StoreHoursPage() {
             </h1>
           </div>
 
-          {/* INNER CONTAINER - Same as Home */}
           <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 w-full overflow-hidden text-left">
             
             <div className="flex items-center justify-center gap-4 mb-6 pb-6 border-b-2 border-dashed border-gray-200">
@@ -88,6 +96,15 @@ export default function StoreHoursPage() {
           </div>
         </div>
       </div>
+
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
+          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+      >
+        <ArrowUp size={24} strokeWidth={3} />
+      </button>
     </div>
   );
-} 
+}

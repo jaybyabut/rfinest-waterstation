@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff } from "lucide-react"; 
+import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff, Check, X, ArrowUp } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
@@ -13,7 +13,6 @@ import { updateCustomerPassword } from "@/app/actions/updateCustomerPassword";
 import { updateCustomerNumber } from "@/app/actions/updateCustomerNumber";
 import { getLocations } from "@/app/actions/locations";
 import { createClient } from "@/lib/supabase/client";
-
 
 export default function CustomerAccount() {
   const router = useRouter();
@@ -78,9 +77,30 @@ export default function CustomerAccount() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // DINAGDAG KO: States para sa Completion / Success Modal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [successText, setSuccessText] = useState("");
+
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleWindowScroll = () => {
+      setShowScrollTop(window.scrollY > 200);
+    };
+    window.addEventListener("scroll", handleWindowScroll);
+    return () => window.removeEventListener("scroll", handleWindowScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const isLengthValid = newPassword.length >= 8;
+  const isUpperValid = /[A-Z]/.test(newPassword);
+  const isLowerValid = /[a-z]/.test(newPassword);
+  const isNumberValid = /[0-9]/.test(newPassword);
+  
+  const isPasswordStrong = isLengthValid && isUpperValid && isLowerValid && isNumberValid;
+  const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -103,7 +123,6 @@ export default function CustomerAccount() {
       if (!tempHouseNo.trim()) newErrors.houseNo = "House number is required.";
       else if (!locRegex.test(tempHouseNo)) newErrors.houseNo = "Invalid symbols used.";
 
-      // Inalis ko na ang required checker dito (Gaya nung request mo kanina)
       if (tempStreetName.trim() && !locRegex.test(tempStreetName)) newErrors.streetName = "Invalid symbols used.";
 
       if (!tempZoneId) newErrors.zoneId = "Please select a zone.";
@@ -122,10 +141,15 @@ export default function CustomerAccount() {
     if (view === "password") {
       if (!oldPassword) newErrors.oldPassword = "Old password is required.";
 
-      if (!newPassword) newErrors.newPassword = "New password is required.";
-      else if (newPassword.length < 8) newErrors.newPassword = "Must be at least 8 characters.";
+      if (!newPassword) {
+        newErrors.newPassword = "New password is required.";
+      } else if (!isPasswordStrong) {
+        newErrors.newPassword = "Please complete all password requirements.";
+      }
 
-      if (newPassword !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
+      if (newPassword !== confirmPassword) {
+        newErrors.confirmPassword = "Passwords do not match.";
+      }
     }
 
     setErrors(newErrors);
@@ -144,7 +168,6 @@ export default function CustomerAccount() {
           setLastName(tempLastName);
           setMiddleInitial(tempMI);
           router.refresh();
-          // DINAGDAG KO: Trigger ang Success Modal
           setSuccessText("Profile name has been updated successfully!");
           setIsSuccessModalOpen(true);
           setView("menu");
@@ -163,7 +186,6 @@ export default function CustomerAccount() {
           const chosenLoc = locations.find(l => l.location_id === tempZoneId);
           if (chosenLoc) setZoneName(chosenLoc.location_name);
           router.refresh();
-          // DINAGDAG KO: Trigger ang Success Modal
           setSuccessText("Delivery location has been updated successfully!");
           setIsSuccessModalOpen(true);
           setView("menu");
@@ -178,7 +200,6 @@ export default function CustomerAccount() {
           setMobileNo(tempMobileNo);
           setMobileVerifyPassword("");
           router.refresh();
-          // DINAGDAG KO: Trigger ang Success Modal
           setSuccessText("Mobile number has been updated successfully!");
           setIsSuccessModalOpen(true);
           setView("menu");
@@ -193,7 +214,6 @@ export default function CustomerAccount() {
           setOldPassword("");
           setNewPassword("");
           setConfirmPassword("");
-          // DINAGDAG KO: Trigger ang Success Modal
           setSuccessText("Password has been changed successfully!");
           setIsSuccessModalOpen(true);
           setView("menu");
@@ -246,7 +266,7 @@ export default function CustomerAccount() {
 
   if (view === "menu") {
     return (
-      <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-10 relative overflow-x-hidden">
+      <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative overflow-x-hidden">
         <div className="w-full max-w-md mx-auto">
           <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
 
@@ -334,30 +354,41 @@ export default function CustomerAccount() {
           confirmText="Yes, Log Out"
         />
 
-        {/* DINAGDAG KO: SUCCESS MODAL UI */}
         {isSuccessModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1e3d58]/40 backdrop-blur-sm px-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-[35px] p-6 sm:p-8 w-full max-w-sm text-center shadow-2xl animate-in zoom-in-95 duration-200 border-2 border-white/50">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
-                </svg>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+            <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
+              <div className="bg-white rounded-[30px] p-8 text-center border border-gray-100 flex flex-col items-center">
+                <div className="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                  <Check size={40} strokeWidth={4} />
+                </div>
+                <h2 className="text-3xl font-black text-[#1e3d58] mb-3 tracking-tight">Success!</h2>
+                <p className="mb-8 text-gray-500 font-bold text-base leading-snug">{successText}</p>
+                <Button 
+                  onClick={() => setIsSuccessModalOpen(false)} 
+                  className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
+                >
+                  Continue
+                </Button>
               </div>
-              <h2 className="text-2xl font-black text-[#1e3d58] mb-2">Success!</h2>
-              <p className="text-gray-500 font-bold mb-6 text-sm leading-snug">{successText}</p>
-              <Button onClick={() => setIsSuccessModalOpen(false)} className="w-full h-14 rounded-full font-bold text-lg bg-[#43b0f1] hover:bg-[#1e3d58] text-white transition-colors shadow-md">
-                Awesome
-              </Button>
             </div>
           </div>
         )}
+
+        <button
+          onClick={scrollToTop}
+          className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
+            showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+          }`}
+        >
+          <ArrowUp size={24} strokeWidth={3} />
+        </button>
 
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center w-full px-4 py-6 animate-in slide-in-from-right-8 duration-300 mb-10 relative overflow-x-hidden">
+    <div className="flex flex-col items-center w-full px-4 py-6 animate-in slide-in-from-right-8 duration-300 mb-24 relative overflow-x-hidden">
       <div className="w-full max-w-md mx-auto">
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-4 sm:p-5 pt-10 text-center border-2 border-white/50 shadow-xl relative">
 
@@ -388,7 +419,7 @@ export default function CustomerAccount() {
                       placeholder="e.g. Juan"
                       value={tempFirstName}
                       onChange={(e) => setTempFirstName(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.firstName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.firstName ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     {errors.firstName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.firstName}</p>}
                   </div>
@@ -400,7 +431,7 @@ export default function CustomerAccount() {
                       placeholder="A"
                       value={tempMI}
                       onChange={(e) => setTempMI(e.target.value)}
-                      className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mi ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-4 text-center rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mi ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     {errors.mi && <p className="text-red-500 text-xs font-bold mt-1 text-center break-words">{errors.mi}</p>}
                   </div>
@@ -412,7 +443,7 @@ export default function CustomerAccount() {
                     placeholder="e.g. Dela Cruz"
                     value={tempLastName}
                     onChange={(e) => setTempLastName(e.target.value)}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.lastName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.lastName ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   />
                   {errors.lastName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.lastName}</p>}
                 </div>
@@ -429,7 +460,7 @@ export default function CustomerAccount() {
                       placeholder="e.g. Blk 1 Lot 8"
                       value={tempHouseNo}
                       onChange={(e) => setTempHouseNo(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.houseNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.houseNo ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     {errors.houseNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.houseNo}</p>}
                   </div>
@@ -440,7 +471,7 @@ export default function CustomerAccount() {
                       placeholder="e.g. San Juan St."
                       value={tempStreetName}
                       onChange={(e) => setTempStreetName(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.streetName ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.streetName ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     {errors.streetName && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.streetName}</p>}
                   </div>
@@ -451,7 +482,7 @@ export default function CustomerAccount() {
                     <select
                       value={tempZoneId}
                       onChange={(e) => setTempZoneId(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer min-w-0 pr-10 ${errors.zoneId ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer min-w-0 pr-10 ${errors.zoneId ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     >
                       <option value="" disabled>Select a valid zone</option>
                       {locations.map((loc) => (
@@ -473,7 +504,7 @@ export default function CustomerAccount() {
                       placeholder="Enter password to verify"
                       value={locationVerifyPassword}
                       onChange={(e) => setLocationVerifyPassword(e.target.value)}
-                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.locationVerifyPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.locationVerifyPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     <button
                       type="button"
@@ -497,7 +528,7 @@ export default function CustomerAccount() {
                     placeholder="09XXXXXXXXX"
                     value={tempMobileNo}
                     onChange={(e) => setTempMobileNo(e.target.value)}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mobileNo ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal min-w-0 ${errors.mobileNo ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   />
                   {errors.mobileNo && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.mobileNo}</p>}
                 </div>
@@ -510,7 +541,7 @@ export default function CustomerAccount() {
                       placeholder="Enter password to verify"
                       value={mobileVerifyPassword}
                       onChange={(e) => setMobileVerifyPassword(e.target.value)}
-                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.mobileVerifyPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.mobileVerifyPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     <button
                       type="button"
@@ -528,7 +559,6 @@ export default function CustomerAccount() {
             {view === "password" && (
               <div className="space-y-4 w-full">
                 
-                {/* OLD PASSWORD */}
                 <div className="w-full">
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Old Password:</label>
                   <div className="relative w-full">
@@ -537,7 +567,7 @@ export default function CustomerAccount() {
                       placeholder="Enter current password"
                       value={oldPassword}
                       onChange={(e) => setOldPassword(e.target.value)}
-                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.oldPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.oldPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     <button
                       type="button"
@@ -550,16 +580,15 @@ export default function CustomerAccount() {
                   {errors.oldPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.oldPassword}</p>}
                 </div>
 
-                {/* NEW PASSWORD */}
                 <div className="w-full">
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">New Password:</label>
-                  <div className="relative w-full">
+                  <div className="relative w-full mb-3">
                     <input
                       type={showNewPassword ? "text" : "password"}
                       placeholder="Min. 8 characters"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.newPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.newPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     <button
                       type="button"
@@ -569,10 +598,30 @@ export default function CustomerAccount() {
                       {showNewPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
                     </button>
                   </div>
-                  {errors.newPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.newPassword}</p>}
+                  
+                  {newPassword.length > 0 && (
+                    <div className="pl-2 space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isLengthValid ? 'text-green-600' : 'text-gray-400'}`}>
+                        {isLengthValid ? <Check size={18} strokeWidth={4} /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 ml-0.5" />}
+                        At least 8 characters
+                      </div>
+                      <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isUpperValid ? 'text-green-600' : 'text-gray-400'}`}>
+                        {isUpperValid ? <Check size={18} strokeWidth={4} /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 ml-0.5" />}
+                        One uppercase letter (A-Z)
+                      </div>
+                      <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isLowerValid ? 'text-green-600' : 'text-gray-400'}`}>
+                        {isLowerValid ? <Check size={18} strokeWidth={4} /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 ml-0.5" />}
+                        One lowercase letter (a-z)
+                      </div>
+                      <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${isNumberValid ? 'text-green-600' : 'text-gray-400'}`}>
+                        {isNumberValid ? <Check size={18} strokeWidth={4} /> : <div className="w-4 h-4 rounded-full border-2 border-gray-300 ml-0.5" />}
+                        One number (0-9)
+                      </div>
+                    </div>
+                  )}
+                  {errors.newPassword && <p className="text-red-500 text-xs sm:text-sm font-bold mt-2 ml-2 break-words leading-snug">{errors.newPassword}</p>}
                 </div>
 
-                {/* CONFIRM PASSWORD */}
                 <div className="w-full">
                   <label className="block text-lg font-bold mb-1 ml-2 text-[#1e3d58]">Confirm Password:</label>
                   <div className="relative w-full">
@@ -581,7 +630,7 @@ export default function CustomerAccount() {
                       placeholder="Re-enter new password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.confirmPassword ? 'border-red-500' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal transition-all min-w-0 ${errors.confirmPassword ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                     />
                     <button
                       type="button"
@@ -591,7 +640,16 @@ export default function CustomerAccount() {
                       {showConfirmPassword ? <EyeOff size={22} strokeWidth={2.5} /> : <Eye size={22} strokeWidth={2.5} />}
                     </button>
                   </div>
-                  {errors.confirmPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.confirmPassword}</p>}
+                  
+                  {confirmPassword.length > 0 && (
+                    <div className="pl-2 mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className={`flex items-center gap-2 text-sm font-bold transition-colors duration-300 ${passwordsMatch ? 'text-green-600' : 'text-red-500'}`}>
+                        {passwordsMatch ? <Check size={18} strokeWidth={4} /> : <X size={18} strokeWidth={4} />}
+                        {passwordsMatch ? "Passwords match" : "Passwords do not match"}
+                      </div>
+                    </div>
+                  )}
+                  {errors.confirmPassword && !confirmPassword && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.confirmPassword}</p>}
                 </div>
 
               </div>
@@ -604,7 +662,8 @@ export default function CustomerAccount() {
                     setIsModalOpen(true);
                   }
                 }}
-                className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 shadow-lg"
+                disabled={isSaving || (view === 'password' && confirmPassword.length > 0 && !passwordsMatch) || (view === 'password' && newPassword.length > 0 && !isPasswordStrong)}
+                className="w-full h-16 text-2xl font-bold rounded-full bg-[#43b0f1] text-white border-2 border-[#43b0f1] hover:bg-[#1e3d58] hover:border-[#1e3d58] transition-all active:scale-95 disabled:opacity-50 shadow-lg"
               >
                 Save
               </Button>
@@ -622,6 +681,15 @@ export default function CustomerAccount() {
         message={isSaving ? "Saving changes..." : `Are you sure you want to save your new ${view === 'number' ? 'mobile number' : view}?`}
         confirmText={isSaving ? "Saving..." : "Yes, Save"}
       />
+
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${
+          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+      >
+        <ArrowUp size={24} strokeWidth={3} />
+      </button>
 
     </div>
   );
