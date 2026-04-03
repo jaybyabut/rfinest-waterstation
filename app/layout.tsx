@@ -5,6 +5,7 @@ import "./globals.css";
 import { CacheInitializer } from "@/components/offline/CacheInitializer";
 import { ConnectionStatus } from "@/components/ui/connection-status";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { NotificationSystem } from "@/components/NotificationSystem";
 
 const defaultUrl = process.env.NEXT_VERCEL_URL
   ? `https://${process.env.NEXT_VERCEL_URL}`
@@ -51,6 +52,7 @@ export default function RootLayout({
           {children}
           <CacheInitializer />
           <ConnectionStatus />
+          <NotificationSystem />
           <SpeedInsights />
         </ThemeProvider>
       </body>
