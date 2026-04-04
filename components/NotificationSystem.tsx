@@ -12,16 +12,33 @@ export function NotificationSystem() {
   useEffect(() => {
     // Fetch the user role
     const getRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        roleRef.current = user.app_metadata?.role || user.user_metadata?.role || null;
+      try {
+        // Only fetch user if we have a session to avoid "session missing" errors on logout
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          roleRef.current = null;
+          return;
+        }
+
+        const { data: { user }, error } = await supabase.auth.getUser();
         
-        // Request notification permission if admin
-        if (roleRef.current === "admin") {
-          if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-            Notification.requestPermission();
+        if (error) {
+          // Silent catch for user not found / session missing
+          return;
+        }
+
+        if (user) {
+          roleRef.current = user.app_metadata?.role || user.user_metadata?.role || null;
+          
+          // Request notification permission if admin
+          if (roleRef.current === "admin") {
+            if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+              Notification.requestPermission();
+            }
           }
         }
+      } catch (err) {
+        // Silently ignore auth errors from background listeners
       }
     };
 

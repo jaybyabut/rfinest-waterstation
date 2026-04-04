@@ -66,7 +66,19 @@ export async function updateSession(request: NextRequest) {
       request.nextUrl.pathname.startsWith("/login") ||
       request.nextUrl.pathname.startsWith("/auth"))
   ) {
-    const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
+    
+    // If session is actually invalid on the server (e.g. they just logged out), 
+    // allow them through to /auth/login or redirect them to login if on /
+    if (error || !supabaseUser) {
+      if (request.nextUrl.pathname === "/") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/auth/login";
+        return NextResponse.redirect(url);
+      }
+      return supabaseResponse;
+    }
+
     const role = supabaseUser?.app_metadata?.role || supabaseUser?.user_metadata?.role;
 
     const url = request.nextUrl.clone();
@@ -84,7 +96,15 @@ export async function updateSession(request: NextRequest) {
 
   // Route protection for specific dashboards
   if (user) {
-    const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
+    
+    if (error || !supabaseUser) {
+        // Token is invalid, redirect to login
+        const url = request.nextUrl.clone();
+        url.pathname = "/auth/login";
+        return NextResponse.redirect(url);
+    }
+
     const role = supabaseUser?.app_metadata?.role || supabaseUser?.user_metadata?.role;
     const path = request.nextUrl.pathname;
 
