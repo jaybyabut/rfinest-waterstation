@@ -35,7 +35,6 @@ export default function EditOrderForm() {
 
     const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-    // DINAGDAG: Ref para mag-auto scroll kapag 0 items
     const itemsRef = useRef<HTMLDivElement>(null);
 
     const newTotal = (slimCount + roundCount) * pricePerUnit;
@@ -176,7 +175,6 @@ export default function EditOrderForm() {
                             <OrderSelection onSelectOrder={loadOrderDetails} />
                         ) : isFetching ? (
                             
-                            // ================= SKELETON LOADER =================
                             <div className="space-y-5 w-full animate-pulse">
                                 <div className="grid grid-cols-1 gap-4 w-full">
                                     <div className="w-full">
@@ -208,7 +206,6 @@ export default function EditOrderForm() {
                                     <div className="w-full h-16 bg-slate-300 rounded-full"></div>
                                 </div>
                             </div>
-                            // ================= END SKELETON LOADER =================
 
                         ) : (
                             <div className={`space-y-5 animate-in slide-in-from-right-4 duration-300 w-full ${loadingSave ? "opacity-50 pointer-events-none" : ""}`}>
@@ -239,17 +236,19 @@ export default function EditOrderForm() {
 
                                 <hr className="border-dashed border-gray-200" />
 
-                                {/* ================= DETAILS (RESPONSIVE FIX) ================= */}
                                 <div className="pt-2 w-full" ref={itemsRef}>
                                     <label className="block text-base sm:text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Details:</label>
-                                    <div className={`w-full p-4 sm:p-5 rounded-[24px] sm:rounded-[30px] border-2 bg-[#e8eef1] space-y-4 transition-colors ${errors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
+                                    <div className={`w-full p-3 sm:p-4 rounded-[30px] border-2 bg-[#e8eef1] space-y-3 sm:space-y-4 transition-colors ${errors.items ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-[#1e3d58]'}`}>
 
-                                        {/* SLIM GALLON */}
-                                        <div className={`flex flex-col min-[400px]:flex-row justify-between items-start min-[400px]:items-center font-bold gap-3 ${errors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                                            <span className="text-lg sm:text-xl whitespace-nowrap leading-tight">Slim Gallon:</span>
-                                            <div className="flex items-center justify-between w-full min-[400px]:w-auto gap-2 bg-white p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] transition-colors shadow-sm">
-                                                <button onClick={() => setSlimCount(Math.max(0, slimCount - 1))} type="button" className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 bg-[#e8eef1]/50">
-                                                    <Minus className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+                                        <div className={`flex flex-row justify-between items-center font-bold gap-1 sm:gap-2 w-full ${errors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                                            <span className="text-sm sm:text-xl leading-tight">Slim Gallon:</span>
+                                            <div className="flex items-center justify-between w-[110px] sm:w-[160px] shrink-0 bg-white p-1 sm:p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] shadow-sm transition-colors">
+                                                <button 
+                                                    onClick={() => setSlimCount(Math.max(0, slimCount - 1))} 
+                                                    type="button" 
+                                                    className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                                                >
+                                                    <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                                                 </button>
                                                 <input 
                                                     type="number" 
@@ -261,22 +260,32 @@ export default function EditOrderForm() {
                                                             setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; });
                                                         }
                                                     }} 
-                                                    className="flex-1 min-[400px]:flex-none w-16 text-center text-xl sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                                    className="w-8 sm:w-12 text-center text-base sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                                                 />
-                                                <button onClick={() => { setSlimCount(Math.min(999, slimCount + 1)); setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; }); }} type="button" className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 bg-[#e8eef1]/50">
-                                                    <Plus className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+                                                <button 
+                                                    onClick={() => { 
+                                                        setSlimCount(Math.min(999, slimCount + 1)); 
+                                                        setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; }); 
+                                                    }} 
+                                                    type="button" 
+                                                    className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                                                >
+                                                    <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                                                 </button>
                                             </div>
                                         </div>
 
                                         <hr className="border-white/60 border-dashed" />
 
-                                        {/* ROUND GALLON */}
-                                        <div className={`flex flex-col min-[400px]:flex-row justify-between items-start min-[400px]:items-center font-bold gap-3 ${errors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
-                                            <span className="text-lg sm:text-xl whitespace-nowrap leading-tight">Round Gallon:</span>
-                                            <div className="flex items-center justify-between w-full min-[400px]:w-auto gap-2 bg-white p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] transition-colors shadow-sm">
-                                                <button onClick={() => setRoundCount(Math.max(0, roundCount - 1))} type="button" className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 bg-[#e8eef1]/50">
-                                                    <Minus className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+                                        <div className={`flex flex-row justify-between items-center font-bold gap-1 sm:gap-2 w-full ${errors.items ? 'text-red-700' : 'text-[#1e3d58]'}`}>
+                                            <span className="text-sm sm:text-xl leading-tight">Round Gallon:</span>
+                                            <div className="flex items-center justify-between w-[110px] sm:w-[160px] shrink-0 bg-white p-1 sm:p-1.5 rounded-full border-2 border-transparent focus-within:border-[#43b0f1] shadow-sm transition-colors">
+                                                <button 
+                                                    onClick={() => setRoundCount(Math.max(0, roundCount - 1))} 
+                                                    type="button" 
+                                                    className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                                                >
+                                                    <Minus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                                                 </button>
                                                 <input 
                                                     type="number" 
@@ -288,10 +297,17 @@ export default function EditOrderForm() {
                                                             setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; });
                                                         }
                                                     }} 
-                                                    className="flex-1 min-[400px]:flex-none w-16 text-center text-xl sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                                    className="w-8 sm:w-12 text-center text-base sm:text-2xl font-black text-[#1e3d58] bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                                                 />
-                                                <button onClick={() => { setRoundCount(Math.min(999, roundCount + 1)); setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; }); }} type="button" className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full shrink-0 bg-[#e8eef1]/50">
-                                                    <Plus className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={3} />
+                                                <button 
+                                                    onClick={() => { 
+                                                        setRoundCount(Math.min(999, roundCount + 1)); 
+                                                        setErrors(prev => { const newE = {...prev}; delete newE.items; return newE; }); 
+                                                    }} 
+                                                    type="button" 
+                                                    className="text-[#1e3d58] hover:bg-[#43b0f1] hover:text-white transition-colors w-7 h-7 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#e8eef1]/50 shrink-0"
+                                                >
+                                                    <Plus className="w-4 h-4 sm:w-6 sm:h-6" strokeWidth={3} />
                                                 </button>
                                             </div>
                                         </div>
@@ -332,7 +348,6 @@ export default function EditOrderForm() {
                 confirmText={loadingSave ? "Saving..." : "Save Changes"}
             />
 
-            {/* DINAGDAG KO: SUCCESS MODAL UI */}
             {isSuccessModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
                     <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">
