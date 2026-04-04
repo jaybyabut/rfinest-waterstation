@@ -1,11 +1,13 @@
 'use server'
-import { ensureRole } from "../../lib/supabase/server"
+import { ensureRole, createAdminClient } from "../../lib/supabase/server"
 
 export async function getQueueOrders() {
-    const { supabase } = await ensureRole(['station', 'admin']);
+    await ensureRole(['station', 'admin']);
 
-    // Fetch orders that are not 'Delivered' and not 'Cancelled'
-    const { data, error } = await supabase
+    // Use the admin client (service role) to bypass RLS and fetch ALL orders
+    const supabaseAdmin = await createAdminClient();
+
+    const { data, error } = await supabaseAdmin
         .from('orders')
         .select(`
             order_id,
@@ -28,7 +30,7 @@ export async function getQueueOrders() {
         `)
         .not('current_status', 'eq', 'Delivered')
         .not('current_status', 'eq', 'Cancelled')
-        .order('order_dt', { ascending: true }); // Oldest first for queue
+        .order('order_dt', { ascending: true });
 
     if (error) {
         console.error("Error fetching queue orders:", error);
