@@ -165,7 +165,7 @@ export default function OrderStatus() {
     e.stopPropagation();
     if (order.status === "Cancelled") return;
     setStatusChangeOrder(order);
-    setNewStatus(order.status === "Pending" ? "Pick-up" : order.status);
+    setNewStatus(order.status === "Pending" ? "Pickup" : order.status);
   };
 
   const confirmStatusChange = async () => {
@@ -200,7 +200,7 @@ export default function OrderStatus() {
     switch (status) {
       case "Pending":
         return "bg-gray-200 text-gray-700 border-gray-400";
-      case "Pick-up":
+      case "Pickup":
         return "bg-amber-100 text-amber-700 border-amber-400";
       case "Processing":
         return "bg-orange-100 text-orange-700 border-orange-400";

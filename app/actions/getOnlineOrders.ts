@@ -25,7 +25,7 @@ export async function getOnlineOrders() {
             )
         `)
         .not('transaction_type', 'eq', 'Walk-in')
-        .in('current_status', ['Pending', 'Pick-up', 'Processing', 'Refilled', 'Out for Delivery'])
+        .in('current_status', ['Pending', 'pending', 'Pickup', 'pickup', 'Processing', 'processing', 'Refilled', 'refilled', 'Out for Delivery', 'out for delivery'])
         .order('order_dt', { ascending: true });
 
     if (error) {
