@@ -120,16 +120,17 @@ export default function EmployeeTablet() {
               }
 
               return {
-                id: o.order_id.toString(),
-                status: o.current_status.toLowerCase(),
-                name: o.name,
-                address: o.address,
-                notes: o.note,
-                payment_method: o.payment_mode,
+                id: o.order_id?.toString(),
+                status: o.current_status?.toLowerCase() || 'pickup',
+                name: o.name || 'Unknown Customer',
+                address: o.address || 'N/A',
+                notes: o.note || '',
+                payment_method: o.payment_mode || 'Cash',
                 receipt_url: receipt_url,
-                items: o.order_items.map((i: any) => ({
-                  type: i.products.product_name.includes('Slim') ? 'SLIM' : 'ROUND',
-                  quantity: i.quantity
+                
+                items: (o.order_items || []).map((i: any) => ({
+                  type: i.products?.product_name?.toLowerCase().includes('slim') ? 'SLIM' : 'ROUND',
+                  quantity: i.quantity || 0
                 }))
               };
             })
@@ -198,8 +199,8 @@ export default function EmployeeTablet() {
     if (!currentOrder) return;
 
     let nextStatus = '';
-    if (currentOrder.status === 'pending') nextStatus = 'Pick-up';
-    else if (currentOrder.status === 'pick-up') nextStatus = 'Processing';
+    if (currentOrder.status === 'pending') nextStatus = 'Pickup';
+    else if (currentOrder.status === 'pickup') nextStatus = 'Processing';
     else if (currentOrder.status === 'processing') nextStatus = 'Refilled';
     else if (currentOrder.status === 'refilled') nextStatus = 'Out for Delivery';
     else if (currentOrder.status === 'out for delivery') nextStatus = 'Delivered';
@@ -226,14 +227,15 @@ export default function EmployeeTablet() {
     }
   };
 
-  const fetchMyLogs = async () => {
+const fetchMyLogs = async () => {
     setLoadingLogs(true);
     setLogError(null);
     try {
       const result = await getActivityLogs();
       if (result && 'logs' in result && Array.isArray(result.logs)) {
         setLogs(result.logs.map((log: any) => ({
-          id: log.log_id.toString(),
+          // Changed log.log_id to log.id with an optional chaining fallback
+          id: log.id?.toString() || Math.random().toString(), 
           timestamp: log.created_at,
           action: log.activity,
           details: `Performed by ${log.user_name || 'Staff'}`
@@ -412,11 +414,11 @@ export default function EmployeeTablet() {
                         'text-purple-600'
                     }`}>
                     {order.status === 'pending' && <ShoppingBag className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
-                    {['pick-up', 'processing', 'refilled'].includes(order.status) && <Droplets className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
+                    {['pickup', 'processing', 'refilled'].includes(order.status) && <Droplets className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
                     {order.status === 'out for delivery' && <Bike className="w-10 h-10 md:w-16 md:h-16" strokeWidth={2.5} />}
                     <span className="font-bold text-sm md:text-xl uppercase tracking-widest mt-2 text-center leading-none">
                       {order.status === 'pending' && 'PENDING'}
-                      {order.status === 'pick-up' && 'PICK-UP'}
+                      {order.status === 'pickup' && 'PICK-UP'}
                       {order.status === 'processing' && 'QUEUED'}
                       {order.status === 'refilled' && 'REFILLED'}
                       {order.status === 'out for delivery' && 'DELIVERY'}
@@ -487,7 +489,7 @@ export default function EmployeeTablet() {
                             }`}
                         >
                           {order.status === 'pending' && "MARK FOR PICK-UP"}
-                          {order.status === 'pick-up' && "MARK PROCESSING"}
+                          {order.status === 'pickup' && "MARK PROCESSING"}
                           {order.status === 'processing' && "MARK REFILLED"}
                           {order.status === 'refilled' && "MARK FOR DELIVERY"}
                           {order.status === 'out for delivery' && "MARK DELIVERED"}

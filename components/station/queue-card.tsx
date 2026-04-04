@@ -29,7 +29,7 @@ export default function QueueCard({ order }: { order: QueueOrder }) {
       borderColor = "border-l-orange-500";
       textColor = "text-orange-600";
       icon = <ShoppingBag className="w-[4vh] h-[4vh]" strokeWidth={2.5} />;
-      statusLabel = "PICK-UP";
+      statusLabel = "PICKUP";
       mainInstruction = order.address;
       subInstruction = order.name;
       break;
