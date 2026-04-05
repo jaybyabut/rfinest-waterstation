@@ -19,7 +19,7 @@ export interface Order {
 
 const STATUSES = [
   { title: "Pending", desc: "Your order has been received and is waiting to be processed.", icon: Clock },
-  { title: "Pick-up", desc: "We are on our way to pick up your empty containers.", icon: Package },
+  { title: "Pickup", desc: "We are on our way to pick up your empty containers.", icon: Package },
   { title: "Processing", desc: "We are currently refilling your containers.", icon: Package },
   { title: "Refilled", desc: "Your containers are freshly refilled and sealed.", icon: Droplets },
   { title: "Out for Delivery", desc: "Your order is on its way to you.", icon: Truck },
@@ -93,7 +93,7 @@ export default function CustomerOrderStatus() {
 
           let currentStep = -1;
           if (order.current_status === "Pending") currentStep = 0;
-          else if (order.current_status === "Pick-up" || order.current_status === "Picked-up") currentStep = 1;
+          else if (order.current_status === "Pickup" || order.current_status === "Picked-up") currentStep = 1;
           else if (order.current_status === "Processing") currentStep = 2;
           else if (order.current_status === "Refilled") currentStep = 3;
           else if (order.current_status === "Delivered" || order.current_status === "Out for Delivery") currentStep = 4;
