@@ -63,7 +63,7 @@ export default function LiveQueueDisplay() {
           fetchOrders();
 
           window.location.reload();
-          
+          document.documentElement.requestFullscreen();
         }
       )
       .subscribe();
