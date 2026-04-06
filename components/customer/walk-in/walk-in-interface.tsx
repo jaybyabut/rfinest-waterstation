@@ -31,7 +31,7 @@ interface TerminalButtonProps {
   icon?: React.ReactElement<React.SVGProps<SVGSVGElement>>;
 }
 
-// SUB-COMPONENT: KIOSK-SIZED CONFIRMATION
+// SUB-COMPONENT: KIOSK-SIZED CONFIRMATION (RESIZED TO FIT WITHOUT SCROLLING)
 function WalkInConfirmation({
   isOpen,
   onClose,
@@ -48,36 +48,41 @@ function WalkInConfirmation({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/90 backdrop-blur-md animate-in fade-in duration-200 p-4 sm:p-8">
-      <div className="bg-white rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 2xl:p-16 w-full max-w-[900px] shadow-2xl animate-in zoom-in-95 duration-200 relative border-[8px] sm:border-[12px] border-[#e8eef1] my-auto">
-        <button onClick={onClose} className="absolute right-4 top-4 sm:right-8 sm:top-8 p-3 sm:p-4 bg-[#e8eef1] hover:bg-gray-200 rounded-full active:scale-90 transition-all">
-          <X size={32} className="text-[#1e3d58] sm:w-10 sm:h-10" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/90 backdrop-blur-md animate-in fade-in duration-200 p-4 sm:p-6">
+      {/* Removed scroll classes, reduced padding to p-6/p-8/p-10 so it naturally fits */}
+      <div className="bg-white rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 lg:p-10 w-full max-w-[850px] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 relative border-[8px] sm:border-[12px] border-[#e8eef1]">
+        
+        <button onClick={onClose} className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 sm:p-3 bg-[#e8eef1] hover:bg-gray-200 rounded-full active:scale-90 transition-all z-10">
+          <X className="w-8 h-8 sm:w-10 sm:h-10 text-[#1e3d58]" strokeWidth={3} />
         </button>
 
-        <div className="text-center mt-8 sm:mt-0">
-          <div className="mx-auto w-24 h-24 sm:w-32 sm:h-32 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mb-6 sm:mb-8">
-            <AlertCircle size={64} className="sm:w-20 sm:h-20" strokeWidth={2.5} />
+        <div className="text-center flex flex-col items-center justify-center">
+          {/* Scaled down icon size slightly */}
+          <div className="w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mb-4 sm:mb-6 shrink-0">
+            <AlertCircle className="w-10 h-10 sm:w-14 sm:h-14 lg:w-16 lg:h-16" strokeWidth={2.5} />
           </div>
 
-          <h2 className="text-4xl sm:text-6xl font-black text-[#1e3d58] mb-4 uppercase tracking-tighter break-words leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#1e3d58] mb-2 sm:mb-4 uppercase tracking-tighter break-words leading-tight shrink-0">
             CONFIRM ORDER
           </h2>
 
-          <p className="text-xl sm:text-3xl font-bold text-gray-500 mb-8 sm:mb-12 uppercase tracking-wide leading-tight break-words whitespace-normal">
+          {/* Scaled down text slightly */}
+          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-500 mb-6 sm:mb-8 uppercase tracking-wide leading-tight break-words whitespace-normal shrink-0">
             YOU ARE PLACING AN ORDER FOR <span className="text-[#43b0f1]">₱{total.toLocaleString()}</span><br />
             VIA <span className="text-[#43b0f1]">{method}</span>. IS THIS CORRECT?
           </p>
 
-          <div className="flex flex-col gap-4 sm:gap-6 w-full">
+          {/* Scaled down button heights so they don't push past the screen */}
+          <div className="flex flex-col gap-3 sm:gap-4 w-full mt-2 shrink-0">
             <Button
               onClick={onConfirm}
-              className="w-full h-24 sm:h-32 text-2xl sm:text-4xl font-black rounded-3xl bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-xl uppercase tracking-widest active:scale-95 whitespace-normal break-words leading-tight border-2 border-[#43b0f1]"
+              className="w-full h-16 sm:h-20 lg:h-24 text-xl sm:text-2xl lg:text-3xl font-black rounded-2xl sm:rounded-3xl bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-xl uppercase tracking-widest active:scale-95 whitespace-normal break-words leading-tight border-2 border-[#43b0f1]"
             >
               YES, PLACE ORDER
             </Button>
             <Button
               onClick={onClose}
-              className="w-full h-16 sm:h-24 text-xl sm:text-2xl font-black rounded-3xl border-4 border-[#e8eef1] bg-white text-gray-400 hover:bg-[#e8eef1] hover:text-[#1e3d58] transition-all uppercase tracking-widest active:scale-95 whitespace-normal break-words leading-tight"
+              className="w-full h-14 sm:h-16 lg:h-20 text-lg sm:text-xl lg:text-2xl font-black rounded-2xl sm:rounded-3xl border-4 border-[#e8eef1] bg-white text-gray-400 hover:bg-[#e8eef1] hover:text-[#1e3d58] transition-all uppercase tracking-widest active:scale-95 whitespace-normal break-words leading-tight"
             >
               NO, GO BACK
             </Button>
