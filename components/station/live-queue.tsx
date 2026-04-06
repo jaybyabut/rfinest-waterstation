@@ -36,7 +36,19 @@ export default function LiveQueueDisplay() {
   const fetchOrders = async () => {
     const data = await getQueueOrders();
     if (data && !('error' in data)) {
-      setOrders(data as unknown as RawOrderRecord[]);
+      const fetchedOrders = data as unknown as RawOrderRecord[];
+      setOrders(fetchedOrders);
+
+      // Jump to the last page automatically whenever new data arrives
+      const newTotalPages = Math.ceil(fetchedOrders.length / ITEMS_PER_PAGE);
+      if (newTotalPages > 0) {
+        setCurrentPage(newTotalPages - 1); // -1 because currentPage is 0-indexed
+      } else {
+        setCurrentPage(0);
+      }
+
+
+      
     } else {
       console.error("Failed to fetch orders:", data.error);
     }
@@ -63,7 +75,7 @@ export default function LiveQueueDisplay() {
           fetchOrders();
 
           window.location.reload();
-          document.documentElement.requestFullscreen();
+          setCurrentPage(totalPages);
         }
       )
       .subscribe();
