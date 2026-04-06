@@ -62,8 +62,8 @@ export default function LiveQueueDisplay() {
         () => {
           fetchOrders();
 
-
-          setCurrentPage(0);
+          window.location.reload();
+          
         }
       )
       .subscribe();
