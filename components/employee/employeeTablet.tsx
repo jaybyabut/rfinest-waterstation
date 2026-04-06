@@ -370,7 +370,7 @@ export default function EmployeeTablet() {
                           onClick={() => setConfirmingId(order.id)}
                           className="bg-[#1e3d58] text-white w-full px-4 sm:px-4 lg:px-6 py-3 sm:py-3 lg:py-8 rounded-xl lg:rounded-3xl font-black text-xl sm:text-base md:text-xl lg:text-3xl shadow-md active:scale-95 transition-transform text-center"
                         >
-                          MARK DELIVERED
+                          MARK REFILLED
                         </button>
                       )}
                     </div>
