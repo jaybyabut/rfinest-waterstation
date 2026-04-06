@@ -61,6 +61,9 @@ export default function LiveQueueDisplay() {
         { event: '*', schema: 'public', table: 'orders' },
         () => {
           fetchOrders();
+
+
+          setCurrentPage(0);
         }
       )
       .subscribe();
