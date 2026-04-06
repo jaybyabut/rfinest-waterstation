@@ -214,61 +214,62 @@ export default function LiveQueueDisplay() {
   });
 
   return (
-    <div className="h-screen w-full bg-slate-50 p-4 sm:p-6 lg:p-8 max-h-[900px]:p-4 flex flex-col relative overflow-hidden">
+    <div className="h-[100dvh] w-full bg-slate-50 p-4 sm:p-6 lg:p-8 2xl:p-12 flex flex-col relative overflow-hidden">
       
       <button
         onClick={toggleFullscreen}
-        className={`absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-8 max-h-[900px]:top-4 max-h-[900px]:right-4 z-50 p-2 sm:p-3 rounded-full transition-all duration-300 shadow-md ${
+        className={`absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-8 2xl:top-12 2xl:right-12 z-50 p-2 sm:p-3 2xl:p-4 rounded-full transition-all duration-300 shadow-md ${
           isFullscreen 
             ? "opacity-0 hover:opacity-100 bg-black/50 text-white" 
             : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"
         }`}
         title={isFullscreen ? "Exit Fullscreen" : "Go Fullscreen"}
       >
-        {isFullscreen ? <Minimize size={24} className="sm:w-7 sm:h-7" strokeWidth={2.5} /> : <Maximize size={24} className="sm:w-7 sm:h-7" strokeWidth={2.5} />}
+        {isFullscreen ? <Minimize size={24} className="sm:w-7 sm:h-7 2xl:w-10 2xl:h-10" strokeWidth={2.5} /> : <Maximize size={24} className="sm:w-7 sm:h-7 2xl:w-10 2xl:h-10" strokeWidth={2.5} />}
       </button>
 
       {/* Responsive One-Liner Header */}
-      <div className="mb-4 sm:mb-6 max-h-[900px]:mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-0 border-b-2 border-slate-200 pb-3 sm:pb-4 max-h-[900px]:pb-2 shrink-0">
-        <div className="w-full sm:w-auto flex flex-row items-baseline gap-3 sm:gap-4 flex-wrap">
+      <div className="mb-4 sm:mb-6 2xl:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-0 border-b-2 border-slate-200 pb-3 sm:pb-4 2xl:pb-6 shrink-0">
+        <div className="w-full sm:w-auto flex flex-row items-baseline gap-3 sm:gap-4 2xl:gap-6 flex-wrap">
           {mounted && time ? (
             <>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl max-h-[900px]:text-3xl font-black text-slate-900 tracking-tight uppercase leading-none">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-7xl font-black text-slate-900 tracking-tight uppercase leading-none">
                 {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl max-h-[900px]:text-base font-bold text-slate-500 uppercase tracking-widest leading-none">
+              <p className="text-base sm:text-lg lg:text-xl 2xl:text-3xl font-bold text-slate-500 uppercase tracking-widest leading-none">
                 {time.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
             </>
           ) : (
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl max-h-[900px]:text-3xl font-black text-slate-300 uppercase leading-none">LOADING TIME...</h1>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-7xl font-black text-slate-300 uppercase leading-none">LOADING TIME...</h1>
           )}
         </div>
 
         {totalPages > 1 && (
-          <div className="bg-slate-200 px-4 sm:px-6 py-2 sm:py-3 rounded-xl self-end sm:self-auto mt-2 sm:mt-0">
-            <h2 className="text-lg sm:text-xl lg:text-2xl max-h-[900px]:text-lg font-black text-slate-700 tracking-widest leading-none">
+          <div className="bg-slate-200 px-4 sm:px-6 2xl:px-8 py-2 sm:py-3 2xl:py-4 rounded-xl 2xl:rounded-2xl self-end sm:self-auto mt-2 sm:mt-0">
+            <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-4xl font-black text-slate-700 tracking-widest leading-none">
               PAGE {currentPage + 1} OF {totalPages}
             </h2>
           </div>
         )}
       </div>
 
-      <div className="flex-1 w-full grid grid-rows-5 gap-3 sm:gap-4 lg:gap-6 max-h-[900px]:gap-2 transition-all duration-500 pb-2 sm:pb-4">
+      {/* min-h-0 is crucial here so the grid respects the screen height and pushes the items to fit properly */}
+      <div className="flex-1 min-h-0 w-full grid grid-rows-5 gap-3 sm:gap-4 lg:gap-6 2xl:gap-8 transition-all duration-500 pb-2 sm:pb-4 2xl:pb-0">
         {mappedOrders.map((order) => (
           <QueueCard key={order.id} order={order} />
         ))}
 
         {!loading && orders.length === 0 && (
           <div className="row-span-5 flex flex-col items-center justify-center text-slate-300 px-4 text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase">No Active Orders</h1>
-            <p className="text-lg sm:text-xl lg:text-2xl font-bold mt-2 sm:mt-4">Waiting for new requests...</p>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl 2xl:text-8xl font-black uppercase">No Active Orders</h1>
+            <p className="text-lg sm:text-xl lg:text-2xl 2xl:text-4xl font-bold mt-2 sm:mt-4 2xl:mt-6">Waiting for new requests...</p>
           </div>
         )}
 
         {loading && (
           <div className="row-span-5 flex flex-col items-center justify-center text-slate-300 px-4 text-center">
-             <span className="text-2xl sm:text-3xl lg:text-4xl animate-pulse uppercase font-black">Updating Queue...</span>
+             <span className="text-2xl sm:text-3xl lg:text-4xl 2xl:text-6xl animate-pulse uppercase font-black">Updating Queue...</span>
           </div>
         )}
       </div>

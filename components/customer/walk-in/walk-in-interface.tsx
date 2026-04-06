@@ -31,33 +31,34 @@ interface TerminalButtonProps {
   icon?: React.ReactElement<React.SVGProps<SVGSVGElement>>;
 }
 
-// SUB-COMPONENT: KIOSK-SIZED CONFIRMATION (RESIZED TO FIT WITHOUT SCROLLING)
+// SUB-COMPONENT: KIOSK-SIZED CONFIRMATION (ADDED isLoading PROP)
 function WalkInConfirmation({
   isOpen,
   onClose,
   onConfirm,
   total,
-  method
+  method,
+  isLoading
 }: {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   total: number;
   method: string;
+  isLoading: boolean;
 }) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/90 backdrop-blur-md animate-in fade-in duration-200 p-4 sm:p-6">
-      {/* Removed scroll classes, reduced padding to p-6/p-8/p-10 so it naturally fits */}
       <div className="bg-white rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-8 lg:p-10 w-full max-w-[850px] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200 relative border-[8px] sm:border-[12px] border-[#e8eef1]">
         
-        <button onClick={onClose} className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 sm:p-3 bg-[#e8eef1] hover:bg-gray-200 rounded-full active:scale-90 transition-all z-10">
+        {/* Disabled when loading */}
+        <button disabled={isLoading} onClick={onClose} className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 sm:p-3 bg-[#e8eef1] hover:bg-gray-200 rounded-full active:scale-90 transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed">
           <X className="w-8 h-8 sm:w-10 sm:h-10 text-[#1e3d58]" strokeWidth={3} />
         </button>
 
         <div className="text-center flex flex-col items-center justify-center">
-          {/* Scaled down icon size slightly */}
           <div className="w-16 h-16 sm:w-24 sm:h-24 lg:w-28 lg:h-28 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mb-4 sm:mb-6 shrink-0">
             <AlertCircle className="w-10 h-10 sm:w-14 sm:h-14 lg:w-16 lg:h-16" strokeWidth={2.5} />
           </div>
@@ -66,23 +67,25 @@ function WalkInConfirmation({
             CONFIRM ORDER
           </h2>
 
-          {/* Scaled down text slightly */}
           <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-500 mb-6 sm:mb-8 uppercase tracking-wide leading-tight break-words whitespace-normal shrink-0">
             YOU ARE PLACING AN ORDER FOR <span className="text-[#43b0f1]">₱{total.toLocaleString()}</span><br />
             VIA <span className="text-[#43b0f1]">{method}</span>. IS THIS CORRECT?
           </p>
 
-          {/* Scaled down button heights so they don't push past the screen */}
           <div className="flex flex-col gap-3 sm:gap-4 w-full mt-2 shrink-0">
+            {/* Disabled when loading and updated text */}
             <Button
               onClick={onConfirm}
-              className="w-full h-16 sm:h-20 lg:h-24 text-xl sm:text-2xl lg:text-3xl font-black rounded-2xl sm:rounded-3xl bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-xl uppercase tracking-widest active:scale-95 whitespace-normal break-words leading-tight border-2 border-[#43b0f1]"
+              disabled={isLoading}
+              className="w-full h-16 sm:h-20 lg:h-24 text-xl sm:text-2xl lg:text-3xl font-black rounded-2xl sm:rounded-3xl bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-xl uppercase tracking-widest active:scale-95 whitespace-normal break-words leading-tight border-2 border-[#43b0f1] disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              YES, PLACE ORDER
+              {isLoading ? "PLACING ORDER..." : "YES, PLACE ORDER"}
             </Button>
+            {/* Disabled when loading */}
             <Button
               onClick={onClose}
-              className="w-full h-14 sm:h-16 lg:h-20 text-lg sm:text-xl lg:text-2xl font-black rounded-2xl sm:rounded-3xl border-4 border-[#e8eef1] bg-white text-gray-400 hover:bg-[#e8eef1] hover:text-[#1e3d58] transition-all uppercase tracking-widest active:scale-95 whitespace-normal break-words leading-tight"
+              disabled={isLoading}
+              className="w-full h-14 sm:h-16 lg:h-20 text-lg sm:text-xl lg:text-2xl font-black rounded-2xl sm:rounded-3xl border-4 border-[#e8eef1] bg-white text-gray-400 hover:bg-[#e8eef1] hover:text-[#1e3d58] transition-all uppercase tracking-widest active:scale-95 whitespace-normal break-words leading-tight disabled:opacity-50 disabled:cursor-not-allowed"
             >
               NO, GO BACK
             </Button>
@@ -264,8 +267,6 @@ export default function WalkInInterface() {
         
         setShowOrderConfirmation(false);
         setShowSuccessModal(true);
-        // Note: SuccessModal will show "ORDER PLACED!" which is fine.
-        // We could add a toast or indicator that it will sync later.
       }
     } catch (err) {
       console.error("Transaction failed:", err);
@@ -356,6 +357,7 @@ export default function WalkInInterface() {
         onConfirm={executeTransaction}
         total={total}
         method={paymentMethod}
+        isLoading={loading} // Passed the loading state here!
       />
 
       <SuccessModal isOpen={showSuccessModal} onNextCustomer={handleNextCustomer} />
