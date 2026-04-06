@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Maximize, Minimize } from "lucide-react";
 import QueueCard, { QueueOrder } from "./queue-card"; 
 import { getQueueOrders } from "@/app/actions/getQueueOrders";
@@ -33,10 +33,26 @@ export default function LiveQueueDisplay() {
   const [orders, setOrders] = useState<RawOrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Refs for tracking order count and holding the audio object
+  const prevOrderCount = useRef(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const fetchOrders = async () => {
     const data = await getQueueOrders();
     if (data && !('error' in data)) {
       const fetchedOrders = data as unknown as RawOrderRecord[];
+
+      // If we have more orders than before, play the bell sound
+      if (mounted && fetchedOrders.length > prevOrderCount.current) {
+        if (audioRef.current) {
+          audioRef.current.play().catch((err) => {
+            console.log("Audio play blocked by browser. User must interact with the page first.", err);
+          });
+        }
+      }
+      
+      // Update the previous count reference
+      prevOrderCount.current = fetchedOrders.length;
       setOrders(fetchedOrders);
 
       // Jump to the last page automatically whenever new data arrives
@@ -47,8 +63,6 @@ export default function LiveQueueDisplay() {
         setCurrentPage(0);
       }
 
-
-      
     } else {
       console.error("Failed to fetch orders:", data.error);
     }
@@ -58,6 +72,9 @@ export default function LiveQueueDisplay() {
   useEffect(() => {
     setMounted(true);
     setTime(new Date()); 
+
+    // Initialize the audio object (Make sure bell.wav is inside the public/ folder)
+    audioRef.current = new Audio("/bell.wav");
     
     fetchOrders();
 
@@ -72,10 +89,13 @@ export default function LiveQueueDisplay() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
         () => {
-          fetchOrders();
-
-          window.location.reload();
-          setCurrentPage(totalPages);
+          // 1. Fetch orders to trigger the sound and update state
+          fetchOrders(); 
+          
+          // 2. Keep the reload, but delay it by 2 seconds so the bell can ring first
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
         }
       )
       .subscribe();
@@ -84,7 +104,7 @@ export default function LiveQueueDisplay() {
       clearInterval(timer);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [mounted]);
 
   const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
 
