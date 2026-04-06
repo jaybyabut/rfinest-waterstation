@@ -32,8 +32,6 @@ export default function LiveQueueDisplay() {
   
   const [orders, setOrders] = useState<RawOrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Ginamit para i-trigger ang pag-reset ng 7-second timer kapag may bagong order
   const [pageResetToken, setPageResetToken] = useState(0); 
 
   const prevOrderCount = useRef(0);
@@ -45,7 +43,6 @@ export default function LiveQueueDisplay() {
       const fetchedOrders = data as unknown as RawOrderRecord[];
       const newTotalPages = Math.ceil(fetchedOrders.length / ITEMS_PER_PAGE);
 
-      // KAPAG MAY BAGONG ORDER LANG TAYO MAG-JUJUMP
       if (mounted && fetchedOrders.length > prevOrderCount.current) {
         if (audioRef.current) {
           audioRef.current.play().catch((err) => {
@@ -53,19 +50,14 @@ export default function LiveQueueDisplay() {
           });
         }
         
-        // Jump to the latest page
         if (newTotalPages > 0) {
           setCurrentPage(newTotalPages - 1); 
         } else {
           setCurrentPage(0);
         }
-
-        // Trigger the 7-second timer reset!
         setPageResetToken(prev => prev + 1); 
       } 
-      // KUNG NORMAL UPDATE LANG (eg. nag-mark as delivered/na-delete ang order)
       else if (mounted) {
-        // Prevent blank pages if orders are reduced and current page is now empty
         if (currentPage >= newTotalPages && newTotalPages > 0) {
           setCurrentPage(newTotalPages - 1);
         } else if (newTotalPages === 0) {
@@ -84,30 +76,18 @@ export default function LiveQueueDisplay() {
   useEffect(() => {
     setMounted(true);
     setTime(new Date()); 
-
     audioRef.current = new Audio("/bell.wav");
-    
     fetchOrders();
 
-    const timer = setInterval(() => {
-      setTime(new Date());
-    }, 1000);
-
-    const pollingTimer = setInterval(() => {
-      fetchOrders();
-    }, 10000);
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    const pollingTimer = setInterval(() => fetchOrders(), 10000);
 
     const supabase = createClient();
     const channel = supabase
       .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
-        () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
           fetchOrders(); 
-          // Removed the reload logic so the TV can show the latest order for exactly 7 seconds.
-        }
-      )
+      })
       .subscribe();
 
     return () => {
@@ -125,35 +105,23 @@ export default function LiveQueueDisplay() {
       setCurrentPage(0);
       return;
     }
-    
-    // 7 SECONDS INTERVAL + RESET TOKEN DEPENDENCY
     const pageTimer = setInterval(() => {
       setCurrentPage((prevPage) => (prevPage + 1) % totalPages);
     }, 7000); 
-
-    // Kapag nagbago ang pageResetToken (dahil may new order), ma-ki-clear ang timer na ito 
-    // at magsisimula ulit ng fresh 7 seconds, then babalik siya sa Page 1 (index 0).
     return () => clearInterval(pageTimer);
   }, [totalPages, pageResetToken]); 
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
-      });
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+      document.documentElement.requestFullscreen().catch((err) => console.error(err));
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
     }
   };
 
@@ -177,36 +145,25 @@ export default function LiveQueueDisplay() {
 
     let status = (order.current_status || "Pending").toUpperCase();
     
-    // BACKEND SYNC: Map based on user's simplified labels
     if (status === "OUT FOR DELIVERY") status = "DELIVER";
     if (status === "PROCESSING") status = "REFILL";
     if (status === "PICK-UP" || status === "PICK UP") status = "PICKUP";
 
-    // BULLETPROOF WALK-IN CHECK
-    const isWalkIn = 
-      order.transaction_type?.toLowerCase().includes("walk-in") || 
-      order.name?.toLowerCase().includes("walk-in");
-
-    // FORCING WALK-IN ORDERS TO REFILL
-    if (isWalkIn && (status === "PENDING" || status === "PICKUP")) {
-      status = "REFILL";
-    }
+    const isWalkIn = order.transaction_type?.toLowerCase().includes("walk-in") || order.name?.toLowerCase().includes("walk-in");
+    if (isWalkIn && (status === "PENDING" || status === "PICKUP")) status = "REFILL";
 
     const locName = order.location_pricing?.location_name || "";
-    const fullAddress = [order.address, locName].filter(Boolean).join(" | ");
-
+    const rawAddress = order.address || "No Address Provided";
     const rawId = order.order_id?.toString() || "";
     const idParts = rawId.split('-');
-    
-    const displayId = idParts.length > 1 
-      ? idParts[0].substring(0, 8).toUpperCase() 
-      : rawId.substring(0, 8).toUpperCase();
+    const displayId = idParts.length > 1 ? idParts[0].substring(0, 8).toUpperCase() : rawId.substring(0, 8).toUpperCase();
 
     return {
       id: displayId,
       status: status,
       name: order.name,
-      address: fullAddress || "No Address Provided",
+      address: rawAddress,
+      zone: locName,
       qtySlim,
       qtyRound,
       notes: order.note || ""
@@ -216,19 +173,10 @@ export default function LiveQueueDisplay() {
   return (
     <div className="h-[100dvh] w-full bg-slate-50 p-4 sm:p-6 lg:p-8 2xl:p-12 flex flex-col relative overflow-hidden">
       
-      <button
-        onClick={toggleFullscreen}
-        className={`absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-8 2xl:top-12 2xl:right-12 z-50 p-2 sm:p-3 2xl:p-4 rounded-full transition-all duration-300 shadow-md ${
-          isFullscreen 
-            ? "opacity-0 hover:opacity-100 bg-black/50 text-white" 
-            : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"
-        }`}
-        title={isFullscreen ? "Exit Fullscreen" : "Go Fullscreen"}
-      >
+      <button onClick={toggleFullscreen} className={`absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-8 2xl:top-12 2xl:right-12 z-50 p-2 sm:p-3 2xl:p-4 rounded-full transition-all duration-300 shadow-md ${isFullscreen ? "opacity-0 hover:opacity-100 bg-black/50 text-white" : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"}`}>
         {isFullscreen ? <Minimize size={24} className="sm:w-7 sm:h-7 2xl:w-10 2xl:h-10" strokeWidth={2.5} /> : <Maximize size={24} className="sm:w-7 sm:h-7 2xl:w-10 2xl:h-10" strokeWidth={2.5} />}
       </button>
 
-      {/* Responsive One-Liner Header */}
       <div className="mb-4 sm:mb-6 2xl:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3 sm:gap-0 border-b-2 border-slate-200 pb-3 sm:pb-4 2xl:pb-6 shrink-0">
         <div className="w-full sm:w-auto flex flex-row items-baseline gap-3 sm:gap-4 2xl:gap-6 flex-wrap">
           {mounted && time ? (
@@ -244,31 +192,33 @@ export default function LiveQueueDisplay() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-7xl font-black text-slate-300 uppercase leading-none">LOADING TIME...</h1>
           )}
         </div>
-
         {totalPages > 1 && (
           <div className="bg-slate-200 px-4 sm:px-6 2xl:px-8 py-2 sm:py-3 2xl:py-4 rounded-xl 2xl:rounded-2xl self-end sm:self-auto mt-2 sm:mt-0">
-            <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-4xl font-black text-slate-700 tracking-widest leading-none">
-              PAGE {currentPage + 1} OF {totalPages}
-            </h2>
+            <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-4xl font-black text-slate-700 tracking-widest leading-none">PAGE {currentPage + 1} OF {totalPages}</h2>
           </div>
         )}
       </div>
 
-      {/* min-h-0 is crucial here so the grid respects the screen height and pushes the items to fit properly */}
-      <div className="flex-1 min-h-0 w-full grid grid-rows-5 gap-3 sm:gap-4 lg:gap-6 2xl:gap-8 transition-all duration-500 pb-2 sm:pb-4 2xl:pb-0">
+      <div className="flex-1 min-h-0 w-full flex flex-col gap-3 sm:gap-4 lg:gap-6 2xl:gap-8 transition-all duration-500 pb-2 sm:pb-4 2xl:pb-0">
         {mappedOrders.map((order) => (
           <QueueCard key={order.id} order={order} />
         ))}
 
+        {mappedOrders.length > 0 && mappedOrders.length < ITEMS_PER_PAGE && (
+          Array.from({ length: ITEMS_PER_PAGE - mappedOrders.length }).map((_, i) => (
+            <div key={`spacer-${i}`} style={{ flex: 1 }} className="min-h-0 w-full invisible pointer-events-none"></div>
+          ))
+        )}
+
         {!loading && orders.length === 0 && (
-          <div className="row-span-5 flex flex-col items-center justify-center text-slate-300 px-4 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-300 px-4 text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl 2xl:text-8xl font-black uppercase">No Active Orders</h1>
             <p className="text-lg sm:text-xl lg:text-2xl 2xl:text-4xl font-bold mt-2 sm:mt-4 2xl:mt-6">Waiting for new requests...</p>
           </div>
         )}
 
         {loading && (
-          <div className="row-span-5 flex flex-col items-center justify-center text-slate-300 px-4 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-300 px-4 text-center">
              <span className="text-2xl sm:text-3xl lg:text-4xl 2xl:text-6xl animate-pulse uppercase font-black">Updating Queue...</span>
           </div>
         )}
