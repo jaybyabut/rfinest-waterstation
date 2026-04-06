@@ -122,6 +122,11 @@ export default function PlaceOrderForm() {
       hasError = true;
       if (!firstErrorElement) firstErrorElement = locationRef.current;
     }
+    if (!mobileNumber.trim() || mobileNumber.length < 11) {
+      newErrors.mobileNumber = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = numberRef.current;
+    }
     if (slimCount === 0 && roundCount === 0) {
       newErrors.items = true;
       hasError = true;
