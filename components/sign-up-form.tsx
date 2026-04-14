@@ -8,6 +8,15 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Check, X as XIcon, User, MapPin, Lock, ArrowUp } from "lucide-react"; 
 
+// TODO: BACKEND - I-uncomment ito at ayusin yung locations.ts para maging public at hindi nanghihingi ng ensureAuthenticated()
+// import { getLocations } from "@/app/actions/locations"; 
+
+interface Location {
+  location_id: number;
+  location_name: string;
+  location_price: number;
+}
+
 export default function SignUpForm({
   className,
   ...props
@@ -21,7 +30,17 @@ export default function SignUpForm({
   const [mobileNo, setMobileNo] = useState("");
   const [houseNo, setHouseNo] = useState("");
   const [streetName, setStreetName] = useState("");
-  const [barangay, setBarangay] = useState("");
+  const [barangay, setBarangay] = useState(""); 
+  
+  // TODO: BACKEND - Pinalitan muna natin ng static dummy data habang inaayos yung API route
+  const [locations, setLocations] = useState<Location[]>([
+    { location_id: 1, location_name: "Bulaon", location_price: 30 },
+    { location_id: 2, location_name: "Calulut", location_price: 35 },
+    { location_id: 3, location_name: "Maimpis", location_price: 35 },
+    { location_id: 4, location_name: "Mexico", location_price: 40 },
+  ]);
+  const [selectedZoneId, setSelectedZoneId] = useState(""); 
+  
   const [isConfirmed, setIsConfirmed] = useState(false); 
   
   const [showPassword, setShowPassword] = useState(false);
@@ -34,11 +53,6 @@ export default function SignUpForm({
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const barangays = [
-    "Bulaon", "Calulut", "Maimpis", "Mexico", "Montana",
-    "Lakeshore", "Golden Haven", "Hauslands", "Royal Residences", "Malpitic",
-  ];
-
   const isLengthValid = password.length >= 8;
   const isUpperValid = /[A-Z]/.test(password);
   const isLowerValid = /[a-z]/.test(password);
@@ -46,6 +60,21 @@ export default function SignUpForm({
   
   const isPasswordStrong = isLengthValid && isUpperValid && isLowerValid && isNumberValid;
   const passwordsMatch = password.length > 0 && password === repeatPassword;
+
+  // TODO: BACKEND - I-uncomment ito kapag ready na yung public getLocations() action
+  /*
+  useEffect(() => {
+    const fetchLocations = async () => {
+      const data = await getLocations();
+      if (Array.isArray(data)) {
+        setLocations(data);
+      } else {
+        console.error("Failed to fetch locations:", data);
+      }
+    };
+    fetchLocations();
+  }, []);
+  */
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,7 +114,8 @@ export default function SignUpForm({
     else if (!/^\S+@\S+\.\S+$/.test(email)) newErrors.email = "Invalid email format.";
 
     if (!streetName.trim()) newErrors.streetName = "Street name is required.";
-    if (!barangay) newErrors.barangay = "Please select a barangay.";
+    if (!barangay.trim()) newErrors.barangay = "Barangay is required.";
+    if (!selectedZoneId) newErrors.zone = "Please select a delivery zone.";
 
     if (!password) {
       newErrors.password = "Password is required.";
@@ -124,8 +154,10 @@ export default function SignUpForm({
     setIsLoading(true);
     const supabase = createClient();
 
-    const address = [houseNo.trim(), streetName.trim()].filter(Boolean).join(", ");
-    const location_id = barangays.indexOf(barangay) + 1;
+    const address = [houseNo.trim(), streetName.trim(), barangay.trim()].filter(Boolean).join(", ");
+    
+    // Convert string ID back to number for database
+    const location_id = Number(selectedZoneId);
 
     try {
       const { error } = await supabase.auth.signUp({
@@ -312,26 +344,49 @@ export default function SignUpForm({
 
               <div>
                 <label className="block text-xl font-bold text-[#1e3d58] mb-1 ml-2" htmlFor="barangay">Barangay:</label>
+                <input
+                  id="barangay"
+                  type="text"
+                  placeholder="e.g. San Jose"
+                  value={barangay}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^A-Za-z0-9\s,.-]/g, '');
+                    setBarangay(val);
+                    if (val.trim()) clearError("barangay"); 
+                  }}
+                  className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] placeholder:text-gray-400 placeholder:font-normal ${errors.barangay ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
+                />
+                {errors.barangay && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.barangay}</p>}
+              </div>
+
+              <div>
+                <label className="block text-xl font-bold text-[#1e3d58] mb-1 ml-2" htmlFor="zone">Delivery Zone:</label>
                 <div className="relative">
                   <select
-                    id="barangay"
-                    value={barangay}
+                    id="zone"
+                    value={selectedZoneId}
                     onChange={(e) => {
-                      setBarangay(e.target.value);
-                      if (e.target.value) clearError("barangay"); 
+                      setSelectedZoneId(e.target.value);
+                      if (e.target.value) clearError("zone"); 
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer ${errors.barangay ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
+                    className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer ${errors.zone ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
                   >
-                    <option value="" disabled>Select Barangay</option>
-                    {barangays.map((b) => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
+                    <option value="" disabled>Select Zone</option>
+                    {locations.length === 0 ? (
+                      <option disabled>Loading zones...</option>
+                    ) : (
+                      locations.map((loc) => (
+                        <option key={loc.location_id} value={loc.location_id}>
+                          {loc.location_name}
+                        </option>
+                      ))
+                    )}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center px-6 pointer-events-none">
                     <svg className="w-5 h-5 text-[#1e3d58]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
                   </div>
                 </div>
-                {errors.barangay && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.barangay}</p>}
+                {errors.zone && <p className="text-red-500 text-sm font-bold mt-1 ml-2">{errors.zone}</p>}
               </div>
             </div>
 
