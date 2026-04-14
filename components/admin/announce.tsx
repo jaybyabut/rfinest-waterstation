@@ -1,0 +1,120 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { ChevronLeft, Megaphone, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export default function ManageAnnouncements() {
+  const [announcementText, setAnnouncementText] = useState("");
+  const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // TODO: BACKEND - FETCH CURRENT ANNOUNCEMENT
+  useEffect(() => {
+    const fetchAnnouncement = async () => {
+      // Example: const { data } = await supabase.from('announcements').select('*').single();
+      // if (data) {
+      //   setAnnouncementText(data.message);
+      //   setIsAnnouncementActive(data.is_active);
+      // }
+    };
+    fetchAnnouncement();
+  }, []);
+
+  // TODO: BACKEND - SAVE ANNOUNCEMENT
+  const handleSaveAnnouncement = async () => {
+    setIsSaving(true);
+    
+    // Example: await supabase.from('announcements').upsert({ id: 1, message: announcementText, is_active: isAnnouncementActive });
+
+    // Simulating API call for UI preview
+    setTimeout(() => {
+      setIsSaving(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }, 1000);
+  };
+
+  return (
+    <div className="flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative overflow-x-hidden">
+      <div className="w-full max-w-md mx-auto">
+        <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-8 text-center border-2 border-white shadow-xl relative">
+
+          {/* SUCCESS TOAST */}
+          {showSuccess && (
+            <div className="absolute -top-12 left-0 right-0 z-50 flex justify-center animate-in slide-in-from-top-2 fade-in duration-300">
+              <div className="bg-green-100 text-green-700 px-6 py-3 rounded-full shadow-lg border-2 border-green-200 font-bold flex items-center gap-2">
+                <Check size={20} strokeWidth={3} /> Saved successfully!
+              </div>
+            </div>
+          )}
+
+          {/* HEADER FIXED: Adjusted sizes and padding */}
+          <div className="flex items-center justify-center mb-8 relative w-full">
+            <Link href="/dashboard" className="absolute left-0 text-black hover:scale-110 transition-transform z-10">
+              <ChevronLeft size={44} strokeWidth={3} />
+            </Link>
+            
+            <h1 className="text-4xl sm:text-5xl font-black text-black tracking-tighter w-full text-center px-14 leading-tight">
+              Announce
+            </h1>
+          </div>
+
+          <div className="bg-white rounded-[40px] p-6 sm:p-8 shadow-inner border border-gray-100 text-left relative w-full overflow-hidden flex flex-col items-center">
+
+            <div className="w-20 h-20 bg-[#43b0f1]/10 text-[#43b0f1] rounded-full flex items-center justify-center mb-6 shadow-sm border border-[#43b0f1]/20">
+              <Megaphone size={40} strokeWidth={2.5} />
+            </div>
+
+            <p className="mb-6 text-gray-500 font-bold text-sm text-center px-2">
+              This message will be displayed on the home page of all customers.
+            </p>
+
+            <div className="w-full space-y-5">
+              <div className="w-full">
+                <label className="block text-lg font-bold mb-2 ml-2 text-[#1e3d58]">Announcement Message</label>
+                <textarea
+                  value={announcementText}
+                  onChange={(e) => setAnnouncementText(e.target.value)}
+                  placeholder="e.g. Please be advised that we will be closed tomorrow due to maintenance..."
+                  className="w-full h-40 p-5 rounded-[25px] border-2 border-[#1e3d58]/10 bg-[#f8fbfd] text-[#1e3d58] font-semibold text-base focus:outline-none focus:ring-2 focus:ring-[#43b0f1] focus:border-[#43b0f1] resize-none transition-all"
+                />
+              </div>
+
+              <div className="flex items-center justify-between bg-[#e8eef1]/50 p-5 rounded-[25px] border border-gray-200">
+                <div className="flex flex-col pr-4">
+                  <span className="font-black text-[#1e3d58] text-lg">Display Status</span>
+                  <span className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">Turn on to make the banner visible to customers</span>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={isAnnouncementActive}
+                    onChange={(e) => setIsAnnouncementActive(e.target.checked)}
+                  />
+                  <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#43b0f1]"></div>
+                </label>
+              </div>
+            </div>
+
+            <div className="w-full pt-8">
+              <Button
+                onClick={handleSaveAnnouncement}
+                disabled={isSaving}
+                className="w-full h-16 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md flex items-center justify-center"
+              >
+                {isSaving ? "Saving..." : "Save & Publish"}
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  );
+}
