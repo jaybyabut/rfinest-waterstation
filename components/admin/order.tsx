@@ -42,18 +42,13 @@ export default function PlaceOrderForm() {
 
   const nameRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
-  const locationRef = useRef<HTMLDivElement>(null);
-  const numberRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLDivElement>(null);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   
   const [fieldErrors, setFieldErrors] = useState<{
     firstName?: boolean;
-    lastName?: boolean;
-    streetName?: boolean;
     zone?: boolean;
-    mobileNumber?: boolean;
     items?: boolean;
   }>({});
 
@@ -107,22 +102,13 @@ export default function PlaceOrderForm() {
       hasError = true;
       if (!firstErrorElement) firstErrorElement = nameRef.current;
     }
-    if (!lastName.trim()) {
-      newErrors.lastName = true;
-      hasError = true;
-      if (!firstErrorElement) firstErrorElement = nameRef.current;
-    }
+    
     if (!selectedLocation) {
       newErrors.zone = true;
       hasError = true;
       if (!firstErrorElement) firstErrorElement = zoneRef.current;
     }
-    if (!streetName.trim()) {
-      newErrors.streetName = true;
-      hasError = true;
-      if (!firstErrorElement) firstErrorElement = locationRef.current;
-    }
-
+    
     if (slimCount === 0 && roundCount === 0) {
       newErrors.items = true;
       hasError = true;
@@ -245,7 +231,7 @@ export default function PlaceOrderForm() {
                   </div>
                 </div>
                 <div className="w-full">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Last Name:</label>
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Last Name: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
                   <input
                     type="text"
                     placeholder="e.g. Dela Cruz"
@@ -254,10 +240,9 @@ export default function PlaceOrderForm() {
                       const val = e.target.value;
                       if (/^[a-zA-ZñÑ\s]*$/.test(val)) {
                         setLastName(val);
-                        if (val) setFieldErrors(prev => ({ ...prev, lastName: false }));
                       }
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.lastName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors"
                   />
                 </div>
               </div>
@@ -290,10 +275,10 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full" ref={locationRef}>
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <div className="w-full sm:w-1/3 shrink-0 flex flex-col justify-end">
                   <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight">
-                    House No.: <span className="text-[11px] sm:text-xs font-normal text-gray-400 block mt-0.5">(Leave blank if none)</span>
+                    House No.: <span className="text-[11px] sm:text-xs font-normal text-gray-400 block mt-0.5">(Optional)</span>
                   </label>
                   <input
                     type="text"
@@ -304,22 +289,21 @@ export default function PlaceOrderForm() {
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-end">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name:</label>
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name: <span className="text-[11px] sm:text-xs font-normal text-gray-400">(Optional)</span></label>
                   <input
                     type="text"
                     placeholder="e.g. San Juan St."
                     value={streetName}
                     onChange={(e) => {
                       setStreetName(e.target.value);
-                      if (e.target.value.trim()) setFieldErrors(prev => ({ ...prev, streetName: false }));
                     }}
-                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto ${fieldErrors.streetName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto"
                   />
                 </div>
               </div>
 
-              <div className="w-full" ref={numberRef}>
-                <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Mobile Number:</label>
+              <div className="w-full">
+                <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Mobile Number: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
                 <input
                   type="tel"
                   value={mobileNumber}
@@ -328,11 +312,10 @@ export default function PlaceOrderForm() {
                     const val = e.target.value;
                     if (/^[0-9]*$/.test(val)) {
                       setMobileNumber(val);
-                      if (val.length === 11) setFieldErrors(prev => ({ ...prev, mobileNumber: false }));
                     }
                   }}
                   placeholder="09..."
-                  className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors ${fieldErrors.mobileNumber ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                  className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors"
                 />
               </div>
 
@@ -461,7 +444,7 @@ export default function PlaceOrderForm() {
         onClose={() => setIsModalOpen(false)}
         onConfirm={confirmAndProcessOrder}
         title="Confirm Order"
-        message={`Are you sure you want to place this order for ${firstName} ${lastName}? Total amount is ₱${totalAmount}.`}
+        message={`Are you sure you want to place this order for ${firstName}${lastName ? ' ' + lastName : ''}? Total amount is ₱${totalAmount}.`}
         confirmText={loading ? "Processing..." : "Yes, Place Order"}
       />
 
