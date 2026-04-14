@@ -6,7 +6,7 @@ import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { ArrowUp, Minus, Plus, Check } from "lucide-react"; 
+import { ArrowUp, Minus, Plus, Check, Search, X } from "lucide-react"; 
 
 interface Location {
   location_id: number;
@@ -14,9 +14,22 @@ interface Location {
   location_price: number;
 }
 
+// TODO: BACKEND - Tanggalin itong dummy data at palitan ng actual API call sa Supabase
+// na kumukuha ng listahan ng mga nakaraang customers base sa name o mobile number.
+const DUMMY_CUSTOMERS = [
+  { id: 1, first_name: "Juan", last_name: "Dela Cruz", mi: "M", mobile_no: "09123456789", house_no: "Blk 1 Lot 2", street_name: "San Juan St.", zone_name: "Mexico" },
+  { id: 2, first_name: "Maria", last_name: "Santos", mi: "", mobile_no: "09987654321", house_no: "", street_name: "Mabini St.", zone_name: "Bulaon" },
+  { id: 3, first_name: "Pedro", last_name: "Penduko", mi: "P", mobile_no: "09551234567", house_no: "Apt 4", street_name: "Rizal Ave.", zone_name: "Calulut" },
+];
+
 export default function PlaceOrderForm() {
   const [locations, setLocations] = useState<Location[]>([]);
   
+  // Search States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<typeof DUMMY_CUSTOMERS>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
   const [firstName, setFirstName] = useState("");
   const [mi, setMi] = useState("");
   const [lastName, setLastName] = useState("");
@@ -43,6 +56,7 @@ export default function PlaceOrderForm() {
   const nameRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   
@@ -78,11 +92,68 @@ export default function PlaceOrderForm() {
       }
     };
     window.addEventListener("scroll", handleWindowScroll);
-    return () => window.removeEventListener("scroll", handleWindowScroll);
+    
+    // Close dropdown when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("scroll", handleWindowScroll);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Search Logic
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+
+    if (val.trim().length > 1) {
+      // TODO: BACKEND - Dito papalitan ng actual API call `await supabase.from('proxy_customers').select(...)`
+      const filtered = DUMMY_CUSTOMERS.filter(c => 
+        c.first_name.toLowerCase().includes(val.toLowerCase()) ||
+        c.last_name.toLowerCase().includes(val.toLowerCase()) ||
+        c.mobile_no.includes(val)
+      );
+      setSearchResults(filtered);
+      setShowSearchDropdown(true);
+    } else {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+    }
+  };
+
+  // Auto-fill Logic
+  const handleSelectCustomer = (customer: typeof DUMMY_CUSTOMERS[0]) => {
+    setFirstName(customer.first_name || "");
+    setLastName(customer.last_name || "");
+    setMi(customer.mi || "");
+    setMobileNumber(customer.mobile_no || "");
+    setHouseNo(customer.house_no || "");
+    setStreetName(customer.street_name || "");
+    
+    if (customer.zone_name) {
+      setSelectedZone(customer.zone_name);
+    }
+
+    // Clear search and hide dropdown
+    setSearchQuery("");
+    setShowSearchDropdown(false);
+
+    // Clear any existing errors for these fields
+    setFieldErrors(prev => ({
+      ...prev,
+      firstName: false,
+      zone: false
+    }));
   };
 
   const selectedLocation = locations.find((l) => l.location_name === selectedZone);
@@ -165,6 +236,7 @@ export default function PlaceOrderForm() {
         setSlimCount(0);
         setRoundCount(0);
         setNote("");
+        setSearchQuery("");
 
         setIsSuccessModalOpen(true);
       }
@@ -196,6 +268,60 @@ export default function PlaceOrderForm() {
             )}
 
             <div className="space-y-5 w-full">
+
+              {/* ================= SEARCH EXISTING CUSTOMER ================= */}
+              <div className="w-full bg-[#f4f7f9] p-4 rounded-[25px] border-2 border-[#1e3d58]/10 mb-2 relative" ref={searchRef}>
+                {/* Changed to text-center and removed ml-2 */}
+                <label className="block text-center text-sm font-bold mb-2 text-[#43b0f1] uppercase tracking-wider">Search Existing Customer</label>
+                <div className="relative w-full">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                    <Search className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Juan"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onFocus={() => { if (searchResults.length > 0) setShowSearchDropdown(true) }}
+                    className="w-full h-12 pl-12 pr-10 rounded-full border-2 border-transparent bg-white text-[#1e3d58] font-bold text-base focus:outline-none focus:ring-2 focus:ring-[#43b0f1] focus:border-transparent transition-all shadow-sm"
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => { setSearchQuery(""); setShowSearchDropdown(false); }}
+                      className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Dropdown Results */}
+                {showSearchDropdown && (
+                  <div className="absolute z-50 w-full left-0 mt-2 bg-white border-2 border-[#e8eef1] rounded-[20px] shadow-xl max-h-60 overflow-y-auto overflow-x-hidden animate-in fade-in slide-in-from-top-2">
+                    {searchResults.length > 0 ? (
+                      <div className="flex flex-col p-2 gap-1">
+                        {searchResults.map((customer) => (
+                          <button
+                            key={customer.id}
+                            onClick={() => handleSelectCustomer(customer)}
+                            className="flex flex-col items-start w-full p-3 rounded-xl hover:bg-[#e8eef1] transition-colors text-left"
+                          >
+                            <span className="font-bold text-[#1e3d58] text-base">{customer.first_name} {customer.last_name}</span>
+                            <span className="text-xs font-semibold text-gray-500">
+                              {customer.mobile_no} • {customer.zone_name}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-gray-400 font-semibold text-sm">
+                        No customers found.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* ========================================================= */}
 
               <div className="space-y-3 w-full" ref={nameRef}>
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
@@ -302,7 +428,7 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              <div className="w-full">
+              <div className="w-full" ref={numberRef}>
                 <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58]">Mobile Number: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
                 <input
                   type="tel"
