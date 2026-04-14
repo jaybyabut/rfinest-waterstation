@@ -83,7 +83,7 @@ export default function CustomerHome({
               Stay hydrated! We are ready to deliver fresh water to your doorstep.
             </p>
 
-            {/* ================= BINALIK YUNG BANNER DITO ================= */}
+            {/* ================= STORE HOURS BANNER ================= */}
             <StoreHoursBanner />
 
             {/* ================= CURRENT ORDER WITH SKELETON ================= */}
@@ -103,7 +103,10 @@ export default function CustomerHome({
             ) : activeOrder ? (
               <div className="mb-8 p-4 rounded-[25px] bg-[#e8eef1]/50 border-2 border-[#1e3d58]/10 flex flex-col gap-2 text-left shadow-sm w-full overflow-hidden">
                 <div className="flex justify-between items-start sm:items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <span className="text-sm font-black text-[#1e3d58] uppercase tracking-wider flex-1 min-w-0 break-words leading-tight">Current Order</span>
+                  {/* Pinalitan ang break-words ng whitespace-nowrap dito para hindi mag-vertical */}
+                  <span className="text-sm font-black text-[#1e3d58] uppercase tracking-wider whitespace-nowrap leading-tight mt-1">
+                    Current Order
+                  </span>
                   <span className="text-xs font-black px-3 py-1 rounded-full bg-blue-100 text-blue-700 border border-blue-200 animate-pulse shrink-0">
                     {activeOrder.current_status} 💧
                   </span>
@@ -117,12 +120,7 @@ export default function CustomerHome({
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="mb-8 p-6 rounded-[25px] bg-[#e8eef1]/30 border-2 border-dashed border-[#1e3d58]/10 flex flex-col items-center justify-center gap-1 text-center w-full">
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Current Order</p>
-                <p className="text-lg font-black text-[#1e3d58]/40 italic">No current order</p>
-              </div>
-            )}
+            ) : null}
 
             <div className="flex flex-col gap-4 w-full">
               <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all whitespace-normal break-words leading-tight shadow-sm">
@@ -134,12 +132,11 @@ export default function CustomerHome({
               </Button>
 
               <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all whitespace-normal break-words leading-tight shadow-sm">
-                <Link href="/home/account" className="w-full text-center">Account Settings</Link>
+                <Link href="/home/store-hours" className="w-full text-center">Store Hours</Link>
               </Button>
 
-              {/* ================= BAGONG BUTTON PARA SA STORE HOURS ================= */}
               <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all whitespace-normal break-words leading-tight shadow-sm">
-                <Link href="/home/store-hours" className="w-full text-center">Store Hours</Link>
+                <Link href="/home/account" className="w-full text-center">Account Settings</Link>
               </Button>
             </div>
 
