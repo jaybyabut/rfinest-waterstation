@@ -35,7 +35,7 @@ interface BackendOrderItem {
 }
 
 interface BackendOrder {
-  order_id: number;
+  order_id: string | number; 
   order_dt: string;
   total_amount: number;
   current_status: string;
@@ -103,8 +103,10 @@ export default function CustomerOrderStatus() {
           if (round > 0) itemsStr.push(`${round} Round`);
           itemsStr.push(order.payment_mode || "COD");
 
+          const shortOrderId = String(order.order_id).split('-')[0].toUpperCase();
+
           return {
-            id: `ORD-${order.order_id}`,
+            id: `ORD-${shortOrderId}`,
             date: new Date(order.order_dt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
             totalAmount: order.total_amount,
             items: itemsStr.join(" • "),
@@ -149,7 +151,6 @@ export default function CustomerOrderStatus() {
               <h2 className="text-[#1e3d58] font-black text-2xl tracking-tight ml-2 mb-2">Recent Orders</h2>
               <div className="space-y-3 w-full">
                 
-                {/* ================= SKELETON LOADERS ================= */}
                 {loading ? (
                   <>
                     {[1, 2, 3].map((skeletonId) => (
@@ -158,22 +159,17 @@ export default function CustomerOrderStatus() {
                         className="w-full flex items-center justify-between p-4 rounded-3xl bg-[#e8eef1]/40 border-2 border-transparent shadow-sm gap-3"
                       >
                         <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
-                          {/* SKELETON: Icon Circle */}
                           <div className="w-12 h-12 rounded-full bg-slate-200 animate-pulse shrink-0 mt-1 sm:mt-0"></div>
                           
                           <div className="text-left flex-1 min-w-0 flex flex-col gap-1.5 py-1">
-                            {/* SKELETON: Date & Status */}
                             <div className="flex justify-between items-center mb-0.5 gap-2">
                               <div className="h-3 w-16 bg-slate-200 rounded animate-pulse"></div>
                               <div className="h-4 w-16 bg-slate-200 rounded-full animate-pulse"></div>
                             </div>
-                            {/* SKELETON: Order ID */}
                             <div className="h-5 w-24 sm:w-32 bg-slate-300 rounded animate-pulse mt-0.5"></div>
-                            {/* SKELETON: Items List */}
                             <div className="h-3 w-36 sm:w-48 bg-slate-200 rounded animate-pulse mt-1"></div>
                           </div>
                         </div>
-                        {/* SKELETON: Chevron Right */}
                         <div className="w-5 h-5 bg-slate-200 rounded-full animate-pulse shrink-0 self-center"></div>
                       </div>
                     ))}
@@ -195,17 +191,19 @@ export default function CustomerOrderStatus() {
                           {order.currentStep === 2 ? <CheckCircle2 size={24} /> : <ReceiptText size={24} />}
                         </div>
                         <div className="text-left flex-1 min-w-0">
-                          <div className="flex justify-between items-start sm:items-center mb-1 gap-2 flex-wrap sm:flex-nowrap">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest flex-1 min-w-0 break-words leading-tight">{order.date}</p>
+                          {/* FIX: Binago ang wrapper ng date at status para hindi magpatong */}
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1 w-full">
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{order.date}</p>
                             <span className={cn(
-                              "text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap",
+                              "text-[10px] font-black uppercase px-2 py-0.5 rounded-full",
                               order.currentStep === 2 ? "bg-green-100 text-green-700" : "bg-[#43b0f1]/20 text-[#1e3d58]"
                             )}>
                               {order.statusText}
                             </span>
                           </div>
-                          <p className="text-lg font-black text-[#1e3d58] break-words whitespace-normal leading-tight">{order.id}</p>
-                          <p className="text-sm font-bold text-gray-500 break-words whitespace-normal leading-tight mt-0.5">₱{order.totalAmount} • {order.items.split('•')[0]}</p>
+                          
+                          <p className="text-lg sm:text-xl font-black text-[#1e3d58] truncate leading-tight">{order.id}</p>
+                          <p className="text-sm font-bold text-gray-500 truncate leading-tight mt-0.5">₱{order.totalAmount} • {order.items.split('•')[0]}</p>
                         </div>
                       </div>
                       <ChevronRight size={24} className="text-gray-400 shrink-0 self-center" />
@@ -217,7 +215,6 @@ export default function CustomerOrderStatus() {
           </div>
         </div>
 
-        {/* Floating Scroll to Top Button */}
         <button
           onClick={scrollToTop}
           className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
@@ -254,7 +251,7 @@ export default function CustomerOrderStatus() {
                   <span className="text-sm font-black text-[#1e3d58] uppercase tracking-wider flex-1 min-w-0 break-words leading-tight">Order ID</span>
                   <span className="text-2xl font-black text-[#43b0f1] shrink-0">₱{selectedOrder.totalAmount}</span>
                 </div>
-                <p className="text-2xl font-black text-[#1e3d58] break-words whitespace-normal leading-tight">{selectedOrder.id}</p>
+                <p className="text-2xl sm:text-3xl font-black text-[#1e3d58] truncate leading-tight">{selectedOrder.id}</p>
                 <div className="flex items-start sm:items-center gap-2 mt-2">
                   <CalendarClock size={16} className="text-gray-500 shrink-0 mt-0.5 sm:mt-0" />
                   <p className="text-sm text-gray-500 font-bold break-words whitespace-normal leading-tight">{selectedOrder.date}</p>
@@ -312,7 +309,6 @@ export default function CustomerOrderStatus() {
           </div>
         </div>
 
-        {/* Floating Scroll to Top Button for Detail View */}
         <button
           onClick={scrollToTop}
           className={`fixed bottom-24 right-4 sm:right-6 p-3 bg-[#43b0f1] text-white rounded-full shadow-lg hover:bg-[#3298d4] hover:scale-110 transition-all duration-300 z-40 ${showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
