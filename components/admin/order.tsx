@@ -55,8 +55,6 @@ export default function PlaceOrderForm() {
 
   const nameRef = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
-  const locationRef = useRef<HTMLDivElement>(null);
-  const numberRef = useRef<HTMLDivElement>(null);
   const itemsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -403,7 +401,7 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full" ref={locationRef}>
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <div className="w-full sm:w-1/3 shrink-0 flex flex-col justify-end">
                   <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight">
                     House No.: <span className="text-[11px] sm:text-xs font-normal text-gray-400 block mt-0.5">(Optional)</span>

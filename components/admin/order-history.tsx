@@ -17,7 +17,7 @@ interface OrderItem {
 }
 
 interface FetchedOrder {
-  order_id: number;
+  order_id: number | string; // Updated to handle both just in case
   order_dt: string;
   name: string;
   total_amount: number;
@@ -97,8 +97,11 @@ export default function OrderHistory() {
 
             const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
 
+            // FIX: Shorten Order ID format
+            const shortOrderId = String(order.order_id).split('-')[0].toUpperCase();
+
             return {
-              id: `ORD-${order.order_id}`,
+              id: `ORD-${shortOrderId}`,
               name: order.name,
               zone: location?.location_name || "Unknown",
               slim,
@@ -226,7 +229,8 @@ export default function OrderHistory() {
 
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0 flex-1 pt-0.5">
-                        <h3 className="text-lg font-black text-[#1e3d58] break-words leading-tight">{order.id}</h3>
+                        {/* FIX: Changed break-words to truncate for safety */}
+                        <h3 className="text-lg sm:text-xl font-black text-[#1e3d58] truncate leading-tight">{order.id}</h3>
                         <p className="text-sm font-bold text-gray-500 whitespace-normal break-words leading-tight mt-0.5">{order.name} • {order.zone}</p>
                         <p className="text-xs font-semibold text-gray-400 mt-1">{order.date}</p>
                       </div>
