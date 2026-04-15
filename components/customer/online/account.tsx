@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff, Check, X, ArrowUp } from "lucide-react"; 
+import { ChevronLeft, ChevronRight, User, MapPin, Phone, Lock, LogOut, Eye, EyeOff, Check, X, ArrowUp, ChevronDown } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { useUser } from "@/app/(protected)/(customer)/home/user-provider";
@@ -23,9 +23,16 @@ export default function CustomerAccount() {
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // ================= FETCH AND FILTER LOCATIONS =================
   useEffect(() => {
     getLocations().then((res) => {
-      if (Array.isArray(res)) setLocations(res as LocationItem[]);
+      if (Array.isArray(res)) {
+        // Fini-filter natin dito para hindi na makasama ang "Walk-in" sa choices
+        const filteredLocations = (res as LocationItem[]).filter(
+          loc => !loc.location_name.toLowerCase().includes("walk-in")
+        );
+        setLocations(filteredLocations);
+      }
     });
   }, []);
 
@@ -450,6 +457,7 @@ export default function CustomerAccount() {
               </div>
             )}
 
+            {/* ================= UPDATED LOCATION VIEW ================= */}
             {view === "location" && (
               <div className="space-y-4 w-full">
                 <div className="flex flex-col sm:flex-row gap-3 w-full">
@@ -479,18 +487,21 @@ export default function CustomerAccount() {
                 <div className="w-full">
                   <label className="block text-lg font-bold text-[#1e3d58] mb-1 ml-2">Zone:</label>
                   <div className="relative w-full">
+                    {/* Nilinis na UI dropdown */}
                     <select
                       value={tempZoneId}
                       onChange={(e) => setTempZoneId(e.target.value)}
-                      className={`w-full h-14 px-6 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer min-w-0 pr-10 ${errors.zoneId ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58]'}`}
+                      className={`w-full h-14 pl-6 pr-14 rounded-full border-2 bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] appearance-none cursor-pointer transition-all min-w-0 ${errors.zoneId ? 'border-red-400 bg-red-50 text-red-700' : 'border-[#1e3d58] hover:border-[#43b0f1]'}`}
                     >
-                      <option value="" disabled>Select a valid zone</option>
+                      <option value="" disabled>Select your delivery zone</option>
                       {locations.map((loc) => (
-                        <option key={loc.location_id} value={loc.location_id}>{loc.location_name}</option>
+                        <option key={loc.location_id} value={loc.location_id}>
+                          {loc.location_name}
+                        </option>
                       ))}
                     </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-6 pointer-events-none">
-                      <svg className="w-6 h-6 text-[#1e3d58]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
+                    <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-[#1e3d58]">
+                      <ChevronDown size={24} strokeWidth={2.5} />
                     </div>
                   </div>
                   {errors.zoneId && <p className="text-red-500 text-sm font-bold mt-1 ml-2 break-words">{errors.zoneId}</p>}
