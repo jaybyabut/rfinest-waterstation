@@ -11,6 +11,7 @@ import { getCurrentOrder } from "@/app/actions/getCurrentOrder";
 
 // Siguraduhing tama ang import path ng banner mo
 import StoreHoursBanner from "@/components/StoreHoursBanner"; 
+import AnnouncementBanner from "@/components/announcement-banner"; // <-- Added the new banner import
 
 export default function CustomerHome({
   className,
@@ -63,6 +64,12 @@ export default function CustomerHome({
   return (
     <div className={cn("flex flex-col items-center w-full px-4 py-6 animate-in fade-in zoom-in duration-500 mb-24 relative overflow-x-hidden", className)} {...props}>
       <div className="w-full max-w-md mx-auto">
+
+        {/* ================= ANNOUNCEMENT BANNER ================= */}
+        {/* Placed at the top so it's the first thing the customer sees */}
+        <div className="mb-4">
+          <AnnouncementBanner />
+        </div>
 
         <div className="w-full bg-[#e8eef1] rounded-[50px] p-5 pt-10 text-center border-2 border-white/50 shadow-xl overflow-hidden">
 
