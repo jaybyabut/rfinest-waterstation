@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
+import { getAllCustomers } from "@/app/actions/getAllCustomers";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { ArrowUp, Minus, Plus, Check, Search, X } from "lucide-react"; 
 
@@ -14,20 +15,23 @@ interface Location {
   location_price: number;
 }
 
-// TODO: BACKEND - Tanggalin itong dummy data at palitan ng actual API call sa Supabase
-// na kumukuha ng listahan ng mga nakaraang customers base sa name o mobile number.
-const DUMMY_CUSTOMERS = [
-  { id: 1, first_name: "Juan", last_name: "Dela Cruz", mi: "M", mobile_no: "09123456789", house_no: "Blk 1 Lot 2", street_name: "San Juan St.", zone_name: "Mexico" },
-  { id: 2, first_name: "Maria", last_name: "Santos", mi: "", mobile_no: "09987654321", house_no: "", street_name: "Mabini St.", zone_name: "Bulaon" },
-  { id: 3, first_name: "Pedro", last_name: "Penduko", mi: "P", mobile_no: "09551234567", house_no: "Apt 4", street_name: "Rizal Ave.", zone_name: "Calulut" },
-];
+interface CustomerSearchResult {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  middle_initial: string;
+  mobile_no: string;
+  address: string;
+  location_pricing: any;
+}
 
 export default function PlaceOrderForm() {
   const [locations, setLocations] = useState<Location[]>([]);
+  const [allCustomers, setAllCustomers] = useState<CustomerSearchResult[]>([]);
   
   // Search States
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<typeof DUMMY_CUSTOMERS>([]);
+  const [searchResults, setSearchResults] = useState<CustomerSearchResult[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
   const [firstName, setFirstName] = useState("");
@@ -68,7 +72,7 @@ export default function PlaceOrderForm() {
   }>({});
 
   useEffect(() => {
-    const fetchLocations = async () => {
+    const fetchLocationsAndCustomers = async () => {
       const data = await getLocations();
       if (Array.isArray(data)) {
         setLocations(data);
@@ -78,8 +82,13 @@ export default function PlaceOrderForm() {
       } else {
         console.error("Failed to fetch locations:", data);
       }
+      
+      const customers = await getAllCustomers();
+      if (customers) {
+        setAllCustomers(customers as CustomerSearchResult[]);
+      }
     };
-    fetchLocations();
+    fetchLocationsAndCustomers();
 
     const handleWindowScroll = () => {
       lastKnownScrollPosition.current = window.scrollY;
@@ -118,12 +127,12 @@ export default function PlaceOrderForm() {
     setSearchQuery(val);
 
     if (val.trim().length > 1) {
-      // TODO: BACKEND - Dito papalitan ng actual API call `await supabase.from('proxy_customers').select(...)`
-      const filtered = DUMMY_CUSTOMERS.filter(c => 
-        c.first_name.toLowerCase().includes(val.toLowerCase()) ||
-        c.last_name.toLowerCase().includes(val.toLowerCase()) ||
-        c.mobile_no.includes(val)
-      );
+      const lowerVal = val.toLowerCase();
+      const filtered = allCustomers.filter(c => 
+        (c.first_name || "").toLowerCase().includes(lowerVal) ||
+        (c.last_name || "").toLowerCase().includes(lowerVal) ||
+        (c.mobile_no || "").includes(lowerVal)
+      ).slice(0, 15);
       setSearchResults(filtered);
       setShowSearchDropdown(true);
     } else {
@@ -133,16 +142,25 @@ export default function PlaceOrderForm() {
   };
 
   // Auto-fill Logic
-  const handleSelectCustomer = (customer: typeof DUMMY_CUSTOMERS[0]) => {
+  const handleSelectCustomer = (customer: CustomerSearchResult) => {
     setFirstName(customer.first_name || "");
     setLastName(customer.last_name || "");
-    setMi(customer.mi || "");
+    setMi(customer.middle_initial || "");
     setMobileNumber(customer.mobile_no || "");
-    setHouseNo(customer.house_no || "");
-    setStreetName(customer.street_name || "");
     
-    if (customer.zone_name) {
-      setSelectedZone(customer.zone_name);
+    const addrParts = (customer.address || "").split(",");
+    if (addrParts.length >= 2) {
+      setHouseNo(addrParts[0].trim());
+      setStreetName(addrParts.slice(1).join(",").trim());
+    } else {
+       setHouseNo("");
+       setStreetName(customer.address || "");
+    }
+    
+    const zoneName = customer.location_pricing ? (Array.isArray(customer.location_pricing) ? customer.location_pricing[0]?.location_name : customer.location_pricing.location_name) : null;
+    
+    if (zoneName) {
+      setSelectedZone(zoneName);
     }
 
     // Clear search and hide dropdown
@@ -301,18 +319,20 @@ export default function PlaceOrderForm() {
                   <div className="absolute z-50 w-full left-0 mt-2 bg-white border-2 border-[#e8eef1] rounded-[20px] shadow-xl max-h-60 overflow-y-auto overflow-x-hidden animate-in fade-in slide-in-from-top-2">
                     {searchResults.length > 0 ? (
                       <div className="flex flex-col p-2 gap-1">
-                        {searchResults.map((customer) => (
+                        {searchResults.map((customer) => {
+                          const zoneName = customer.location_pricing ? (Array.isArray(customer.location_pricing) ? customer.location_pricing[0]?.location_name : customer.location_pricing.location_name) : "Walk-in";
+                          return (
                           <button
-                            key={customer.id}
+                            key={customer.user_id}
                             onClick={() => handleSelectCustomer(customer)}
                             className="flex flex-col items-start w-full p-3 rounded-xl hover:bg-[#e8eef1] transition-colors text-left"
                           >
                             <span className="font-bold text-[#1e3d58] text-base">{customer.first_name} {customer.last_name}</span>
                             <span className="text-xs font-semibold text-gray-500">
-                              {customer.mobile_no} • {customer.zone_name}
+                              {customer.mobile_no} • {zoneName}
                             </span>
                           </button>
-                        ))}
+                        )})}
                       </div>
                     ) : (
                       <div className="p-4 text-center text-gray-400 font-semibold text-sm">
