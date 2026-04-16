@@ -161,7 +161,7 @@ export default function SignUpForm({
 
     try {
       const { error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/protected`, 
