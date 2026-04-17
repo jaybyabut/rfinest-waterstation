@@ -59,6 +59,7 @@ export async function getOrderForEdit(orderId: string) {
             pricePerUnit: locData?.location_price || 0,
             slimCount,
             roundCount,
+            status: data.current_status,
         }
     };
 }
