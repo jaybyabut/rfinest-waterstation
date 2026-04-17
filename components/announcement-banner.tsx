@@ -2,33 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { Megaphone } from "lucide-react";
+import { getAnnouncement } from "@/app/actions/getAnnouncement";
 
 export default function AnnouncementBanner() {
-  const [announcement, setAnnouncement] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState<{ title: string; content: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // TODO: BACKEND - FETCH ACTIVE ANNOUNCEMENT
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
-        // Dito mo ilalagay yung fetch logic. Example:
-        // const { data, error } = await supabase
-        //   .from('announcements')
-        //   .select('message, is_active')
-        //   .eq('id', 1) 
-        //   .single();
-        //
-        // if (data?.is_active) {
-        //   setAnnouncement(data.message);
-        // } else {
-        //   setAnnouncement(null);
-        // }
-
-        // MOCK DATA PARA MA-TEST MO YUNG UI NGAYON (Burahin mo ito pag may backend na)
-        setAnnouncement("Please be advised that we will be closed tomorrow due to maintenance. Regular operations will resume the following day.");
-        
-        // Simulating no announcement default state (Naka-comment muna para ma-test mo yung may laman)
-        // setAnnouncement(null); 
+        const data = await getAnnouncement();
+        if (data) {
+           const today = new Date().toISOString().split('T')[0];
+           if (data.expires_at >= today) {
+              setAnnouncement({ title: data.title || "Announcement", content: data.content });
+           } else {
+              setAnnouncement(null);
+           }
+        }
       } catch (error) {
         console.error("Error fetching announcement:", error);
       } finally {
@@ -48,9 +39,9 @@ export default function AnnouncementBanner() {
           <Megaphone size={24} strokeWidth={2.5} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-black text-[#1e3d58] uppercase tracking-wider mb-0.5">Store Announcement</h3>
+          <h3 className="text-sm font-black text-[#1e3d58] uppercase tracking-wider mb-0.5">{announcement.title}</h3>
           <p className="text-sm sm:text-base font-bold text-gray-600 leading-snug break-words">
-            {announcement}
+            {announcement.content}
           </p>
         </div>
       </div>
