@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check, MapPin } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-// BAAKEND TODO: Siguraduhing magawa ang addLocation function sa server action file ninyo
 import { getLocations, batchUpdatePrices, addLocation } from "@/app/actions/locations";
 
 type PriceItem = {
