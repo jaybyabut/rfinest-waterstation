@@ -93,21 +93,8 @@ export default function CustomerHome({
             {/* ================= STORE HOURS BANNER ================= */}
             <StoreHoursBanner />
 
-            {/* ================= CURRENT ORDER WITH SKELETON ================= */}
-            {isLoadingOrder ? (
-              <div className="mb-8 p-4 rounded-[25px] bg-[#e8eef1]/40 border-2 border-transparent flex flex-col gap-2 text-left shadow-sm w-full overflow-hidden">
-                <div className="flex justify-between items-start sm:items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <div className="h-4 w-24 bg-slate-200 rounded animate-pulse"></div>
-                  <div className="h-6 w-20 bg-slate-200 rounded-full animate-pulse shrink-0"></div>
-                </div>
-                <div className="flex justify-between items-end mt-1">
-                  <div className="flex-1 min-w-0 flex flex-col gap-1.5 pt-1">
-                    <div className="h-6 w-28 bg-slate-300 rounded animate-pulse"></div>
-                    <div className="h-4 w-36 bg-slate-200 rounded animate-pulse"></div>
-                  </div>
-                </div>
-              </div>
-            ) : activeOrder ? (
+            {/* ================= CURRENT ORDER (NO SKELETON) ================= */}
+            {!isLoadingOrder && activeOrder && (
               <div className="mb-8 p-4 rounded-[25px] bg-[#e8eef1]/50 border-2 border-[#1e3d58]/10 flex flex-col gap-2 text-left shadow-sm w-full overflow-hidden">
                 <div className="flex justify-between items-start sm:items-center gap-2 flex-wrap sm:flex-nowrap">
                   {/* Pinalitan ang break-words ng whitespace-nowrap dito para hindi mag-vertical */}
@@ -127,7 +114,7 @@ export default function CustomerHome({
                   </div>
                 </div>
               </div>
-            ) : null}
+            )}
 
             <div className="flex flex-col gap-4 w-full">
               <Button asChild variant="outline" className="w-full h-16 text-xl font-bold border-2 border-[#1e3d58] rounded-[20px] bg-[#e8eef1] text-[#1e3d58] hover:bg-[#1e3d58] hover:text-white transition-all whitespace-normal break-words leading-tight shadow-sm">

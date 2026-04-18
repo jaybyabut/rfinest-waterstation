@@ -331,7 +331,7 @@ export default function CustomerAccount() {
                 <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-[#43b0f1] shadow-sm shrink-0"><Lock size={24} /></div>
                   <div className="text-left flex-1 min-w-0">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">Password</p>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-0.5">Change Password</p>
                     <p className="text-xl font-black text-[#1e3d58] tracking-widest leading-none translate-y-1 truncate">••••••••</p>
                   </div>
                 </div>
