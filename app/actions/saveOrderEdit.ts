@@ -1,5 +1,5 @@
 'use server'
-import { ensureRole } from "../../lib/supabase/server"
+import { ensureAuthenticated } from "../../lib/supabase/server"
 import { logActivity } from "./logActivity";
 
 interface SaveOrderEditParams {
@@ -10,7 +10,7 @@ interface SaveOrderEditParams {
 }
 
 export async function saveOrderEdit({ orderId, slimCount, roundCount, pricePerUnit }: SaveOrderEditParams) {
-    const { supabase } = await ensureRole(['admin']);
+    const { supabase, user } = await ensureAuthenticated();
 
     // Validation
     if (slimCount < 0 || roundCount < 0) {
@@ -22,15 +22,28 @@ export async function saveOrderEdit({ orderId, slimCount, roundCount, pricePerUn
 
     const newTotal = (slimCount + roundCount) * pricePerUnit;
 
+    const role = user.app_metadata?.role || user.user_metadata?.role || user.role;
+
     try {
-        // Update order total
-        const { error: orderError } = await supabase
+        let updateQuery = supabase
             .from("orders")
             .update({ total_amount: newTotal })
             .eq("order_id", orderId)
-            .in("current_status", ["Pending", "Pickup"]);
+            .in("current_status", ["Pending", "Pickup"])
+            .select("order_id");
+        
+        if (role !== 'admin' && role !== 'employee') {
+            updateQuery = updateQuery.eq("user_id", user.id);
+        }
+
+        // Update order total
+        const { data, error: orderError } = await updateQuery;
 
         if (orderError) throw orderError;
+        
+        if (!data || data.length === 0) {
+            return { error: "Update failed: Order might have been processed already or does not exist." };
+        }
 
         // Fetch product IDs
         const { data: allProducts, error: productsError } = await supabase

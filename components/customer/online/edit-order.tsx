@@ -44,9 +44,8 @@ export default function EditOrderForm() {
 
     const newTotal = (slimCount + roundCount) * pricePerUnit;
 
-    // TODO: BACKEND - Change "Pending" to whatever exact string your DB uses for an order that hasn't been picked up yet.
-    // Make sure to add other statuses here if multiple statuses are considered "not picked up" (e.g., status === "Pending" || status === "Preparing")
-    const isEditable = orderStatus.toLowerCase() === "pending"; 
+    // Wait for Pickup status is also considered editable to match backend logic
+    const isEditable = orderStatus.toLowerCase() === "pending" || orderStatus.toLowerCase() === "pickup"; 
 
     useEffect(() => {
         const handleWindowScroll = () => {
@@ -83,7 +82,6 @@ export default function EditOrderForm() {
             setSlimCount(order.slimCount);
             setRoundCount(order.roundCount);
             
-            // TODO: BACKEND - You must update the getOrderForEdit action to also return the order.status
             setOrderStatus(order.status || "Pending"); 
 
         } catch (e) {
@@ -124,8 +122,6 @@ export default function EditOrderForm() {
         setGlobalError(null);
 
         try {
-            // TODO: BACKEND - Add server-side validation inside saveOrderEdit to reject the save 
-            // if the order status changed to "Picked Up" while the user was on this screen.
             const result = await saveOrderEdit({
                 orderId: selectedOrderId,
                 slimCount,

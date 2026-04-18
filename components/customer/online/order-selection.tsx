@@ -52,8 +52,8 @@ export default function OrderSelection({ onSelectOrder }: OrderSelectionProps) {
                     current_status,
                     location_pricing ( location_name )
                 `)
-                .eq("customer_id", user.id) // <--- BACKEND: Verify this column name!
-                .in("current_status", ["Pending", "Pickup"]) // Ensure these are the statuses that mean "not picked up yet"
+                .eq("user_id", user.id) 
+                .in("current_status", ["Pending", "Pickup"]) 
                 .order("order_dt", { ascending: false });
 
             if (fetchError) throw fetchError;
