@@ -43,11 +43,10 @@ export async function getOrdersForExport(selectedMonth: string) {
 
     if (!orders) return [];
 
-    // ================= FIX 1: FILTER OUT CANCELLED ORDERS =================
+    // ================= FIX 1: FILTER ONLY DELIVERED ORDERS =================
     const validOrders = orders.filter((order: any) => {
       const status = order.current_status?.toLowerCase() || "";
-      // Sinama na natin 'cancelled' at 'canceled' para sure hit!
-      return status !== "cancelled" && status !== "canceled"; 
+      return status === "delivered";
     });
 
     // ================= FIX 2: PRE-CALCULATE DAILY TOTALS =================
