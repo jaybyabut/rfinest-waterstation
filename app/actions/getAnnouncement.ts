@@ -6,9 +6,12 @@ export async function getAnnouncement() {
     const supabase = await createAdminClient();
     
     // Fetch the most recent announcement
+    const now = new Date().toISOString();
     const { data, error } = await supabase
         .from('announcements')
         .select('*')
+        .lte('starts_at', now)
+        .gte('expires_at', now)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
