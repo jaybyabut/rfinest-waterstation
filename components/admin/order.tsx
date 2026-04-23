@@ -424,7 +424,9 @@ export default function PlaceOrderForm() {
                     {locations.length === 0 ? (
                       <option>Loading locations...</option>
                     ) : (
-                      locations.map((loc) => (
+                      locations
+                        .filter((loc) => loc.location_name !== "Walk-in")
+                        .map((loc) => (
                         <option key={loc.location_id} value={loc.location_name}>
                           {loc.location_name} (₱{loc.location_price}/pc)
                         </option>

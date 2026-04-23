@@ -364,7 +364,9 @@ export default function SignUpForm({
                     {locations.length === 0 ? (
                       <option disabled>Loading zones...</option>
                     ) : (
-                      locations.map((loc) => (
+                      locations
+                        .filter((loc) => loc.location_name !== "Walk-in")
+                        .map((loc) => (
                         <option key={loc.location_id} value={loc.location_id}>
                           {loc.location_name}
                         </option>
