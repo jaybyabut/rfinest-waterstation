@@ -6,6 +6,7 @@ import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
 import { getAllCustomers } from "@/app/actions/getAllCustomers";
+import { saveCustomerInfo } from "@/app/actions/saveCustomer";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { ArrowUp, Minus, Plus, Check, Search, X } from "lucide-react"; 
 
@@ -244,6 +245,17 @@ export default function PlaceOrderForm() {
         setGlobalError("Error creating order: " + result.error);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
+        if (selectedLocation?.location_id) {
+          await saveCustomerInfo({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            mi: mi.trim(),
+            mobileNumber: mobileNumber.trim(),
+            address: fullAddress,
+            locationId: selectedLocation.location_id
+          });
+        }
+
         window.scrollTo({ top: 0, behavior: "smooth" });
 
         setFirstName("");
