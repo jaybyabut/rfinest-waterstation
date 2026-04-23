@@ -1,11 +1,10 @@
 'use server'
-import { ensureAuthenticated, ensureRole } from '../../lib/supabase/server'
+import { createClient, ensureRole } from '../../lib/supabase/server'
 import { logActivity } from './logActivity'
 
 export async function getLocations() {
     console.log("getLocations: Started fetching...");
-    const { supabase } = await ensureAuthenticated()
-    console.log("getLocations: Auth passed");
+    const supabase = await createClient();
 
     const { data, error } = await supabase.from('location_pricing').select('location_id, location_name, location_price')
     console.log("getLocations: Data received:", data);
