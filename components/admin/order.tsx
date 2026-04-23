@@ -642,7 +642,10 @@ export default function PlaceOrderForm() {
                           Order placed successfully!
                       </p>
                       <Button 
-                          onClick={() => setIsSuccessModalOpen(false)} 
+                          onClick={() => {
+                              setIsSuccessModalOpen(false);
+                              window.location.reload();
+                          }} 
                           className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
                       >
                           Continue
