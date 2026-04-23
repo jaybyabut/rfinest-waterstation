@@ -63,6 +63,7 @@ export default function PlaceOrderForm() {
   const itemsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const numberRef = useRef<HTMLDivElement>(null);
+  const addressRef = useRef<HTMLDivElement>(null);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   
@@ -70,6 +71,8 @@ export default function PlaceOrderForm() {
     firstName?: boolean;
     zone?: boolean;
     items?: boolean;
+    houseNo?: boolean;
+    streetName?: boolean;
   }>({});
 
   useEffect(() => {
@@ -172,7 +175,9 @@ export default function PlaceOrderForm() {
     setFieldErrors(prev => ({
       ...prev,
       firstName: false,
-      zone: false
+      zone: false,
+      houseNo: false,
+      streetName: false
     }));
   };
 
@@ -192,6 +197,18 @@ export default function PlaceOrderForm() {
       newErrors.firstName = true;
       hasError = true;
       if (!firstErrorElement) firstErrorElement = nameRef.current;
+    }
+
+    if (!houseNo.trim()) {
+      newErrors.houseNo = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = addressRef.current;
+    }
+
+    if (!streetName.trim()) {
+      newErrors.streetName = true;
+      hasError = true;
+      if (!firstErrorElement) firstErrorElement = addressRef.current;
     }
     
     if (!selectedLocation) {
@@ -436,29 +453,33 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <div className="flex flex-col sm:flex-row gap-3 w-full" ref={addressRef}>
                 <div className="w-full sm:w-1/3 shrink-0 flex flex-col justify-end">
                   <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight">
-                    House No.: <span className="text-[11px] sm:text-xs font-normal text-gray-400 block mt-0.5">(Optional)</span>
+                    House No.:
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Blk 1"
                     value={houseNo}
-                    onChange={(e) => setHouseNo(e.target.value)}
-                    className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto"
+                    onChange={(e) => {
+                      setHouseNo(e.target.value);
+                      if (e.target.value) setFieldErrors(prev => ({ ...prev, houseNo: false }));
+                    }}
+                    className={`w-full h-14 px-4 text-center rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto ${fieldErrors.houseNo ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-end">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name: <span className="text-[11px] sm:text-xs font-normal text-gray-400">(Optional)</span></label>
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name:</label>
                   <input
                     type="text"
                     placeholder="e.g. San Juan St."
                     value={streetName}
                     onChange={(e) => {
                       setStreetName(e.target.value);
+                      if (e.target.value) setFieldErrors(prev => ({ ...prev, streetName: false }));
                     }}
-                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto"
+                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto ${fieldErrors.streetName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
                   />
                 </div>
               </div>
