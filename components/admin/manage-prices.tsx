@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check } from "lucide-react";
+import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check, MapPin } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { getLocations, batchUpdatePrices } from "@/app/actions/locations";
+import { getLocations, batchUpdatePrices, addLocation } from "@/app/actions/locations";
 
 type PriceItem = {
   id: number;
@@ -41,12 +41,18 @@ export default function ManagePricesPage() {
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
+  // New states for Add Zone Feature
+  const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
+  const [newZoneName, setNewZoneName] = useState("");
+  const [newZonePrice, setNewZonePrice] = useState("");
+  const [addingZoneLoading, setAddingZoneLoading] = useState(false);
+
   const fetchPrices = async () => {
     setInitialLoading(true);
     try {
       const data = await getLocations();
       if (Array.isArray(data)) {
-        const walkInLocation = data.find(l => l.location_name.toLowerCase() === 'walk-in');
+        const walkInLocation = data.find((l: DBLocation) => l.location_name.toLowerCase() === 'walk-in');
         if (walkInLocation) {
           setWalkInPrice(walkInLocation.location_price);
           setWalkInId(walkInLocation.location_id);
@@ -54,7 +60,7 @@ export default function ManagePricesPage() {
           setWalkInPrice(35);
         }
 
-        const filteredData = data.filter(l => l.location_name.toLowerCase() !== 'walk-in');
+        const filteredData = data.filter((l: DBLocation) => l.location_name.toLowerCase() !== 'walk-in');
         setPrices(filteredData.map((l: DBLocation) => ({
           id: l.location_id,
           name: l.location_name,
@@ -189,6 +195,42 @@ export default function ManagePricesPage() {
     }
   };
 
+  const handleSaveNewZone = async () => {
+    setGlobalError(null);
+    setSuccessMessage(null);
+
+    if (!newZoneName.trim() || !newZonePrice || Number(newZonePrice) <= 0) {
+      setGlobalError("Please provide a valid zone name and a price greater than ₱0.");
+      setIsAddZoneModalOpen(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setAddingZoneLoading(true);
+    try {
+      const result = await addLocation({ 
+        location_name: newZoneName.trim(), 
+        location_price: Number(newZonePrice) 
+      });
+
+      if (result && result.success) {
+        setSuccessMessage(`Zone "${newZoneName}" added successfully!`);
+        fetchPrices(); 
+        setNewZoneName("");
+        setNewZonePrice("");
+      } else {
+        setGlobalError(result?.error || "Failed to add new zone.");
+      }
+    } catch (e) {
+      console.error(e);
+      setGlobalError("An unexpected error occurred while adding the new zone.");
+    } finally {
+      setAddingZoneLoading(false);
+      setIsAddZoneModalOpen(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const filteredPrices = prices.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -212,13 +254,13 @@ export default function ManagePricesPage() {
           <div className="bg-white rounded-[40px] p-5 sm:p-8 shadow-inner border border-gray-100 text-left relative overflow-hidden">
 
             {globalError && (
-              <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200">
+              <div className="mb-6 bg-red-100 text-red-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-red-200 animate-in fade-in">
                 ⚠️ {globalError}
               </div>
             )}
 
             {successMessage && (
-              <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200">
+              <div className="mb-6 bg-green-100 text-green-700 p-4 rounded-xl text-center font-bold text-sm border-2 border-green-200 animate-in fade-in">
                 ✅ {successMessage}
               </div>
             )}
@@ -287,6 +329,16 @@ export default function ManagePricesPage() {
             </div>
 
             <hr className="border-dashed border-gray-300 mb-6" />
+
+            <div className="flex justify-center mb-6">
+              <Button
+                onClick={() => setIsAddZoneModalOpen(true)}
+                className="h-12 px-6 rounded-[15px] bg-[#eef2f5] text-[#1e3d58] border border-[#1e3d58]/10 hover:bg-[#1e3d58] hover:text-white transition-all font-bold flex items-center justify-center gap-2 shadow-sm"
+              >
+                <MapPin size={20} strokeWidth={2.5} />
+                <span>Add New Zone</span>
+              </Button>
+            </div>
 
             <div className="relative mb-6">
               <input
@@ -389,6 +441,75 @@ export default function ManagePricesPage() {
       >
         <ArrowUp size={24} strokeWidth={3} />
       </button>
+
+      {/* MODAL PARA SA BAGONG ZONE */}
+      {isAddZoneModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+          <div className="bg-[#e8eef1] rounded-[40px] p-2 w-full max-w-sm shadow-2xl">
+            <div className="bg-white rounded-[30px] p-6 text-center border border-gray-100 flex flex-col items-center">
+              <div className="w-16 h-16 bg-[#eef2f5] text-[#43b0f1] rounded-full flex items-center justify-center mb-4 shadow-sm">
+                <MapPin size={32} strokeWidth={2.5} />
+              </div>
+              <h2 className="text-2xl font-black text-[#1e3d58] mb-5 tracking-tight">Add New Zone</h2>
+              
+              <div className="w-full space-y-4 mb-6">
+                <div className="text-left">
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-2 mb-1 block">Zone Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., San Jose"
+                    value={newZoneName}
+                    maxLength={50}
+                    onChange={(e) => {
+                      // Restrict: Letters, numbers, spaces, commas, and hyphens only
+                      const restrictedValue = e.target.value.replace(/[^a-zA-Z0-9\s,-]/g, '');
+                      setNewZoneName(restrictedValue);
+                    }}
+                    className="w-full h-12 rounded-[15px] border-2 border-gray-200 bg-gray-50 px-4 text-lg font-bold text-[#1e3d58] focus:outline-none focus:border-[#43b0f1] transition-all"
+                  />
+                </div>
+                
+                <div className="text-left relative">
+                  <label className="text-xs font-bold text-gray-500 uppercase ml-2 mb-1 block">Total Price (₱) per container</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1e3d58] font-black text-xl">₱</span>
+                    <input
+                      type="text" // Pinalitan ng text + regex para bawal ang 'e' at '-'
+                      inputMode="numeric" // Lalabas pa rin ang number pad sa mobile
+                      placeholder="0"
+                      maxLength={5}
+                      value={newZonePrice}
+                      onChange={(e) => {
+                        // Restrict: Numbers only (0-9)
+                        const restrictedValue = e.target.value.replace(/[^0-9]/g, '');
+                        setNewZonePrice(restrictedValue);
+                      }}
+                      className="w-full h-12 rounded-[15px] border-2 border-gray-200 bg-gray-50 pl-10 pr-4 text-xl font-bold text-[#1e3d58] focus:outline-none focus:border-[#43b0f1] transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 w-full">
+                <Button 
+                  onClick={() => setIsAddZoneModalOpen(false)} 
+                  disabled={addingZoneLoading}
+                  className="flex-1 h-12 text-lg font-bold rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-all shadow-sm"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSaveNewZone} 
+                  disabled={addingZoneLoading}
+                  className="flex-1 h-12 text-lg font-bold rounded-xl bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                >
+                  {addingZoneLoading ? "Saving..." : "Save Zone"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmationModal
         isOpen={isModalOpen}

@@ -129,7 +129,7 @@ export default function AnalyticsAndReports() {
         return;
       }
 
-      // 1. Setup the CSV Header (Status removed)
+      // 1. Setup the CSV Header (Dinagdag ang Daily Total)
       const headers = [
         "Order ID", 
         "Date", 
@@ -138,6 +138,7 @@ export default function AnalyticsAndReports() {
         "Slim Gallons", 
         "Round Gallons", 
         "Total Amount (PHP)", 
+        "Daily Total", // <-- NEW COLUMN
         "Type", 
         "Payment Mode"
       ];
@@ -157,14 +158,15 @@ export default function AnalyticsAndReports() {
           order.slim,
           order.round,
           orderTotal,
+          order.daily_total, // <-- NEW DATA MAPPING
           order.type,
           order.payment
         ];
       });
 
-      // 3. Add spacer and Grand Total at the bottom
-      rows.push(["", "", "", "", "", "", "", "", ""]);
-      rows.push(["", "", "", "", "", "GRAND TOTAL:", grandTotal, "", ""]);
+      // 3. Add spacer and Grand Total at the bottom (In-adjust ang empty strings para match sa 10 columns)
+      rows.push(["", "", "", "", "", "", "", "", "", ""]);
+      rows.push(["", "", "", "", "", "GRAND TOTAL:", grandTotal, "", "", ""]);
 
       // 4. Combine headers and rows
       const csvContent = [

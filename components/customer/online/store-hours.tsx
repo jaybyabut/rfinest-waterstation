@@ -79,11 +79,6 @@ export default function StoreHoursPage() {
                       <span className={cn("text-base sm:text-lg font-bold", isToday ? 'text-white' : 'text-[#1e3d58]')}>
                         {item.day}
                       </span>
-                      {isToday && (
-                        <span className="text-[10px] sm:text-xs bg-white/20 px-2 py-0.5 rounded-full uppercase tracking-widest font-black shrink-0">
-                          Today
-                        </span>
-                      )}
                     </div>
                     <span className={cn("text-sm sm:text-base font-black tracking-wide", isToday ? 'text-white' : 'text-[#43b0f1]')}>
                       {item.hours}

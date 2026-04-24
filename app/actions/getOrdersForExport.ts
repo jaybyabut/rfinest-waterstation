@@ -15,7 +15,7 @@ export async function getOrdersForExport(selectedMonth: string) {
     // Kukunin ang pinaka-last millisecond ng buwan
     const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999).toISOString(); 
 
-    // 2. I-query ang database, isama yung related tables na kailangan sa CSV (Inalis na ang current_status)
+    // 2. I-query ang database (IBINALIK natin ang current_status para ma-filter)
     const { data: orders, error } = await supabase
       .from('orders')
       .select(`
@@ -25,6 +25,7 @@ export async function getOrdersForExport(selectedMonth: string) {
         total_amount,
         transaction_type,
         payment_mode,
+        current_status, 
         location_pricing ( location_name ),
         order_items (
           quantity,
@@ -42,8 +43,30 @@ export async function getOrdersForExport(selectedMonth: string) {
 
     if (!orders) return [];
 
+    // ================= FIX 1: FILTER ONLY DELIVERED ORDERS =================
+    const validOrders = orders.filter((order: any) => {
+      const status = order.current_status?.toLowerCase() || "";
+      return status === "delivered";
+    });
+
+    // ================= FIX 2: PRE-CALCULATE DAILY TOTALS =================
+    const dailyTotals: Record<string, number> = {};
+    
+    validOrders.forEach((order: any) => {
+      const dateObj = new Date(order.order_dt);
+      const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+      
+      // I-save na rin natin yung formattedDate sa object para di na ulitin sa baba
+      order._formattedDate = formattedDate; 
+      
+      // I-add yung total_amount ng order na 'to sa total ng araw na 'yon
+      dailyTotals[formattedDate] = (dailyTotals[formattedDate] || 0) + (order.total_amount || 0);
+    });
+
     // 3. I-format ang data para swak na swak sa hinihingi ng frontend Excel exporter natin
-    const formattedOrders = orders.map((order: any) => {
+    const seenDates = new Set<string>();
+
+    const formattedOrders = validOrders.map((order: any) => {
       let slimCount = 0;
       let roundCount = 0;
 
@@ -62,19 +85,25 @@ export async function getOrdersForExport(selectedMonth: string) {
       const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
       const zoneName = location?.location_name || "Walk-in";
 
-      // Format the date to a readable string (e.g., 2026-03-24)
-      const dateObj = new Date(order.order_dt);
-      const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+      // Kunin yung pre-calculated date natin
+      const fDate = order._formattedDate;
 
-      // Inalis na ang status field dito para match sa frontend
+      // Logic: Ilagay lang ang daily total sa PINAKA-UNANG order na lalabas para sa araw na 'yon
+      let currentDailyTotal: number | string = ""; 
+      if (!seenDates.has(fDate)) {
+        currentDailyTotal = dailyTotals[fDate];
+        seenDates.add(fDate); // I-mark na nalagyan na natin ng total ang araw na ito
+      }
+
       return {
         id: `ORD-${order.order_id}`,
-        date: formattedDate,
+        date: fDate,
         name: order.name || "Unknown",
         zone: zoneName,
         slim: slimCount,
         round: roundCount,
         total: order.total_amount || 0,
+        daily_total: currentDailyTotal, // <-- DITO PAPASOK ANG DAILY TOTAL COLUMN NATIN
         type: order.transaction_type || "N/A",
         payment: order.payment_mode || "Cash"
       };

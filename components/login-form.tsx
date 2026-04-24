@@ -29,7 +29,7 @@ export default function LoginForm({
     try {
       await supabase.auth.signOut();
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
       if (error) throw error;
