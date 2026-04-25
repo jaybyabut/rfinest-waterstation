@@ -9,10 +9,11 @@ export async function getOrdersForExport(selectedMonth: string) {
     // 1. Kunin ang start at end date ng napiling buwan sa Manila Time
     const [yearStr, monthStr] = selectedMonth.split('-');
     const year = parseInt(yearStr);
+    const monthIndex = parseInt(monthStr) - 1;
     const startDate = `${yearStr}-${monthStr}-01T00:00:00`;
     
     // Kunin ang huling araw ng buwan
-    const lastDay = new Date(year, month + 1, 0).getDate();
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
     const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999`;
 
     // 2. I-query ang database
