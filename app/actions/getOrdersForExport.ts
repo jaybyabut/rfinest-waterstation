@@ -6,16 +6,16 @@ export async function getOrdersForExport(selectedMonth: string) {
   try {
     const supabase = await createClient();
 
-    // 1. Kunin ang start at end date ng napiling buwan
+    // 1. Kunin ang start at end date ng napiling buwan sa Manila Time
     const [yearStr, monthStr] = selectedMonth.split('-');
     const year = parseInt(yearStr);
-    const month = parseInt(monthStr) - 1; // 0-indexed ang buwan sa JS Date
+    const startDate = `${yearStr}-${monthStr}-01T00:00:00`;
+    
+    // Kunin ang huling araw ng buwan
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999`;
 
-    const startDate = new Date(year, month, 1).toISOString();
-    // Kukunin ang pinaka-last millisecond ng buwan
-    const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999).toISOString(); 
-
-    // 2. I-query ang database (IBINALIK natin ang current_status para ma-filter)
+    // 2. I-query ang database
     const { data: orders, error } = await supabase
       .from('orders')
       .select(`
@@ -49,12 +49,17 @@ export async function getOrdersForExport(selectedMonth: string) {
       return status === "delivered";
     });
 
-    // ================= FIX 2: PRE-CALCULATE DAILY TOTALS =================
+    // ================= FIX 2: PRE-CALCULATE DAILY TOTALS (MANILA TIME) =================
     const dailyTotals: Record<string, number> = {};
+    const manilaFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
     
     validOrders.forEach((order: any) => {
-      const dateObj = new Date(order.order_dt);
-      const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+      const formattedDate = manilaFormatter.format(new Date(order.order_dt));
       
       // I-save na rin natin yung formattedDate sa object para di na ulitin sa baba
       order._formattedDate = formattedDate; 

@@ -17,15 +17,19 @@ export async function getAnalyticsData(selectedMonth: string) {
     const phMonth = todayPhParts.find(p => p.type === 'month')?.value;
     const phDay = todayPhParts.find(p => p.type === 'day')?.value;
 
-    const startOfToday = new Date(`${phYear}-${phMonth}-${phDay}T00:00:00+08:00`).toISOString();
-    const endOfToday = new Date(`${phYear}-${phMonth}-${phDay}T23:59:59.999+08:00`).toISOString();
+    const startOfToday = `${phYear}-${phMonth}-${phDay}T00:00:00`;
+    const endOfToday = `${phYear}-${phMonth}-${phDay}T23:59:59.999`;
 
     const [yearStr, monthStr] = selectedMonth.split('-');
-    const startOfMonth = new Date(`${yearStr}-${monthStr}-01T00:00:00+08:00`).toISOString();
+    const year = parseInt(yearStr);
+    const monthIndex = parseInt(monthStr) - 1;
 
-    const nextMonth = new Date(`${yearStr}-${monthStr}-01T00:00:00+08:00`);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    const endOfMonth = new Date(nextMonth.getTime() - 1).toISOString();
+    // Last day of selected month
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+
+    // Manila Time strings
+    const startOfMonth = `${yearStr}-${monthStr}-01T00:00:00`;
+    const endOfMonth = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999`;
 
     const result = {
         today: {
