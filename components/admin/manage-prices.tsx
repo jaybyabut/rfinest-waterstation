@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check, MapPin, Trash2 } from "lucide-react";
+import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check, MapPin, Trash2, RotateCcw, Eye, EyeOff } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { getLocations, batchUpdatePrices, addLocation, deactivateLocation } from "@/app/actions/locations";
+import { getLocations, batchUpdatePrices, addLocation, deactivateLocation, getRemovedLocations, restoreLocation } from "@/app/actions/locations";
 
 type PriceItem = {
   id: number;
@@ -21,6 +21,7 @@ interface DBLocation {
 
 export default function ManagePricesPage() {
   const [prices, setPrices] = useState<PriceItem[]>([]);
+  const [removedPrices, setRemovedPrices] = useState<PriceItem[]>([]); // NEW STATE PARA SA REMOVED ZONES
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [increaseAmount, setIncreaseAmount] = useState("");
@@ -50,10 +51,21 @@ export default function ManagePricesPage() {
   const [zoneToDelete, setZoneToDelete] = useState<{ id: number; name: string } | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
 
+  // NEW STATES PARA SA RESTORE FEATURE
+  const [showRemovedZones, setShowRemovedZones] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [zoneToRestore, setZoneToRestore] = useState<{ id: number; name: string } | null>(null);
+  const [restoringLoading, setRestoringLoading] = useState(false);
+
   const fetchPrices = async () => {
     setInitialLoading(true);
     try {
-      const data = await getLocations();
+      // SABAY NA KUKUNIN ANG ACTIVE AT INACTIVE ZONES
+      const [data, removedData] = await Promise.all([
+          getLocations(),
+          getRemovedLocations()
+      ]);
+
       if (Array.isArray(data)) {
         const walkInLocation = data.find((l: DBLocation) => l.location_name.toLowerCase() === 'walk-in');
         if (walkInLocation) {
@@ -72,6 +84,15 @@ export default function ManagePricesPage() {
       } else {
         setGlobalError("Failed to fetch prices from database.");
       }
+
+      if (Array.isArray(removedData)) {
+         setRemovedPrices(removedData.map((l: DBLocation) => ({
+             id: l.location_id,
+             name: l.location_name,
+             price: l.location_price
+         })));
+      }
+
     } catch (err) {
       console.error(err);
       setGlobalError("An error occurred while fetching prices.");
@@ -257,7 +278,7 @@ export default function ManagePricesPage() {
 
           if (result.success) {
               setSuccessMessage(`Zone "${zoneToDelete.name}" has been removed.`);
-              setPrices(prices.filter(p => p.id !== zoneToDelete.id));
+              fetchPrices(); // REFRESH DATA TO UPDATE BOTH LISTS
               setEditingId(null);
           } else {
               setGlobalError(result.error || "Failed to remove zone.");
@@ -269,6 +290,38 @@ export default function ManagePricesPage() {
           setDeletingLoading(false);
           setIsDeleteModalOpen(false);
           setZoneToDelete(null);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+  };
+
+  // RESTORE HANDLERS
+  const handleRestoreZoneClick = (id: number, name: string) => {
+      setZoneToRestore({ id, name });
+      setIsRestoreModalOpen(true);
+  };
+
+  const handleConfirmRestore = async () => {
+      if (!zoneToRestore) return;
+      
+      setRestoringLoading(true);
+      setGlobalError(null);
+      
+      try {
+          const result = await restoreLocation(zoneToRestore.id);
+
+          if (result.success) {
+              setSuccessMessage(`Zone "${zoneToRestore.name}" has been restored.`);
+              fetchPrices(); // REFRESH DATA TO UPDATE BOTH LISTS
+          } else {
+              setGlobalError(result.error || "Failed to restore zone.");
+          }
+      } catch (e) {
+          console.error(e);
+          setGlobalError("An unexpected error occurred while restoring the zone.");
+      } finally {
+          setRestoringLoading(false);
+          setIsRestoreModalOpen(false);
+          setZoneToRestore(null);
           window.scrollTo({ top: 0, behavior: "smooth" });
       }
   };
@@ -480,6 +533,52 @@ export default function ManagePricesPage() {
               )}
             </div>
 
+            {/* ============================== */}
+            {/* VIEW REMOVED ZONES SECTION     */}
+            {/* ============================== */}
+            <div className="pt-4 pb-2 flex flex-col items-center border-t border-dashed border-gray-200 mt-4">
+              <button
+                onClick={() => setShowRemovedZones(!showRemovedZones)}
+                className="flex items-center gap-2 text-gray-400 hover:text-[#1e3d58] transition-colors font-bold text-xs uppercase tracking-widest py-2 px-4 rounded-full hover:bg-gray-50"
+              >
+                {showRemovedZones ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showRemovedZones ? "Hide Removed Zones" : "View Removed Zones"}
+              </button>
+
+              {showRemovedZones && (
+                <div className="w-full mt-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+                  {removedPrices.length === 0 ? (
+                    <div className="text-center py-4 text-gray-400 font-bold italic text-sm">
+                      No removed zones found.
+                    </div>
+                  ) : (
+                    removedPrices.map((zone) => (
+                      <div key={zone.id} className="flex flex-row justify-between items-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-[20px] bg-gray-50/50 gap-2">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <span className="text-base sm:text-lg font-bold text-gray-400 line-through block truncate">
+                            {zone.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-base sm:text-lg font-bold text-gray-400 line-through">
+                            ₱{zone.price}
+                          </span>
+                          <Button
+                            onClick={() => handleRestoreZoneClick(zone.id, zone.name)}
+                            variant="ghost"
+                            className="bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1 shrink-0"
+                          >
+                            <RotateCcw size={14} strokeWidth={3} />
+                            Restore
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="pt-8 flex justify-center">
               <Button
                 onClick={handleSaveClick}
@@ -501,6 +600,7 @@ export default function ManagePricesPage() {
         <ArrowUp size={24} strokeWidth={3} />
       </button>
 
+      {/* MODAL PARA SA BAGONG ZONE */}
       {isAddZoneModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
           <div className="bg-[#e8eef1] rounded-[40px] p-2 w-full max-w-sm shadow-2xl">
@@ -567,6 +667,7 @@ export default function ManagePricesPage() {
         </div>
       )}
 
+      {/* CONFIRMATION MODALS */}
       <ConfirmationModal
         isOpen={isModalOpen}
         onClose={() => !loading && setIsModalOpen(false)}
@@ -585,6 +686,7 @@ export default function ManagePricesPage() {
         confirmText="Yes, Apply"
       />
 
+      {/* DELETE MODAL */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => !deletingLoading && setIsDeleteModalOpen(false)}
@@ -594,6 +696,17 @@ export default function ManagePricesPage() {
         confirmText={deletingLoading ? "Removing..." : "Yes, Remove"}
       />
 
+      {/* RESTORE MODAL */}
+      <ConfirmationModal
+        isOpen={isRestoreModalOpen}
+        onClose={() => !restoringLoading && setIsRestoreModalOpen(false)}
+        onConfirm={handleConfirmRestore}
+        title="Restore Zone?"
+        message={`Are you sure you want to restore "${zoneToRestore?.name}"? It will be available again for new orders.`}
+        confirmText={restoringLoading ? "Restoring..." : "Yes, Restore"}
+      />
+
+      {/* SUCCESS MODAL */}
       {isSuccessModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
               <div className="bg-[#e8eef1] rounded-[40px] p-2 sm:p-3 w-full max-w-sm shadow-2xl">

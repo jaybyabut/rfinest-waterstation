@@ -83,3 +83,37 @@ export async function deactivateLocation(id: number) {
 
     return { success: true };
 }
+
+export async function getRemovedLocations() {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from('location_pricing')
+        .select('location_id, location_name, location_price')
+        .eq('is_active', false); 
+        
+    if (error) {
+        console.error("Error fetching removed locations:", error);
+        return { error: "Failed to fetch removed locations." }
+    }
+
+    return data;
+}
+
+export async function restoreLocation(id: number) {
+    const { supabase } = await ensureRole(['admin']);
+
+    const { error } = await supabase
+        .from('location_pricing')
+        .update({ is_active: true })
+        .eq('location_id', id);
+
+    if (error) {
+        console.error(`Error restoring location ${id}:`, error);
+        return { error: "Failed to restore zone. Please try again." };
+    }
+
+    await logActivity(`Restored delivery zone ID: ${id}`);
+
+    return { success: true };
+}
