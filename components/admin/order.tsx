@@ -262,7 +262,7 @@ export default function PlaceOrderForm() {
         setGlobalError("Error creating order: " + result.error);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        if (selectedLocation?.location_id) {
+        if (selectedLocation != null) {
           await saveCustomerInfo({
             firstName: firstName.trim(),
             lastName: lastName.trim(),
