@@ -80,7 +80,7 @@ export async function getAnalyticsData(selectedMonth: string) {
                 // Group by payment_mode
                 if (order.payment_mode?.toLowerCase() === 'cash') {
                     result.today.earnings.cash += amount;
-                } else {
+                } else if (order.payment_mode?.toLowerCase() === 'e-bank') {
                     result.today.earnings.eBank += amount;
                 }
 
