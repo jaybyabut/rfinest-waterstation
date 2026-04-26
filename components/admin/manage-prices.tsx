@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check, MapPin } from "lucide-react";
+import { ChevronLeft, SquarePen, Plus, Search, RefreshCw, ArrowUp, Check, MapPin, Trash2 } from "lucide-react";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { getLocations, batchUpdatePrices, addLocation } from "@/app/actions/locations";
+import { getLocations, batchUpdatePrices, addLocation, deactivateLocation } from "@/app/actions/locations";
 
 type PriceItem = {
   id: number;
@@ -41,11 +41,14 @@ export default function ManagePricesPage() {
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  // New states for Add Zone Feature
   const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
   const [newZoneName, setNewZoneName] = useState("");
   const [newZonePrice, setNewZonePrice] = useState("");
   const [addingZoneLoading, setAddingZoneLoading] = useState(false);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [zoneToDelete, setZoneToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [deletingLoading, setDeletingLoading] = useState(false);
 
   const fetchPrices = async () => {
     setInitialLoading(true);
@@ -130,17 +133,23 @@ export default function ManagePricesPage() {
   };
 
   const handleEditClick = (id: number) => {
-    setEditingId(id);
-    setTimeout(() => {
-      document.getElementById(`price-input-${id}`)?.focus();
-    }, 10);
+    if (editingId === id) {
+       setEditingId(null);
+    } else {
+       setEditingId(id);
+       setTimeout(() => {
+         document.getElementById(`price-input-${id}`)?.focus();
+       }, 10);
+    }
   };
 
   const handleEditWalkInClick = () => {
-    setEditingWalkIn(true);
-    setTimeout(() => {
-      document.getElementById(`walk-in-price-input`)?.focus();
-    }, 10);
+    setEditingWalkIn(!editingWalkIn);
+    if (!editingWalkIn) {
+        setTimeout(() => {
+          document.getElementById(`walk-in-price-input`)?.focus();
+        }, 10);
+    }
   };
 
   const validateForm = () => {
@@ -183,6 +192,7 @@ export default function ManagePricesPage() {
 
       if (result.success) {
         setIsSuccessModalOpen(true);
+        setEditingId(null); 
       } else {
         setGlobalError(result.error || "Failed to update prices.");
       }
@@ -229,6 +239,38 @@ export default function ManagePricesPage() {
       setIsAddZoneModalOpen(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
+  };
+
+  const handleDeleteZoneClick = (id: number, name: string) => {
+      setZoneToDelete({ id, name });
+      setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+      if (!zoneToDelete) return;
+      
+      setDeletingLoading(true);
+      setGlobalError(null);
+      
+      try {
+          const result = await deactivateLocation(zoneToDelete.id);
+
+          if (result.success) {
+              setSuccessMessage(`Zone "${zoneToDelete.name}" has been removed.`);
+              setPrices(prices.filter(p => p.id !== zoneToDelete.id));
+              setEditingId(null);
+          } else {
+              setGlobalError(result.error || "Failed to remove zone.");
+          }
+      } catch (e) {
+          console.error(e);
+          setGlobalError("An unexpected error occurred while removing the zone.");
+      } finally {
+          setDeletingLoading(false);
+          setIsDeleteModalOpen(false);
+          setZoneToDelete(null);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+      }
   };
 
   const filteredPrices = prices.filter((p) =>
@@ -290,40 +332,41 @@ export default function ManagePricesPage() {
             </div>
 
             <div className="mb-6">
-              <div className={`flex flex-row justify-between items-center p-4 border-2 rounded-[20px] bg-white transition-colors gap-2 sm:gap-3 ${isWalkInInvalid ? 'border-red-400 bg-red-50' : 'border-[#43b0f1] bg-[#e8eef1]/30'}`}>
-                <div className="flex-1 min-w-0 pr-2">
-                  <span className={`text-lg sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isWalkInInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
-                    Walk-in
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className={`text-xl sm:text-2xl font-bold ${isWalkInInvalid ? 'text-red-500' : editingWalkIn ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
-                    ₱
-                  </span>
-                  <input
-                    id="walk-in-price-input"
-                    type="number"
-                    value={walkInPrice}
-                    onChange={(e) => setWalkInPrice(e.target.value === "" ? "" : parseInt(e.target.value))}
-                    readOnly={!editingWalkIn}
-                    onBlur={() => setEditingWalkIn(false)}
-                    className={`w-12 sm:w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isWalkInInvalid
-                        ? "text-red-600 border-b-2 border-red-500"
-                        : editingWalkIn
-                          ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
-                          : "text-[#1e3d58]"
-                      }`}
-                  />
-                  <SquarePen
-                    onClick={handleEditWalkInClick}
-                    size={22}
-                    className={`ml-1 sm:ml-2 cursor-pointer transition-all shrink-0 ${isWalkInInvalid
-                        ? "text-red-400 hover:text-red-600"
-                        : editingWalkIn
-                          ? "text-[#43b0f1] scale-110"
-                          : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
-                      }`}
-                  />
+              <div className={`flex flex-col p-4 border-2 rounded-[20px] bg-white transition-colors gap-2 ${isWalkInInvalid ? 'border-red-400 bg-red-50' : 'border-[#43b0f1] bg-[#e8eef1]/30'}`}>
+                <div className="flex flex-row justify-between items-center w-full gap-2 sm:gap-3">
+                    <div className="flex-1 min-w-0 pr-2">
+                    <span className={`text-lg sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isWalkInInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
+                        Walk-in
+                    </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                    <span className={`text-xl sm:text-2xl font-bold ${isWalkInInvalid ? 'text-red-500' : editingWalkIn ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
+                        ₱
+                    </span>
+                    <input
+                        id="walk-in-price-input"
+                        type="number"
+                        value={walkInPrice}
+                        onChange={(e) => setWalkInPrice(e.target.value === "" ? "" : parseInt(e.target.value))}
+                        readOnly={!editingWalkIn}
+                        className={`w-12 sm:w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isWalkInInvalid
+                            ? "text-red-600 border-b-2 border-red-500"
+                            : editingWalkIn
+                            ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
+                            : "text-[#1e3d58]"
+                        }`}
+                    />
+                    <SquarePen
+                        onClick={handleEditWalkInClick}
+                        size={22}
+                        className={`ml-1 sm:ml-2 cursor-pointer transition-all shrink-0 ${isWalkInInvalid
+                            ? "text-red-400 hover:text-red-600"
+                            : editingWalkIn
+                            ? "text-[#43b0f1] scale-110"
+                            : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
+                        }`}
+                    />
+                    </div>
                 </div>
               </div>
             </div>
@@ -378,43 +421,59 @@ export default function ManagePricesPage() {
               ) : (
                 filteredPrices.map((location) => {
                   const isInvalid = location.price === "" || location.price <= 0;
+                  const isEditing = editingId === location.id;
 
                   return (
-                    <div key={location.id} className={`flex flex-row justify-between items-center p-4 border-2 rounded-[20px] bg-white transition-colors gap-2 sm:gap-3 ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
-                      <div className="flex-1 min-w-0 pr-2">
-                        <span className={`text-lg sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
-                          {location.name}
-                        </span>
+                    <div key={location.id} className={`flex flex-col p-4 border-2 rounded-[20px] bg-white transition-colors gap-2 sm:gap-3 ${isInvalid ? 'border-red-400 bg-red-50' : 'border-[#1e3d58]/20'}`}>
+                      <div className="flex flex-row justify-between items-center w-full gap-2">
+                          <div className="flex-1 min-w-0 pr-2">
+                            <span className={`text-lg sm:text-2xl font-bold whitespace-normal break-words block leading-tight ${isInvalid ? 'text-red-600' : 'text-[#1e3d58]'}`}>
+                              {location.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className={`text-xl sm:text-2xl font-bold ${isInvalid ? 'text-red-500' : isEditing ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
+                              ₱
+                            </span>
+                            <input
+                              id={`price-input-${location.id}`}
+                              type="number"
+                              value={location.price}
+                              onChange={(e) => updatePrice(location.id, e.target.value)}
+                              readOnly={!isEditing}
+                              className={`w-12 sm:w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isInvalid
+                                  ? "text-red-600 border-b-2 border-red-500"
+                                  : isEditing
+                                    ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
+                                    : "text-[#1e3d58]"
+                                }`}
+                            />
+                            <SquarePen
+                              onClick={() => handleEditClick(location.id)}
+                              size={22}
+                              className={`ml-1 sm:ml-2 cursor-pointer transition-all shrink-0 ${isInvalid
+                                  ? "text-red-400 hover:text-red-600"
+                                  : isEditing
+                                    ? "text-[#43b0f1] scale-110"
+                                    : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
+                                }`}
+                            />
+                          </div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <span className={`text-xl sm:text-2xl font-bold ${isInvalid ? 'text-red-500' : editingId === location.id ? "text-[#43b0f1]" : "text-[#1e3d58]"}`}>
-                          ₱
-                        </span>
-                        <input
-                          id={`price-input-${location.id}`}
-                          type="number"
-                          value={location.price}
-                          onChange={(e) => updatePrice(location.id, e.target.value)}
-                          readOnly={editingId !== location.id}
-                          onBlur={() => setEditingId(null)}
-                          className={`w-12 sm:w-14 text-xl sm:text-2xl font-black text-left pl-1 bg-transparent focus:outline-none transition-colors ${isInvalid
-                              ? "text-red-600 border-b-2 border-red-500"
-                              : editingId === location.id
-                                ? "text-[#43b0f1] border-b-2 border-[#43b0f1]"
-                                : "text-[#1e3d58]"
-                            }`}
-                        />
-                        <SquarePen
-                          onClick={() => handleEditClick(location.id)}
-                          size={22}
-                          className={`ml-1 sm:ml-2 cursor-pointer transition-all shrink-0 ${isInvalid
-                              ? "text-red-400 hover:text-red-600"
-                              : editingId === location.id
-                                ? "text-[#43b0f1] scale-110"
-                                : "text-[#1e3d58] hover:text-[#43b0f1] hover:scale-110"
-                            }`}
-                        />
-                      </div>
+                      
+                      {isEditing && (
+                          <div className="w-full pt-3 mt-1 border-t border-gray-100 flex justify-end animate-in fade-in slide-in-from-top-2">
+                             <Button
+                                onClick={() => handleDeleteZoneClick(location.id, location.name)}
+                                variant="ghost"
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-1"
+                             >
+                                 <Trash2 size={14} strokeWidth={3} />
+                                 Remove Zone
+                             </Button>
+                          </div>
+                      )}
+
                     </div>
                   );
                 })
@@ -442,7 +501,6 @@ export default function ManagePricesPage() {
         <ArrowUp size={24} strokeWidth={3} />
       </button>
 
-      {/* MODAL PARA SA BAGONG ZONE */}
       {isAddZoneModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e3d58]/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
           <div className="bg-[#e8eef1] rounded-[40px] p-2 w-full max-w-sm shadow-2xl">
@@ -461,7 +519,6 @@ export default function ManagePricesPage() {
                     value={newZoneName}
                     maxLength={50}
                     onChange={(e) => {
-                      // Restrict: Letters, numbers, spaces, commas, and hyphens only
                       const restrictedValue = e.target.value.replace(/[^a-zA-Z0-9\s,-]/g, '');
                       setNewZoneName(restrictedValue);
                     }}
@@ -474,13 +531,12 @@ export default function ManagePricesPage() {
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1e3d58] font-black text-xl">₱</span>
                     <input
-                      type="text" // Pinalitan ng text + regex para bawal ang 'e' at '-'
-                      inputMode="numeric" // Lalabas pa rin ang number pad sa mobile
+                      type="text" 
+                      inputMode="numeric" 
                       placeholder="0"
                       maxLength={5}
                       value={newZonePrice}
                       onChange={(e) => {
-                        // Restrict: Numbers only (0-9)
                         const restrictedValue = e.target.value.replace(/[^0-9]/g, '');
                         setNewZonePrice(restrictedValue);
                       }}
@@ -527,6 +583,15 @@ export default function ManagePricesPage() {
         title="Confirm Bulk Update"
         message={`Are you sure you want to apply a bulk update of ₱${increaseAmount} to all items? You still need to click "Save Changes" afterwards to update the database.`}
         confirmText="Yes, Apply"
+      />
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => !deletingLoading && setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Remove Zone?"
+        message={`Are you sure you want to remove "${zoneToDelete?.name}"? It will no longer be available for new orders.`}
+        confirmText={deletingLoading ? "Removing..." : "Yes, Remove"}
       />
 
       {isSuccessModalOpen && (
