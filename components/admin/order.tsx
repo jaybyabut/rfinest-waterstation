@@ -393,11 +393,12 @@ export default function PlaceOrderForm() {
                               </button>
                               
                               <button
-                                onClick={(e) => handleDeleteCustomerClick(customer, e)}
-                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                title="Remove Customer"
-                              >
-                                <Trash2 size={18} strokeWidth={2.5} />
+                                  onClick={(e) => handleDeleteCustomerClick(customer, e)}
+                                  // TINANGGAL KO YUNG opacity-0 PARA LAGING KITA
+                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                  title="Remove Customer"
+                                >
+                                  <Trash2 size={18} strokeWidth={2.5} />
                               </button>
                           </div>
                         )})}
