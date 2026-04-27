@@ -96,10 +96,9 @@ export default function EmployeeTablet() {
     }
   };
 
+  // Initial load for walk-in orders
   useEffect(() => {
     fetchWalkIn();
-    const interval = setInterval(fetchWalkIn, 10000); 
-    return () => clearInterval(interval);
   }, []);
 
   const [onlineOrders, setOnlineOrders] = useState<OnlineOrder[]>([]);
@@ -159,10 +158,28 @@ export default function EmployeeTablet() {
     }
   };
 
+  // Initial load for online orders + unified Realtime subscription
   useEffect(() => {
     fetchOnline();
-    const interval = setInterval(fetchOnline, 10000); 
-    return () => clearInterval(interval);
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('employee-tablet-orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
+          // Re-fetch both tabs on any order change
+          fetchWalkIn();
+          fetchOnline();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
