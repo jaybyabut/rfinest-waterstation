@@ -8,9 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Check, X as XIcon, User, MapPin, Lock, ArrowUp } from "lucide-react"; 
 
-// TODO: BACKEND - I-uncomment ito at ayusin yung locations.ts para maging public at hindi nanghihingi ng ensureAuthenticated()
-// import { getLocations } from "@/app/actions/locations"; 
-
+import { getLocations } from "@/app/actions/locations";
 interface Location {
   location_id: number;
   location_name: string;
@@ -32,13 +30,7 @@ export default function SignUpForm({
   const [streetName, setStreetName] = useState("");
   const [barangay, setBarangay] = useState(""); 
   
-  // TODO: BACKEND - Pinalitan muna natin ng static dummy data habang inaayos yung API route
-  const [locations, setLocations] = useState<Location[]>([
-    { location_id: 1, location_name: "Bulaon", location_price: 30 },
-    { location_id: 2, location_name: "Calulut", location_price: 35 },
-    { location_id: 3, location_name: "Maimpis", location_price: 35 },
-    { location_id: 4, location_name: "Mexico", location_price: 40 },
-  ]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [selectedZoneId, setSelectedZoneId] = useState(""); 
   
   const [isConfirmed, setIsConfirmed] = useState(false); 
@@ -61,8 +53,6 @@ export default function SignUpForm({
   const isPasswordStrong = isLengthValid && isUpperValid && isLowerValid && isNumberValid;
   const passwordsMatch = password.length > 0 && password === repeatPassword;
 
-  // TODO: BACKEND - I-uncomment ito kapag ready na yung public getLocations() action
-  /*
   useEffect(() => {
     const fetchLocations = async () => {
       const data = await getLocations();
@@ -74,7 +64,6 @@ export default function SignUpForm({
     };
     fetchLocations();
   }, []);
-  */
 
   useEffect(() => {
     const handleScroll = () => {
@@ -375,7 +364,9 @@ export default function SignUpForm({
                     {locations.length === 0 ? (
                       <option disabled>Loading zones...</option>
                     ) : (
-                      locations.map((loc) => (
+                      locations
+                        .filter((loc) => loc.location_name !== "Walk-in")
+                        .map((loc) => (
                         <option key={loc.location_id} value={loc.location_id}>
                           {loc.location_name}
                         </option>

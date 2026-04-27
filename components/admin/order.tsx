@@ -6,6 +6,7 @@ import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
 import { getAllCustomers } from "@/app/actions/getAllCustomers";
+import { saveCustomerInfo } from "@/app/actions/saveCustomer";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
 import { ArrowUp, Minus, Plus, Check, Search, X } from "lucide-react"; 
 
@@ -62,6 +63,7 @@ export default function PlaceOrderForm() {
   const itemsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const numberRef = useRef<HTMLDivElement>(null);
+  const addressRef = useRef<HTMLDivElement>(null);
 
   const [globalError, setGlobalError] = useState<string | null>(null);
   
@@ -171,7 +173,7 @@ export default function PlaceOrderForm() {
     setFieldErrors(prev => ({
       ...prev,
       firstName: false,
-      zone: false
+      zone: false,
     }));
   };
 
@@ -192,6 +194,8 @@ export default function PlaceOrderForm() {
       hasError = true;
       if (!firstErrorElement) firstErrorElement = nameRef.current;
     }
+
+
     
     if (!selectedLocation) {
       newErrors.zone = true;
@@ -244,6 +248,17 @@ export default function PlaceOrderForm() {
         setGlobalError("Error creating order: " + result.error);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
+        if (selectedLocation != null) {
+          await saveCustomerInfo({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            mi: mi.trim(),
+            mobileNumber: mobileNumber.trim(),
+            address: fullAddress,
+            locationId: selectedLocation.location_id
+          });
+        }
+
         window.scrollTo({ top: 0, behavior: "smooth" });
 
         setFirstName("");
@@ -412,7 +427,9 @@ export default function PlaceOrderForm() {
                     {locations.length === 0 ? (
                       <option>Loading locations...</option>
                     ) : (
-                      locations.map((loc) => (
+                      locations
+                        .filter((loc) => loc.location_name !== "Walk-in")
+                        .map((loc) => (
                         <option key={loc.location_id} value={loc.location_name}>
                           {loc.location_name} (₱{loc.location_price}/pc)
                         </option>
@@ -422,10 +439,10 @@ export default function PlaceOrderForm() {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <div className="flex flex-col sm:flex-row gap-3 w-full" ref={addressRef}>
                 <div className="w-full sm:w-1/3 shrink-0 flex flex-col justify-end">
                   <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight">
-                    House No.: <span className="text-[11px] sm:text-xs font-normal text-gray-400 block mt-0.5">(Optional)</span>
+                    House No.: <span className="text-sm font-normal text-gray-400">(Optional)</span>
                   </label>
                   <input
                     type="text"
@@ -436,14 +453,12 @@ export default function PlaceOrderForm() {
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-end">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name: <span className="text-[11px] sm:text-xs font-normal text-gray-400">(Optional)</span></label>
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
                   <input
                     type="text"
                     placeholder="e.g. San Juan St."
                     value={streetName}
-                    onChange={(e) => {
-                      setStreetName(e.target.value);
-                    }}
+                    onChange={(e) => setStreetName(e.target.value)}
                     className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto"
                   />
                 </div>
@@ -607,7 +622,10 @@ export default function PlaceOrderForm() {
                           Order placed successfully!
                       </p>
                       <Button 
-                          onClick={() => setIsSuccessModalOpen(false)} 
+                          onClick={() => {
+                              setIsSuccessModalOpen(false);
+                              window.location.reload();
+                          }} 
                           className="w-full h-14 text-xl font-bold rounded-full bg-[#43b0f1] text-white hover:bg-[#1e3d58] transition-all shadow-md active:scale-95"
                       >
                           Continue
