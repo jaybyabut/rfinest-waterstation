@@ -555,7 +555,8 @@ export default function ManagePricesPage() {
                     removedPrices.map((zone) => (
                       <div key={zone.id} className="flex flex-row justify-between items-center p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-[20px] bg-gray-50/50 gap-2">
                         <div className="flex-1 min-w-0 pr-2">
-                          <span className="text-base sm:text-lg font-bold text-gray-400 line-through block truncate">
+                          {/* MODIFIED: Tinanggal ang truncate, idinagdag ang whitespace-normal break-words leading-tight */}
+                          <span className="text-base sm:text-lg font-bold text-gray-400 line-through block whitespace-normal break-words leading-tight">
                             {zone.name}
                           </span>
                         </div>
