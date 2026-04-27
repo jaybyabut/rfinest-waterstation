@@ -159,10 +159,24 @@ export default function PlaceOrderForm() {
        setStreetName(customer.address || "");
     }
     
-    const zoneName = customer.location_pricing ? (Array.isArray(customer.location_pricing) ? customer.location_pricing[0]?.location_name : customer.location_pricing.location_name) : null;
-    
-    if (zoneName) {
-      setSelectedZone(zoneName);
+    // Resolve the zone: find the matching location from the loaded list
+    // (excluding Walk-in since it's filtered out of the dropdown)
+    const rawZoneName = customer.location_pricing
+      ? (Array.isArray(customer.location_pricing)
+          ? customer.location_pricing[0]?.location_name
+          : customer.location_pricing.location_name)
+      : null;
+
+    const availableLocations = locations.filter(loc => loc.location_name !== "Walk-in");
+    const matchedLocation = availableLocations.find(
+      loc => loc.location_name === rawZoneName
+    );
+
+    if (matchedLocation) {
+      setSelectedZone(matchedLocation.location_name);
+    } else if (availableLocations.length > 0) {
+      // Fall back to first available location if no match (e.g. customer was Walk-in)
+      setSelectedZone(availableLocations[0].location_name);
     }
 
     // Clear search and hide dropdown
