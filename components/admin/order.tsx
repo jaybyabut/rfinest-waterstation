@@ -78,9 +78,12 @@ export default function PlaceOrderForm() {
       const data = await getLocations();
       if (Array.isArray(data)) {
         setLocations(data);
-        if (data.length > 0) {
+        // MODIFIED: Tinanggal ko yung auto-selection ng unang zone dito
+        // para walang default na nakapili pag-load ng page.
+        /* if (data.length > 0) {
           setSelectedZone(data[0].location_name);
         }
+        */
       } else {
         console.error("Failed to fetch locations:", data);
       }
@@ -427,13 +430,17 @@ export default function PlaceOrderForm() {
                     {locations.length === 0 ? (
                       <option>Loading locations...</option>
                     ) : (
-                      locations
-                        .filter((loc) => loc.location_name !== "Walk-in")
-                        .map((loc) => (
-                        <option key={loc.location_id} value={loc.location_name}>
-                          {loc.location_name} (₱{loc.location_price}/pc)
-                        </option>
-                      ))
+                      <>
+                        {/* MODIFIED: Nag-add ako ng disabled placeholder option para walang nakapiling default */}
+                        <option value="" disabled>Select a Zone</option>
+                        {locations
+                          .filter((loc) => loc.location_name !== "Walk-in")
+                          .map((loc) => (
+                          <option key={loc.location_id} value={loc.location_name}>
+                            {loc.location_name} (₱{loc.location_price}/pc)
+                          </option>
+                        ))}
+                      </>
                     )}
                   </select>
                 </div>
