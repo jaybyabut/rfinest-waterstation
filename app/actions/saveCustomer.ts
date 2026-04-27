@@ -14,22 +14,39 @@ export async function saveCustomerInfo(customerData: {
     // Check if user already exists
     let query = supabase.from('users').select('user_id');
     
-    if (customerData.mobileNumber) {
-        query = query.eq('mobile_no', customerData.mobileNumber);
+    const trimmedMobile = customerData.mobileNumber?.trim();
+    
+    if (trimmedMobile) {
+        query = query.eq('mobile_no', trimmedMobile);
     } else {
+        // When no mobile number, match on name + address + location to avoid false positives
         query = query.eq('first_name', customerData.firstName);
-        if (customerData.lastName) {
+        if (customerData.lastName?.trim()) {
              query = query.eq('last_name', customerData.lastName);
-        } else {
-             // Handle both null and empty string in the database
-             query = query.or('last_name.is.null,last_name.eq.');
         }
+        query = query.eq('address', customerData.address);
+        query = query.eq('location_id', customerData.locationId);
     }
 
     const { data: existingUsers } = await query.limit(1);
         
     if (existingUsers && existingUsers.length > 0) {
-        // User already exists, we could update but for now just return success
+        // User already exists, update their info
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({
+                first_name: customerData.firstName,
+                last_name: customerData.lastName,
+                middle_initial: customerData.mi,
+                mobile_no: trimmedMobile || customerData.mobileNumber,
+                address: customerData.address,
+                location_id: customerData.locationId,
+            })
+            .eq('user_id', existingUsers[0].user_id);
+
+        if (updateError) {
+            console.error("Error updating existing customer:", updateError);
+        }
         return { success: true, isExisting: true };
     }
 

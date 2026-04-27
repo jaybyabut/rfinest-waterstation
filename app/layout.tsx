@@ -5,6 +5,7 @@ import "./globals.css";
 import { CacheInitializer } from "@/components/offline/CacheInitializer";
 import { ConnectionStatus } from "@/components/ui/connection-status";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import { NotificationSystem } from "@/components/NotificationSystem";
 import { GlobalRestrictions } from "@/components/GlobalRestrictions"; 
 
@@ -55,6 +56,7 @@ export default function RootLayout({
           <ConnectionStatus />
           <NotificationSystem />
           <SpeedInsights />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>

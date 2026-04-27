@@ -6,9 +6,11 @@ import AdminTabs from "@/components/admin/tabs";
 import { getLocations } from "@/app/actions/locations";
 import { createOrder } from "@/app/actions/createOrder";
 import { getAllCustomers } from "@/app/actions/getAllCustomers";
+// NEW: Import the deactivateCustomer function (Update path if necessary)
+import { deactivateCustomer } from "@/app/actions/getAllCustomers"; 
 import { saveCustomerInfo } from "@/app/actions/saveCustomer";
 import ConfirmationModal from "@/components/ui/confirmation-modal";
-import { ArrowUp, Minus, Plus, Check, Search, X } from "lucide-react"; 
+import { ArrowUp, Minus, Plus, Check, Search, X, Trash2 } from "lucide-react"; 
 
 interface Location {
   location_id: number;
@@ -55,6 +57,11 @@ export default function PlaceOrderForm() {
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
+  // NEW STATES: For Deleting Customer
+  const [isDeleteCustomerModalOpen, setIsDeleteCustomerModalOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<CustomerSearchResult | null>(null);
+  const [deletingCustomer, setDeletingCustomer] = useState(false);
+
   const lastKnownScrollPosition = useRef(0);
   const ticking = useRef(false);
 
@@ -71,27 +78,23 @@ export default function PlaceOrderForm() {
     firstName?: boolean;
     zone?: boolean;
     items?: boolean;
-    houseNo?: boolean;
-    streetName?: boolean;
   }>({});
 
+  const fetchLocationsAndCustomers = async () => {
+    const data = await getLocations();
+    if (Array.isArray(data)) {
+      setLocations(data);
+    } else {
+      console.error("Failed to fetch locations:", data);
+    }
+    
+    const customers = await getAllCustomers();
+    if (customers) {
+      setAllCustomers(customers as CustomerSearchResult[]);
+    }
+  };
+
   useEffect(() => {
-    const fetchLocationsAndCustomers = async () => {
-      const data = await getLocations();
-      if (Array.isArray(data)) {
-        setLocations(data);
-        if (data.length > 0) {
-          setSelectedZone(data[0].location_name);
-        }
-      } else {
-        console.error("Failed to fetch locations:", data);
-      }
-      
-      const customers = await getAllCustomers();
-      if (customers) {
-        setAllCustomers(customers as CustomerSearchResult[]);
-      }
-    };
     fetchLocationsAndCustomers();
 
     const handleWindowScroll = () => {
@@ -161,24 +164,75 @@ export default function PlaceOrderForm() {
        setStreetName(customer.address || "");
     }
     
-    const zoneName = customer.location_pricing ? (Array.isArray(customer.location_pricing) ? customer.location_pricing[0]?.location_name : customer.location_pricing.location_name) : null;
-    
-    if (zoneName) {
-      setSelectedZone(zoneName);
+    // Resolve the zone: find the matching location from the loaded list
+    // (excluding Walk-in since it's filtered out of the dropdown)
+    const rawZoneName = customer.location_pricing
+      ? (Array.isArray(customer.location_pricing)
+          ? customer.location_pricing[0]?.location_name
+          : customer.location_pricing.location_name)
+      : null;
+
+    const availableLocations = locations.filter(loc => loc.location_name !== "Walk-in");
+    const matchedLocation = availableLocations.find(
+      loc => loc.location_name === rawZoneName
+    );
+
+    if (matchedLocation) {
+      setSelectedZone(matchedLocation.location_name);
+    } else if (availableLocations.length > 0) {
+      // Fall back to first available location if no match (e.g. customer was Walk-in)
+      setSelectedZone(availableLocations[0].location_name);
     }
 
-    // Clear search and hide dropdown
     setSearchQuery("");
     setShowSearchDropdown(false);
 
-    // Clear any existing errors for these fields
     setFieldErrors(prev => ({
       ...prev,
       firstName: false,
       zone: false,
-      houseNo: false,
-      streetName: false
     }));
+  };
+
+  // NEW: Delete Customer Handlers
+  const handleDeleteCustomerClick = (customer: CustomerSearchResult, e: React.MouseEvent) => {
+    e.stopPropagation(); // Pinipigilan nitong ma-trigger yung handleSelectCustomer kapag pinindot yung basurahan
+    setCustomerToDelete(customer);
+    setIsDeleteCustomerModalOpen(true);
+  };
+
+  const handleConfirmDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+    
+    setDeletingCustomer(true);
+    setGlobalError(null);
+    
+    try {
+      const result = await deactivateCustomer(customerToDelete.user_id);
+
+      if (result.success) {
+        // Optimistic UI Update: Tanggalin agad sa lists
+        setAllCustomers(prev => prev.filter(c => c.user_id !== customerToDelete.user_id));
+        setSearchResults(prev => prev.filter(c => c.user_id !== customerToDelete.user_id));
+        
+        // Isara ang dropdown kung wala nang laman
+        if (searchResults.length <= 1) {
+            setShowSearchDropdown(false);
+            setSearchQuery("");
+        }
+      } else {
+        setGlobalError(result.error || "Failed to remove customer.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } catch (e) {
+      console.error(e);
+      setGlobalError("An unexpected error occurred while removing the customer.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } finally {
+      setDeletingCustomer(false);
+      setIsDeleteCustomerModalOpen(false);
+      setCustomerToDelete(null);
+    }
   };
 
   const selectedLocation = locations.find((l) => l.location_name === selectedZone);
@@ -197,18 +251,6 @@ export default function PlaceOrderForm() {
       newErrors.firstName = true;
       hasError = true;
       if (!firstErrorElement) firstErrorElement = nameRef.current;
-    }
-
-    if (!houseNo.trim()) {
-      newErrors.houseNo = true;
-      hasError = true;
-      if (!firstErrorElement) firstErrorElement = addressRef.current;
-    }
-
-    if (!streetName.trim()) {
-      newErrors.streetName = true;
-      hasError = true;
-      if (!firstErrorElement) firstErrorElement = addressRef.current;
     }
     
     if (!selectedLocation) {
@@ -262,7 +304,7 @@ export default function PlaceOrderForm() {
         setGlobalError("Error creating order: " + result.error);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        if (selectedLocation?.location_id) {
+        if (selectedLocation != null) {
           await saveCustomerInfo({
             firstName: firstName.trim(),
             lastName: lastName.trim(),
@@ -271,6 +313,8 @@ export default function PlaceOrderForm() {
             address: fullAddress,
             locationId: selectedLocation.location_id
           });
+          // Refresh list to include possibly new customer logic here if needed
+          fetchLocationsAndCustomers();
         }
 
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -319,7 +363,6 @@ export default function PlaceOrderForm() {
 
               {/* ================= SEARCH EXISTING CUSTOMER ================= */}
               <div className="w-full bg-[#f4f7f9] p-4 rounded-[25px] border-2 border-[#1e3d58]/10 mb-2 relative" ref={searchRef}>
-                {/* Changed to text-center and removed ml-2 */}
                 <label className="block text-center text-sm font-bold mb-2 text-[#43b0f1] uppercase tracking-wider">Search Existing Customer</label>
                 <div className="relative w-full">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
@@ -351,16 +394,27 @@ export default function PlaceOrderForm() {
                         {searchResults.map((customer) => {
                           const zoneName = customer.location_pricing ? (Array.isArray(customer.location_pricing) ? customer.location_pricing[0]?.location_name : customer.location_pricing.location_name) : "Walk-in";
                           return (
-                          <button
-                            key={customer.user_id}
-                            onClick={() => handleSelectCustomer(customer)}
-                            className="flex flex-col items-start w-full p-3 rounded-xl hover:bg-[#e8eef1] transition-colors text-left"
-                          >
-                            <span className="font-bold text-[#1e3d58] text-base">{customer.first_name} {customer.last_name}</span>
-                            <span className="text-xs font-semibold text-gray-500">
-                              {customer.mobile_no} • {zoneName}
-                            </span>
-                          </button>
+                          // MODIFIED: Ginawa nating flex container para sa pangalan AT trash icon
+                          <div key={customer.user_id} className="flex items-center justify-between w-full p-2 rounded-xl hover:bg-[#e8eef1] transition-colors group">
+                              <button
+                                onClick={() => handleSelectCustomer(customer)}
+                                className="flex flex-col items-start flex-1 text-left px-2"
+                              >
+                                <span className="font-bold text-[#1e3d58] text-base">{customer.first_name} {customer.last_name}</span>
+                                <span className="text-xs font-semibold text-gray-500">
+                                  {customer.mobile_no} • {zoneName}
+                                </span>
+                              </button>
+                              
+                              <button
+                                  onClick={(e) => handleDeleteCustomerClick(customer, e)}
+                                  // TINANGGAL KO YUNG opacity-0 PARA LAGING KITA
+                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                  title="Remove Customer"
+                                >
+                                  <Trash2 size={18} strokeWidth={2.5} />
+                              </button>
+                          </div>
                         )})}
                       </div>
                     ) : (
@@ -441,13 +495,16 @@ export default function PlaceOrderForm() {
                     {locations.length === 0 ? (
                       <option>Loading locations...</option>
                     ) : (
-                      locations
-                        .filter((loc) => loc.location_name !== "Walk-in")
-                        .map((loc) => (
-                        <option key={loc.location_id} value={loc.location_name}>
-                          {loc.location_name} (₱{loc.location_price}/pc)
-                        </option>
-                      ))
+                      <>
+                        <option value="" disabled>-- Select a Zone --</option>
+                        {locations
+                          .filter((loc) => loc.location_name !== "Walk-in")
+                          .map((loc) => (
+                          <option key={loc.location_id} value={loc.location_name}>
+                            {loc.location_name} (₱{loc.location_price}/pc)
+                          </option>
+                        ))}
+                      </>
                     )}
                   </select>
                 </div>
@@ -456,30 +513,24 @@ export default function PlaceOrderForm() {
               <div className="flex flex-col sm:flex-row gap-3 w-full" ref={addressRef}>
                 <div className="w-full sm:w-1/3 shrink-0 flex flex-col justify-end">
                   <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight">
-                    House No.:
+                    House No.: <span className="text-sm font-normal text-gray-400">(Optional)</span>
                   </label>
                   <input
                     type="text"
                     placeholder="e.g. Blk 1"
                     value={houseNo}
-                    onChange={(e) => {
-                      setHouseNo(e.target.value);
-                      if (e.target.value) setFieldErrors(prev => ({ ...prev, houseNo: false }));
-                    }}
-                    className={`w-full h-14 px-4 text-center rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto ${fieldErrors.houseNo ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                    onChange={(e) => setHouseNo(e.target.value)}
+                    className="w-full h-14 px-4 text-center rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto"
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-end">
-                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name:</label>
+                  <label className="block text-xl font-bold mb-1 ml-2 text-[#1e3d58] leading-tight pb-[18px] sm:pb-0">Street Name: <span className="text-sm font-normal text-gray-400">(Optional)</span></label>
                   <input
                     type="text"
                     placeholder="e.g. San Juan St."
                     value={streetName}
-                    onChange={(e) => {
-                      setStreetName(e.target.value);
-                      if (e.target.value) setFieldErrors(prev => ({ ...prev, streetName: false }));
-                    }}
-                    className={`w-full h-14 px-6 rounded-full border-2 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto ${fieldErrors.streetName ? "border-red-400 bg-red-50 text-red-700" : "border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58]"}`}
+                    onChange={(e) => setStreetName(e.target.value)}
+                    className="w-full h-14 px-6 rounded-full border-2 border-[#1e3d58] bg-[#e8eef1] text-[#1e3d58] font-bold text-lg focus:outline-none focus:ring-2 focus:ring-[#43b0f1] transition-colors mt-auto"
                   />
                 </div>
               </div>
@@ -621,6 +672,7 @@ export default function PlaceOrderForm() {
         <ArrowUp size={24} strokeWidth={3} />
       </button>
 
+      {/* ORIGINAL MODALS */}
       <ConfirmationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -628,6 +680,16 @@ export default function PlaceOrderForm() {
         title="Confirm Order"
         message={`Are you sure you want to place this order for ${firstName}${lastName ? ' ' + lastName : ''}? Total amount is ₱${totalAmount}.`}
         confirmText={loading ? "Processing..." : "Yes, Place Order"}
+      />
+
+      {/* NEW: DELETE CUSTOMER MODAL */}
+      <ConfirmationModal
+        isOpen={isDeleteCustomerModalOpen}
+        onClose={() => !deletingCustomer && setIsDeleteCustomerModalOpen(false)}
+        onConfirm={handleConfirmDeleteCustomer}
+        title="Remove Customer?"
+        message={`Are you sure you want to remove "${customerToDelete?.first_name} ${customerToDelete?.last_name}" from the system? This action cannot be undone.`}
+        confirmText={deletingCustomer ? "Removing..." : "Yes, Remove"}
       />
 
       {isSuccessModalOpen && (
