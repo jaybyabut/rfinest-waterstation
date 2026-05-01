@@ -39,12 +39,12 @@ export default function AnnouncementBanner() {
           <Megaphone size={24} strokeWidth={2.5} />
         </div>
         <div className="flex-1 min-w-0 w-full">
-          {/* Nilagyan ng break-all ang title */}
-          <h3 className="text-sm font-black text-[#1e3d58] uppercase tracking-wider mb-0.5 break-all">
+          {/* MODIFIED: Pinalitan ng break-words para hindi maputol ang salita */}
+          <h3 className="text-sm font-black text-[#1e3d58] uppercase tracking-wider mb-0.5 break-words">
             {announcement.title}
           </h3>
-          {/* Pinalitan ang break-words ng break-all sa content */}
-          <p className="text-sm sm:text-base font-bold text-gray-600 leading-snug break-all">
+          {/* MODIFIED: Idinagdag ang whitespace-pre-wrap para basahin ang line breaks at pinalitan ng break-words */}
+          <p className="text-sm sm:text-base font-bold text-gray-600 leading-snug break-words whitespace-pre-wrap">
             {announcement.content}
           </p>
         </div>
