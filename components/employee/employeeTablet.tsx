@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   LayoutGrid, 
   Package, 
@@ -67,6 +67,7 @@ export default function EmployeeTablet() {
   const [logError, setLogError] = useState<string | null>(null);
 
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
+  const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [walkInOrders, setWalkInOrders] = useState<WalkInOrder[]>([]);
   const [loadingWalkIn, setLoadingWalkIn] = useState(true);
@@ -169,15 +170,19 @@ export default function EmployeeTablet() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
         () => {
-          // Re-fetch both tabs on any order change
-          fetchWalkIn();
-          fetchOnline();
+          // Debounce: wait 500ms after the last event before re-fetching
+          if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
+          realtimeDebounceRef.current = setTimeout(() => {
+            fetchWalkIn();
+            fetchOnline();
+          }, 500);
         }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

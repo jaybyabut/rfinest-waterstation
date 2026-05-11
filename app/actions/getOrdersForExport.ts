@@ -35,6 +35,7 @@ export async function getOrdersForExport(selectedMonth: string) {
       `)
       .gte('order_dt', startDate)
       .lte('order_dt', endDate)
+      .eq('current_status', 'Delivered')
       .order('order_dt', { ascending: false });
 
     if (error) {

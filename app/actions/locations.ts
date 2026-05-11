@@ -22,7 +22,7 @@ export async function getLocations() {
 }
 
 export async function batchUpdatePrices(prices: { id: number, price: number }[]) {
-    const { supabase } = await ensureRole(['admin'])
+    const { supabase, user } = await ensureRole(['admin'])
 
     for (const item of prices) {
         const { error } = await supabase
@@ -36,13 +36,13 @@ export async function batchUpdatePrices(prices: { id: number, price: number }[])
         }
     }
 
-    await logActivity(`Updated prices for ${prices.length} locations`);
+    await logActivity(`Updated prices for ${prices.length} locations`, { supabase, user });
 
     return { success: true };
 }
 
 export async function addLocation(data: { location_name: string; location_price: number }) {
-    const { supabase } = await ensureRole(['admin'])
+    const { supabase, user } = await ensureRole(['admin'])
 
     const { error } = await supabase
         .from('location_pricing')
@@ -61,13 +61,13 @@ export async function addLocation(data: { location_name: string; location_price:
         return { error: "Failed to add new zone. Please try again." };
     }
 
-    await logActivity(`Added new delivery zone: ${data.location_name} with ₱${data.location_price} increment`);
+    await logActivity(`Added new delivery zone: ${data.location_name} with ₱${data.location_price} increment`, { supabase, user });
 
     return { success: true };
 }
 
 export async function deactivateLocation(id: number) {
-    const { supabase } = await ensureRole(['admin']);
+    const { supabase, user } = await ensureRole(['admin']);
 
     const { error } = await supabase
         .from('location_pricing')
@@ -79,7 +79,7 @@ export async function deactivateLocation(id: number) {
         return { error: "Failed to remove zone. Please try again." };
     }
 
-    await logActivity(`Deactivated delivery zone ID: ${id}`);
+    await logActivity(`Deactivated delivery zone ID: ${id}`, { supabase, user });
 
     return { success: true };
 }
@@ -101,7 +101,7 @@ export async function getRemovedLocations() {
 }
 
 export async function restoreLocation(id: number) {
-    const { supabase } = await ensureRole(['admin']);
+    const { supabase, user } = await ensureRole(['admin']);
 
     const { error } = await supabase
         .from('location_pricing')
@@ -113,7 +113,7 @@ export async function restoreLocation(id: number) {
         return { error: "Failed to restore zone. Please try again." };
     }
 
-    await logActivity(`Restored delivery zone ID: ${id}`);
+    await logActivity(`Restored delivery zone ID: ${id}`, { supabase, user });
 
     return { success: true };
 }
