@@ -22,6 +22,7 @@ export async function getOrdersForExport(selectedMonth: string) {
       .select(`
         order_id,
         order_dt,
+        updated_at, /* MODIFIED: Idinagdag natin ang updated_at para makuha kung kailan na-process */
         name,
         total_amount,
         transaction_type,
@@ -33,9 +34,10 @@ export async function getOrdersForExport(selectedMonth: string) {
           products ( product_name )
         )
       `)
-      .gte('order_dt', startDate)
-      .lte('order_dt', endDate)
-      .order('order_dt', { ascending: false });
+      // MODIFIED: Pinalitan ang order_dt ng updated_at sa pag-filter at pag-sort
+      .gte('updated_at', startDate)
+      .lte('updated_at', endDate)
+      .order('updated_at', { ascending: false });
 
     if (error) {
       console.error("Error fetching orders for export:", error);
@@ -60,7 +62,9 @@ export async function getOrdersForExport(selectedMonth: string) {
     });
     
     validOrders.forEach((order: any) => {
-      const formattedDate = manilaFormatter.format(new Date(order.order_dt));
+      // MODIFIED: Gagamitin na natin ang updated_at (o order_dt kung sakaling walang updated_at) bilang basehan ng araw
+      const dateToUse = order.updated_at || order.order_dt;
+      const formattedDate = manilaFormatter.format(new Date(dateToUse));
       
       // I-save na rin natin yung formattedDate sa object para di na ulitin sa baba
       order._formattedDate = formattedDate; 
@@ -103,7 +107,7 @@ export async function getOrdersForExport(selectedMonth: string) {
 
       return {
         id: `ORD-${order.order_id}`,
-        date: fDate,
+        date: fDate, // Ito ay magre-reflect na ng processed date!
         name: order.name || "Unknown",
         zone: zoneName,
         slim: slimCount,
