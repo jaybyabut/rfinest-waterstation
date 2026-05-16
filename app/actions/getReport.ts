@@ -55,8 +55,9 @@ export async function getAnalyticsData(selectedMonth: string) {
                     )
                 )
             `)
-            .gte('order_dt', startOfToday)
-            .lte('order_dt', endOfToday)
+            // MODIFIED: Binago natin from 'order_dt' papuntang 'updated_at'
+            .gte('updated_at', startOfToday)
+            .lte('updated_at', endOfToday)
             .eq('current_status', 'Delivered');
 
         if (todayError) {
@@ -103,8 +104,9 @@ export async function getAnalyticsData(selectedMonth: string) {
         const { data: monthOrders, error: monthError } = await supabase
             .from('orders')
             .select('total_amount')
-            .gte('order_dt', startOfMonth)
-            .lt('order_dt', endOfMonth)
+            // MODIFIED: Binago natin from 'order_dt' papuntang 'updated_at' at ginawang '.lte'
+            .gte('updated_at', startOfMonth)
+            .lte('updated_at', endOfMonth)
             .eq('current_status', 'Delivered');
 
         if (monthError) {
