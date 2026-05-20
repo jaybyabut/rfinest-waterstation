@@ -42,9 +42,11 @@ export async function getAnalyticsData(selectedMonth: string) {
     };
 
     try {
-        const { data: todayOrders, error: todayError } = await supabase
+        const { data: todayOrdersRaw, error: todayError } = await supabase
             .from('orders')
             .select(`
+                order_dt,
+                updated_at,
                 total_amount,
                 transaction_type,
                 payment_mode,
@@ -55,17 +57,24 @@ export async function getAnalyticsData(selectedMonth: string) {
                     )
                 )
             `)
-            .gte('order_dt', startOfToday)
-            .lte('order_dt', endOfToday)
-            .eq('current_status', 'Delivered');
+            .eq('current_status', 'Delivered')
+            // MODIFIED: Fetch kapag updated OR created today
+            .or(`updated_at.gte.${startOfToday},order_dt.gte.${startOfToday}`);
 
         if (todayError) {
             console.error("Error fetching today's orders:", todayError);
             throw todayError;
         }
 
-        if (todayOrders) {
-            todayOrders.forEach(order => {
+        if (todayOrdersRaw) {
+            // ================= FIX: FALLBACK LOGIC =================
+            // Gamitin ang updated_at, pero kung walang laman (lumang data), gamitin ang order_dt
+            const todayOrders = todayOrdersRaw.filter((order: any) => {
+                const dateToUse = order.updated_at || order.order_dt;
+                return dateToUse >= startOfToday && dateToUse <= endOfToday;
+            });
+
+            todayOrders.forEach((order: any) => {
                 // Calculate Earnings
                 const amount = order.total_amount || 0;
                 result.today.earnings.total += amount;
@@ -100,20 +109,26 @@ export async function getAnalyticsData(selectedMonth: string) {
         }
 
         // Fetch Monthly Orders
-        const { data: monthOrders, error: monthError } = await supabase
+        const { data: monthOrdersRaw, error: monthError } = await supabase
             .from('orders')
-            .select('total_amount')
-            .gte('order_dt', startOfMonth)
-            .lt('order_dt', endOfMonth)
-            .eq('current_status', 'Delivered');
+            .select('order_dt, updated_at, total_amount')
+            .eq('current_status', 'Delivered')
+            // MODIFIED: Fetch kapag updated OR created sa selected month
+            .or(`updated_at.gte.${startOfMonth},order_dt.gte.${startOfMonth}`);
 
         if (monthError) {
             console.error("Error fetching monthly orders:", monthError);
             throw monthError;
         }
 
-        if (monthOrders) {
-            result.monthly.earnings = monthOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+        if (monthOrdersRaw) {
+            // ================= FIX: FALLBACK LOGIC =================
+            const monthOrders = monthOrdersRaw.filter((order: any) => {
+                const dateToUse = order.updated_at || order.order_dt;
+                return dateToUse >= startOfMonth && dateToUse <= endOfMonth;
+            });
+
+            result.monthly.earnings = monthOrders.reduce((sum: any, order: any) => sum + (order.total_amount || 0), 0);
         }
 
         return { success: true, data: result };
