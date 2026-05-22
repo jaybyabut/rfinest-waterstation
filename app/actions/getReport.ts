@@ -110,21 +110,40 @@ export async function getAnalyticsData(selectedMonth: string) {
             });
         }
 
-        // Fetch Monthly Orders
-        const { data: monthOrdersRaw, error: monthError } = await supabase
-            .from('orders')
-            .select('order_dt, updated_at, total_amount')
-            .eq('current_status', 'Delivered')
-            // MODIFIED: Fetch kapag updated OR created sa selected month
-            .or(`updated_at.gte.${startOfMonth},order_dt.gte.${startOfMonth}`)
-            .range(0, 9999);
+        // Fetch Monthly Orders (paginated to bypass 1000-row limit)
+        const PAGE_SIZE = 1000;
+        let monthOrdersRaw: any[] = [];
+        let page = 0;
+        let hasMore = true;
 
-        if (monthError) {
-            console.error("Error fetching monthly orders:", monthError);
-            throw monthError;
+        while (hasMore) {
+            const from = page * PAGE_SIZE;
+            const to = from + PAGE_SIZE - 1;
+
+            const { data, error: monthError } = await supabase
+                .from('orders')
+                .select('order_dt, updated_at, total_amount')
+                .eq('current_status', 'Delivered')
+                // MODIFIED: Fetch kapag updated OR created sa selected month
+                .or(`updated_at.gte.${startOfMonth},order_dt.gte.${startOfMonth}`)
+                .range(from, to);
+
+            if (monthError) {
+                console.error("Error fetching monthly orders:", monthError);
+                throw monthError;
+            }
+
+            if (data && data.length > 0) {
+                monthOrdersRaw = monthOrdersRaw.concat(data);
+                // If we got fewer rows than PAGE_SIZE, we've reached the end
+                hasMore = data.length === PAGE_SIZE;
+            } else {
+                hasMore = false;
+            }
+            page++;
         }
 
-        console.log(`[Monthly Orders] Raw rows fetched from Supabase: ${monthOrdersRaw?.length ?? 0}`);
+        console.log(`[Monthly Orders] Raw rows fetched from Supabase: ${monthOrdersRaw.length}`);
 
         if (monthOrdersRaw) {
             // ================= FIX: FALLBACK LOGIC =================
