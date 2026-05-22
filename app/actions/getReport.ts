@@ -42,21 +42,6 @@ export async function getAnalyticsData(selectedMonth: string) {
     };
 
     try {
-        const { data, error, count } = await supabase
-            .from('orders')
-            .select('total_amount', { count: 'exact' })
-            .eq('current_status', 'Delivered')
-            .gte('order_dt', '2026-05-01')
-            .lt('order_dt', '2026-06-01');
-
-        const sum = (data ?? []).reduce((acc, row) => acc + (row.total_amount || 0), 0);
-        console.log("rows fetched:", data?.length, "| total rows in DB:", count, "| sum:", sum)
-    } catch (error) {
-        console.error("Analytics aggregation error:", error);
-        return { success: false, error: "Failed to aggregate analytics data." };
-    }
-
-    try {
         const { data: todayOrdersRaw, error: todayError } = await supabase
             .from('orders')
             .select(`
@@ -74,7 +59,8 @@ export async function getAnalyticsData(selectedMonth: string) {
             `)
             .eq('current_status', 'Delivered')
             // MODIFIED: Fetch kapag updated OR created today
-            .or(`updated_at.gte.${startOfToday},order_dt.gte.${startOfToday}`);
+            .or(`updated_at.gte.${startOfToday},order_dt.gte.${startOfToday}`)
+            .range(0, 9999);
 
         if (todayError) {
             console.error("Error fetching today's orders:", todayError);
@@ -129,7 +115,8 @@ export async function getAnalyticsData(selectedMonth: string) {
             .select('order_dt, updated_at, total_amount')
             .eq('current_status', 'Delivered')
             // MODIFIED: Fetch kapag updated OR created sa selected month
-            .or(`updated_at.gte.${startOfMonth},order_dt.gte.${startOfMonth}`);
+            .or(`updated_at.gte.${startOfMonth},order_dt.gte.${startOfMonth}`)
+            .range(0, 9999);
 
         if (monthError) {
             console.error("Error fetching monthly orders:", monthError);
