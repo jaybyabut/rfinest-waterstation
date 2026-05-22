@@ -10,40 +10,59 @@ export async function getOrdersForExport(selectedMonth: string) {
     const [yearStr, monthStr] = selectedMonth.split('-');
     const year = parseInt(yearStr);
     const monthIndex = parseInt(monthStr) - 1;
-    const startDate = `${yearStr}-${monthStr}-01T00:00:00`;
-    
+    const startDate = `${yearStr}-${monthStr}-01T00:00:00+08:00`;
+
     // Kunin ang huling araw ng buwan
     const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-    const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999`;
+    const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999+08:00`;
 
-    // 2. I-query ang database
-    const { data: orders, error } = await supabase
-      .from('orders')
-      .select(`
-        order_id,
-        order_dt,
-        updated_at,
-        name,
-        total_amount,
-        transaction_type,
-        payment_mode,
-        current_status, 
-        location_pricing ( location_name ),
-        order_items (
-          quantity,
-          products ( product_name )
-        )
-      `)
-      // MODIFIED: Kunin lahat ng orders na CREATED o kaya ay UPDATED ngayong buwan
-      .or(`updated_at.gte.${startDate},order_dt.gte.${startDate}`)
-      .order('order_dt', { ascending: false });
+    // 2. I-query ang database (paginated to bypass 1000-row limit)
+    const PAGE_SIZE = 1000;
+    let orders: any[] = [];
+    let page = 0;
+    let hasMore = true;
 
-    if (error) {
-      console.error("Error fetching orders for export:", error);
-      return [];
+    while (hasMore) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          order_id,
+          order_dt,
+          updated_at,
+          name,
+          total_amount,
+          transaction_type,
+          payment_mode,
+          current_status, 
+          location_pricing ( location_name ),
+          order_items (
+            quantity,
+            products ( product_name )
+          )
+        `)
+        // MODIFIED: Kunin lahat ng orders na CREATED o kaya ay UPDATED ngayong buwan
+        .or(`updated_at.gte.${startDate},order_dt.gte.${startDate}`)
+        .order('order_dt', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error("Error fetching orders for export:", error);
+        return [];
+      }
+
+      if (data && data.length > 0) {
+        orders = orders.concat(data);
+        hasMore = data.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
+      page++;
     }
 
-    if (!orders) return [];
+    console.log(`[Export Orders] Total rows fetched: ${orders.length}`);
 
     // ================= FIX 1: FILTER ONLY DELIVERED ORDERS & CORRECT DATE =================
     const validOrders = orders.filter((order: any) => {
@@ -52,8 +71,8 @@ export async function getOrdersForExport(selectedMonth: string) {
 
       // MODIFIED: JavaScript Fallback Filter. Kung walang updated_at, gamitin ang order_dt.
       // Siguraduhing pasok sa selected month yung date na gagamitin natin.
-      const dateToUse = order.updated_at || order.order_dt;
-      return dateToUse >= startDate && dateToUse <= endDate;
+      const dateToUse = new Date(order.updated_at || order.order_dt);
+      return dateToUse >= new Date(startDate) && dateToUse <= new Date(endDate);
     });
 
     // ================= FIX 2: PRE-CALCULATE DAILY TOTALS (MANILA TIME) =================
@@ -64,12 +83,12 @@ export async function getOrdersForExport(selectedMonth: string) {
       month: '2-digit',
       day: '2-digit',
     });
-    
+
     validOrders.forEach((order: any) => {
       const dateToUse = order.updated_at || order.order_dt;
       const formattedDate = manilaFormatter.format(new Date(dateToUse));
-      
-      order._formattedDate = formattedDate; 
+
+      order._formattedDate = formattedDate;
       dailyTotals[formattedDate] = (dailyTotals[formattedDate] || 0) + (order.total_amount || 0);
     });
 
@@ -95,7 +114,7 @@ export async function getOrdersForExport(selectedMonth: string) {
 
       const fDate = order._formattedDate;
 
-      let currentDailyTotal: number | string = ""; 
+      let currentDailyTotal: number | string = "";
       if (!seenDates.has(fDate)) {
         currentDailyTotal = dailyTotals[fDate];
         seenDates.add(fDate);
@@ -109,7 +128,7 @@ export async function getOrdersForExport(selectedMonth: string) {
         slim: slimCount,
         round: roundCount,
         total: order.total_amount || 0,
-        daily_total: currentDailyTotal, 
+        daily_total: currentDailyTotal,
         type: order.transaction_type || "N/A",
         payment: order.payment_mode || "Cash"
       };
