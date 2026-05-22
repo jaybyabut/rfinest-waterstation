@@ -16,34 +16,53 @@ export async function getOrdersForExport(selectedMonth: string) {
     const lastDay = new Date(year, monthIndex + 1, 0).getDate();
     const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999`;
 
-    // 2. I-query ang database
-    const { data: orders, error } = await supabase
-      .from('orders')
-      .select(`
-        order_id,
-        order_dt,
-        updated_at,
-        name,
-        total_amount,
-        transaction_type,
-        payment_mode,
-        current_status, 
-        location_pricing ( location_name ),
-        order_items (
-          quantity,
-          products ( product_name )
-        )
-      `)
-      // MODIFIED: Kunin lahat ng orders na CREATED o kaya ay UPDATED ngayong buwan
-      .or(`updated_at.gte.${startDate},order_dt.gte.${startDate}`)
-      .order('order_dt', { ascending: false });
+    // 2. I-query ang database (paginated to bypass 1000-row limit)
+    const PAGE_SIZE = 1000;
+    let orders: any[] = [];
+    let page = 0;
+    let hasMore = true;
 
-    if (error) {
-      console.error("Error fetching orders for export:", error);
-      return [];
+    while (hasMore) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          order_id,
+          order_dt,
+          updated_at,
+          name,
+          total_amount,
+          transaction_type,
+          payment_mode,
+          current_status, 
+          location_pricing ( location_name ),
+          order_items (
+            quantity,
+            products ( product_name )
+          )
+        `)
+        // MODIFIED: Kunin lahat ng orders na CREATED o kaya ay UPDATED ngayong buwan
+        .or(`updated_at.gte.${startDate},order_dt.gte.${startDate}`)
+        .order('order_dt', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error("Error fetching orders for export:", error);
+        return [];
+      }
+
+      if (data && data.length > 0) {
+        orders = orders.concat(data);
+        hasMore = data.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
+      page++;
     }
 
-    if (!orders) return [];
+    console.log(`[Export Orders] Total rows fetched: ${orders.length}`);
 
     // ================= FIX 1: FILTER ONLY DELIVERED ORDERS & CORRECT DATE =================
     const validOrders = orders.filter((order: any) => {
