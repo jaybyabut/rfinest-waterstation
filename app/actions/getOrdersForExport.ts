@@ -22,6 +22,7 @@ export async function getOrdersForExport(selectedMonth: string) {
       .select(`
         order_id,
         order_dt,
+        updated_at,
         name,
         total_amount,
         transaction_type,
@@ -33,9 +34,14 @@ export async function getOrdersForExport(selectedMonth: string) {
           products ( product_name )
         )
       `)
+<<<<<<< HEAD
       .gte('order_dt', startDate)
       .lte('order_dt', endDate)
       .eq('current_status', 'Delivered')
+=======
+      // MODIFIED: Kunin lahat ng orders na CREATED o kaya ay UPDATED ngayong buwan
+      .or(`updated_at.gte.${startDate},order_dt.gte.${startDate}`)
+>>>>>>> 69f0091e31eeb677c29458c37c26b6994a7f7006
       .order('order_dt', { ascending: false });
 
     if (error) {
@@ -45,10 +51,15 @@ export async function getOrdersForExport(selectedMonth: string) {
 
     if (!orders) return [];
 
-    // ================= FIX 1: FILTER ONLY DELIVERED ORDERS =================
+    // ================= FIX 1: FILTER ONLY DELIVERED ORDERS & CORRECT DATE =================
     const validOrders = orders.filter((order: any) => {
       const status = order.current_status?.toLowerCase() || "";
-      return status === "delivered";
+      if (status !== "delivered") return false;
+
+      // MODIFIED: JavaScript Fallback Filter. Kung walang updated_at, gamitin ang order_dt.
+      // Siguraduhing pasok sa selected month yung date na gagamitin natin.
+      const dateToUse = order.updated_at || order.order_dt;
+      return dateToUse >= startDate && dateToUse <= endDate;
     });
 
     // ================= FIX 2: PRE-CALCULATE DAILY TOTALS (MANILA TIME) =================
@@ -61,12 +72,10 @@ export async function getOrdersForExport(selectedMonth: string) {
     });
     
     validOrders.forEach((order: any) => {
-      const formattedDate = manilaFormatter.format(new Date(order.order_dt));
+      const dateToUse = order.updated_at || order.order_dt;
+      const formattedDate = manilaFormatter.format(new Date(dateToUse));
       
-      // I-save na rin natin yung formattedDate sa object para di na ulitin sa baba
       order._formattedDate = formattedDate; 
-      
-      // I-add yung total_amount ng order na 'to sa total ng araw na 'yon
       dailyTotals[formattedDate] = (dailyTotals[formattedDate] || 0) + (order.total_amount || 0);
     });
 
@@ -77,7 +86,6 @@ export async function getOrdersForExport(selectedMonth: string) {
       let slimCount = 0;
       let roundCount = 0;
 
-      // Bilangin ang Slim at Round gallons per order
       if (order.order_items && Array.isArray(order.order_items)) {
         order.order_items.forEach((item: any) => {
           const product = Array.isArray(item.products) ? item.products[0] : item.products;
@@ -88,18 +96,15 @@ export async function getOrdersForExport(selectedMonth: string) {
         });
       }
 
-      // Kunin ang Location/Zone name
       const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
       const zoneName = location?.location_name || "Walk-in";
 
-      // Kunin yung pre-calculated date natin
       const fDate = order._formattedDate;
 
-      // Logic: Ilagay lang ang daily total sa PINAKA-UNANG order na lalabas para sa araw na 'yon
       let currentDailyTotal: number | string = ""; 
       if (!seenDates.has(fDate)) {
         currentDailyTotal = dailyTotals[fDate];
-        seenDates.add(fDate); // I-mark na nalagyan na natin ng total ang araw na ito
+        seenDates.add(fDate);
       }
 
       return {
@@ -110,7 +115,7 @@ export async function getOrdersForExport(selectedMonth: string) {
         slim: slimCount,
         round: roundCount,
         total: order.total_amount || 0,
-        daily_total: currentDailyTotal, // <-- DITO PAPASOK ANG DAILY TOTAL COLUMN NATIN
+        daily_total: currentDailyTotal, 
         type: order.transaction_type || "N/A",
         payment: order.payment_mode || "Cash"
       };
