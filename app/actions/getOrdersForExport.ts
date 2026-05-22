@@ -11,7 +11,7 @@ export async function getOrdersForExport(selectedMonth: string) {
     const year = parseInt(yearStr);
     const monthIndex = parseInt(monthStr) - 1;
     const startDate = `${yearStr}-${monthStr}-01T00:00:00`;
-    
+
     // Kunin ang huling araw ng buwan
     const lastDay = new Date(year, monthIndex + 1, 0).getDate();
     const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999`;
@@ -34,14 +34,8 @@ export async function getOrdersForExport(selectedMonth: string) {
           products ( product_name )
         )
       `)
-<<<<<<< HEAD
-      .gte('order_dt', startDate)
-      .lte('order_dt', endDate)
-      .eq('current_status', 'Delivered')
-=======
       // MODIFIED: Kunin lahat ng orders na CREATED o kaya ay UPDATED ngayong buwan
       .or(`updated_at.gte.${startDate},order_dt.gte.${startDate}`)
->>>>>>> 69f0091e31eeb677c29458c37c26b6994a7f7006
       .order('order_dt', { ascending: false });
 
     if (error) {
@@ -70,12 +64,12 @@ export async function getOrdersForExport(selectedMonth: string) {
       month: '2-digit',
       day: '2-digit',
     });
-    
+
     validOrders.forEach((order: any) => {
       const dateToUse = order.updated_at || order.order_dt;
       const formattedDate = manilaFormatter.format(new Date(dateToUse));
-      
-      order._formattedDate = formattedDate; 
+
+      order._formattedDate = formattedDate;
       dailyTotals[formattedDate] = (dailyTotals[formattedDate] || 0) + (order.total_amount || 0);
     });
 
@@ -101,7 +95,7 @@ export async function getOrdersForExport(selectedMonth: string) {
 
       const fDate = order._formattedDate;
 
-      let currentDailyTotal: number | string = ""; 
+      let currentDailyTotal: number | string = "";
       if (!seenDates.has(fDate)) {
         currentDailyTotal = dailyTotals[fDate];
         seenDates.add(fDate);
@@ -115,7 +109,7 @@ export async function getOrdersForExport(selectedMonth: string) {
         slim: slimCount,
         round: roundCount,
         total: order.total_amount || 0,
-        daily_total: currentDailyTotal, 
+        daily_total: currentDailyTotal,
         type: order.transaction_type || "N/A",
         payment: order.payment_mode || "Cash"
       };
