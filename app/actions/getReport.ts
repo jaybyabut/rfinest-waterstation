@@ -42,6 +42,21 @@ export async function getAnalyticsData(selectedMonth: string) {
     };
 
     try {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('total_amount')
+            .eq('current_status', 'Delivered')
+            .gte('order_dt', '2026-05-01')
+            .lt('order_dt', '2026-06-01');
+
+        const sum = (data ?? []).reduce((acc, row) => acc + (row.total_amount || 0), 0);
+        console.log("total amount test", sum)
+    } catch (error) {
+        console.error("Analytics aggregation error:", error);
+        return { success: false, error: "Failed to aggregate analytics data." };
+    }
+
+    try {
         const { data: todayOrdersRaw, error: todayError } = await supabase
             .from('orders')
             .select(`
