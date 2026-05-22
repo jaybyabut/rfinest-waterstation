@@ -10,11 +10,11 @@ export async function getOrdersForExport(selectedMonth: string) {
     const [yearStr, monthStr] = selectedMonth.split('-');
     const year = parseInt(yearStr);
     const monthIndex = parseInt(monthStr) - 1;
-    const startDate = `${yearStr}-${monthStr}-01T00:00:00`;
+    const startDate = `${yearStr}-${monthStr}-01T00:00:00+08:00`;
 
     // Kunin ang huling araw ng buwan
     const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-    const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999`;
+    const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999+08:00`;
 
     // 2. I-query ang database (paginated to bypass 1000-row limit)
     const PAGE_SIZE = 1000;
@@ -71,8 +71,8 @@ export async function getOrdersForExport(selectedMonth: string) {
 
       // MODIFIED: JavaScript Fallback Filter. Kung walang updated_at, gamitin ang order_dt.
       // Siguraduhing pasok sa selected month yung date na gagamitin natin.
-      const dateToUse = order.updated_at || order.order_dt;
-      return dateToUse >= startDate && dateToUse <= endDate;
+      const dateToUse = new Date(order.updated_at || order.order_dt);
+      return dateToUse >= new Date(startDate) && dateToUse <= new Date(endDate);
     });
 
     // ================= FIX 2: PRE-CALCULATE DAILY TOTALS (MANILA TIME) =================
