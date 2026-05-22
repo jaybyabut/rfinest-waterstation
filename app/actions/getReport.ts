@@ -124,12 +124,16 @@ export async function getAnalyticsData(selectedMonth: string) {
             throw monthError;
         }
 
+        console.log(`[Monthly Orders] Raw rows fetched from Supabase: ${monthOrdersRaw?.length ?? 0}`);
+
         if (monthOrdersRaw) {
             // ================= FIX: FALLBACK LOGIC =================
             const monthOrders = monthOrdersRaw.filter((order: any) => {
                 const dateToUse = new Date(order.updated_at || order.order_dt);
                 return dateToUse >= new Date(startOfMonth) && dateToUse <= new Date(endOfMonth);
             });
+
+            console.log(`[Monthly Orders] Filtered rows (within ${selectedMonth}): ${monthOrders.length}`);
 
             result.monthly.earnings = monthOrders.reduce((sum: any, order: any) => sum + (order.total_amount || 0), 0);
         }
