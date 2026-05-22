@@ -41,6 +41,7 @@ export async function getAnalyticsData(selectedMonth: string) {
         }
     };
 
+
     try {
         const { data: todayOrdersRaw, error: todayError } = await supabase
             .from('orders')
