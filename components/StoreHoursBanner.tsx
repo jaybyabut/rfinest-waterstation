@@ -19,11 +19,11 @@ export default function StoreHoursBanner() {
       // SUNDAY LOGIC
       if (day === 0) {
         setTodaySchedule("6:00 AM - 12:00 PM");
-        setCutoffText("We will accept orders until 11:00 AM");
+        setCutoffText("We will accept orders until 10:00 AM");
         
         if (currentTime < 6) {
           setNoticeType("closed");
-        } else if (currentTime >= 11) {
+        } else if (currentTime >= 10) {
           // Sunday cut-off is 11 AM
           setNoticeType("cutoff");
         } else {
