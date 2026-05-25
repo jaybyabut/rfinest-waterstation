@@ -94,7 +94,7 @@ export async function saveOrderEdit({ orderId, slimCount, roundCount, pricePerUn
         await saveItem(roundProductId, roundCount);
 
         // Log the activity
-        await logActivity(`Edited order #${orderId.substring(0, 8)} — new total: ₱${newTotal}`);
+        await logActivity(`Edited order #${orderId.substring(0, 8)} — new total: ₱${newTotal}`, { supabase, user });
 
         return { success: true };
     } catch (e) {

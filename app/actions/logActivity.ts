@@ -16,8 +16,14 @@ function sanitizeLogInput(input: string, maxLength = 500): string {
         .substring(0, maxLength);
 }
 
-export async function logActivity(activity: string) {
-    const { supabase, user } = await ensureAuthenticated();
+export async function logActivity(
+    activity: string,
+    options?: { supabase: any; user: any }
+) {
+    // If caller already has an authenticated client, reuse it to avoid a redundant auth round-trip
+    const { supabase, user } = options?.supabase && options?.user
+        ? options
+        : await ensureAuthenticated();
 
     const safeActivity = sanitizeLogInput(activity);
 
