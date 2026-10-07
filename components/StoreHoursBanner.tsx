@@ -6,7 +6,7 @@ import { Clock, AlertCircle } from "lucide-react";
 export default function StoreHoursBanner() {
   const [todaySchedule, setTodaySchedule] = useState("");
   const [cutoffText, setCutoffText] = useState("");
-  const [noticeType, setNoticeType] = useState<"none" | "lunch" | "cutoff" | "closed">("none");
+  const [noticeType, setNoticeType] = useState<"none" | "cutoff" | "closed">("none");
 
   useEffect(() => {
     const checkStoreStatus = () => {
@@ -64,27 +64,12 @@ export default function StoreHoursBanner() {
         </span>
       </div>
 
-      {/* DYNAMIC NOTICES (LUNCH / CUTOFF / CLOSED) */}
+      {/* DYNAMIC NOTICES (CUTOFF / CLOSED) */}
       {noticeType !== "none" && (
         <div className="bg-amber-50 border-2 border-amber-400 p-4 rounded-[20px] flex items-start gap-3 text-left shadow-sm animate-in fade-in slide-in-from-top-2">
-          {noticeType === "lunch" ? (
-            <Clock className="text-amber-600 shrink-0 mt-0.5" size={24} strokeWidth={2.5} />
-          ) : (
-            <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={24} strokeWidth={2.5} />
-          )}
+          <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={24} strokeWidth={2.5} />
           
           <div>
-            {noticeType === "lunch" && (
-              <>
-                <h3 className="text-amber-800 font-black text-sm sm:text-base leading-tight mb-1">
-                  Employees are on lunch break.
-                </h3>
-                <p className="text-amber-700 text-xs sm:text-sm font-medium leading-snug">
-                  You can still place an order, and the process will continue at <span className="font-bold">1:00 PM</span>.
-                </p>
-              </>
-            )}
-
             {noticeType === "cutoff" && (
               <>
                 <h3 className="text-amber-800 font-black text-sm sm:text-base leading-tight mb-1">
