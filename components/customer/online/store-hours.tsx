@@ -6,13 +6,13 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const SCHEDULE = [
-  { day: "Monday", hours: "6:30 AM - 6:00 PM" },
-  { day: "Tuesday", hours: "6:30 AM - 6:00 PM" },
-  { day: "Wednesday", hours: "6:30 AM - 6:00 PM" },
-  { day: "Thursday", hours: "6:30 AM - 6:00 PM" },
-  { day: "Friday", hours: "6:30 AM - 6:00 PM" },
-  { day: "Saturday", hours: "6:30 AM - 6:00 PM" },
-  { day: "Sunday", hours: "6:00 AM - 12:00 PM" },
+  { day: "Monday", hours: "8:00 AM - 5:00 PM" },
+  { day: "Tuesday", hours: "8:00 AM - 5:00 PM" },
+  { day: "Wednesday", hours: "8:00 AM - 5:00 PM" },
+  { day: "Thursday", hours: "8:00 AM - 5:00 PM" },
+  { day: "Friday", hours: "8:00 AM - 5:00 PM" },
+  { day: "Saturday", hours: "8:00 AM - 5:00 PM" },
+  { day: "Sunday", hours: "Closed" },
 ];
 
 export default function StoreHoursPage() {
