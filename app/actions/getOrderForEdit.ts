@@ -1,5 +1,5 @@
 'use server'
-import { ensureRole } from "../../lib/supabase/server"
+import { ensureAuthenticated } from "../../lib/supabase/server"
 
 interface OrderItemRecord {
     product_id: string;
@@ -9,9 +9,10 @@ interface OrderItemRecord {
 }
 
 export async function getOrderForEdit(orderId: string) {
-    const { supabase } = await ensureRole(['admin']);
+    const { supabase, user } = await ensureAuthenticated();
 
-    const { data, error } = await supabase
+    const role = user.app_metadata?.role || user.user_metadata?.role || user.role;
+    let query = supabase
         .from("orders")
         .select(`
             order_id,
@@ -25,8 +26,13 @@ export async function getOrderForEdit(orderId: string) {
                 products ( product_name )
             )
         `)
-        .eq("order_id", orderId)
-        .single();
+        .eq("order_id", orderId);
+
+    if (role !== 'admin' && role !== 'employee') {
+        query = query.eq("user_id", user.id);
+    }
+
+    const { data, error } = await query.single();
 
     if (error || !data) {
         console.error("Error fetching order for edit:", error);
@@ -59,6 +65,7 @@ export async function getOrderForEdit(orderId: string) {
             pricePerUnit: locData?.location_price || 0,
             slimCount,
             roundCount,
+            status: data.current_status,
         }
     };
 }

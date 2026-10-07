@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   LayoutGrid, 
   Package, 
@@ -14,7 +14,8 @@ import {
   History, 
   Clock, 
   Image as ImageIcon,
-  Loader2 
+  Loader2,
+  Trash2 // <-- Added Trash2 icon for cancel button
 } from 'lucide-react';
 import { getWalkInOrders } from "@/app/actions/getWalkInOrders";
 import { getOnlineOrders } from "@/app/actions/getOnlineOrders";
@@ -57,6 +58,7 @@ interface EmployeeLog {
 export default function EmployeeTablet() {
   const [activeTab, setActiveTab] = useState<'walkin' | 'online'>('walkin');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null); // <-- New state for double-click cancel
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -65,6 +67,7 @@ export default function EmployeeTablet() {
   const [logError, setLogError] = useState<string | null>(null);
 
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
+  const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [walkInOrders, setWalkInOrders] = useState<WalkInOrder[]>([]);
   const [loadingWalkIn, setLoadingWalkIn] = useState(true);
@@ -94,10 +97,9 @@ export default function EmployeeTablet() {
     }
   };
 
+  // Initial load for walk-in orders
   useEffect(() => {
     fetchWalkIn();
-    const interval = setInterval(fetchWalkIn, 10000); 
-    return () => clearInterval(interval);
   }, []);
 
   const [onlineOrders, setOnlineOrders] = useState<OnlineOrder[]>([]);
@@ -157,10 +159,32 @@ export default function EmployeeTablet() {
     }
   };
 
+  // Initial load for online orders + unified Realtime subscription
   useEffect(() => {
     fetchOnline();
-    const interval = setInterval(fetchOnline, 10000); 
-    return () => clearInterval(interval);
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('employee-tablet-orders')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
+          // Debounce: wait 500ms after the last event before re-fetching
+          if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
+          realtimeDebounceRef.current = setTimeout(() => {
+            fetchWalkIn();
+            fetchOnline();
+          }, 500);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -188,6 +212,21 @@ export default function EmployeeTablet() {
       await queueStatusUpdate(id, 'Delivered');
       setWalkInOrders(prev => prev.filter(o => o.id !== id));
       setConfirmingId(null);
+    }
+  };
+
+  // <-- New Function for executing Cancel -->
+  const executeCancelWalkIn = async (id: any) => {
+    if (navigator.onLine) {
+      const res = await updateOrderStatus(id, 'Cancelled');
+      if (res.success) {
+        setWalkInOrders(prev => prev.filter(o => o.id !== id));
+        setCancelingId(null);
+      }
+    } else {
+      await queueStatusUpdate(id, 'Cancelled');
+      setWalkInOrders(prev => prev.filter(o => o.id !== id));
+      setCancelingId(null);
     }
   };
 
@@ -302,14 +341,14 @@ export default function EmployeeTablet() {
       {/* NAVIGATION TABS */}
       <div className="flex w-full bg-white border-b-4 border-slate-200 h-20 sm:h-24 lg:h-32 flex-none shadow-sm pr-24 sm:pr-32 lg:pr-48">
         <button
-          onClick={() => { setActiveTab('walkin'); setConfirmingId(null); }}
+          onClick={() => { setActiveTab('walkin'); setConfirmingId(null); setCancelingId(null); }}
           className={`flex-1 flex items-center justify-center gap-3 sm:gap-4 lg:gap-6 text-2xl sm:text-3xl lg:text-5xl font-black transition-all ${activeTab === 'walkin' ? 'bg-[#43b0f1] text-white' : 'bg-white text-slate-400'
             }`}
         >
           <LayoutGrid className="w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12" /> WALK-IN
         </button>
         <button
-          onClick={() => { setActiveTab('online'); setConfirmingId(null); }}
+          onClick={() => { setActiveTab('online'); setConfirmingId(null); setCancelingId(null); }}
           className={`flex-1 flex items-center justify-center gap-3 sm:gap-4 lg:gap-6 text-2xl sm:text-3xl lg:text-5xl font-black transition-all ${activeTab === 'online' ? 'bg-[#43b0f1] text-white' : 'bg-white text-slate-400'
             }`}
         >
@@ -355,6 +394,7 @@ export default function EmployeeTablet() {
                       <span className="block text-3xl sm:text-2xl md:text-3xl lg:text-6xl font-black text-slate-900 break-all whitespace-normal leading-none w-full">ORD-{order.id.split('-')[0]}</span>
                     </div>
 
+                    {/* MODIFIED: Included Cancel Button Logic */}
                     <div className="flex flex-col w-full">
                       {confirmingId === order.id ? (
                         <div className="flex gap-2 lg:gap-4 items-stretch bg-slate-50 p-2 lg:p-4 rounded-xl lg:rounded-3xl border-2 border-[#43b0f1] w-full">
@@ -366,14 +406,34 @@ export default function EmployeeTablet() {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => setConfirmingId(order.id)}
-                          className="bg-[#1e3d58] text-white w-full px-4 sm:px-4 lg:px-6 py-3 sm:py-3 lg:py-8 rounded-xl lg:rounded-3xl font-black text-xl sm:text-base md:text-xl lg:text-3xl shadow-md active:scale-95 transition-transform text-center"
-                        >
-                          MARK REFILLED
-                        </button>
+                        <div className="flex gap-2 w-full">
+                          <button
+                            onClick={() => { setConfirmingId(order.id); setCancelingId(null); }}
+                            className="bg-[#1e3d58] text-white flex-1 px-4 sm:px-4 lg:px-6 py-3 sm:py-3 lg:py-8 rounded-xl lg:rounded-3xl font-black text-xl sm:text-base md:text-xl lg:text-3xl shadow-md active:scale-95 transition-transform text-center"
+                          >
+                            MARK REFILLED
+                          </button>
+                          
+                          {/* Cancel Logic Integration */}
+                          {cancelingId === order.id ? (
+                            <button
+                              onClick={() => executeCancelWalkIn(order.id)}
+                              className="bg-red-600 text-white w-14 sm:w-16 lg:w-24 rounded-xl lg:rounded-3xl flex items-center justify-center shadow-md transition-all active:scale-95 shrink-0 animate-pulse border-2 border-red-400"
+                            >
+                              <Trash2 className="w-6 h-6 lg:w-10 lg:h-10" strokeWidth={2.5} />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => { setCancelingId(order.id); setConfirmingId(null); }}
+                              className="bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-500 border border-red-100 w-14 sm:w-16 lg:w-24 rounded-xl lg:rounded-3xl flex items-center justify-center shadow-sm transition-all active:scale-95 shrink-0"
+                            >
+                              <Trash2 className="w-6 h-6 lg:w-10 lg:h-10" strokeWidth={2.5} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
+
                   </div>
                 </div>
               ))
@@ -474,7 +534,7 @@ export default function EmployeeTablet() {
                         </div>
                       ) : (
                         <button
-                          onClick={() => setConfirmingId(order.id)}
+                          onClick={() => { setConfirmingId(order.id); setCancelingId(null); }}
                           className={`w-full px-4 lg:px-6 py-3 sm:py-3 lg:py-8 rounded-xl lg:rounded-3xl font-black text-xl sm:text-sm md:text-base lg:text-2xl shadow-md transition-all text-white active:scale-95 text-center ${order.status === 'pending' ? 'bg-orange-500' :
                              order.status === 'pickup' ? 'bg-amber-600' :
                             order.status === 'processing' ? 'bg-sky-600' :

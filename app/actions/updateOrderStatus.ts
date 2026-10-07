@@ -5,9 +5,16 @@ import { logActivity } from "./logActivity";
 export async function updateOrderStatus(orderId: number, newStatus: string) {
     const { supabase } = await ensureRole(['admin', 'employee']);
 
+    // MODIFIED: Kukunin natin yung current date and time
+    const currentTime = new Date().toISOString();
+
     const { error } = await supabase
         .from('orders')
-        .update({ current_status: newStatus })
+        // MODIFIED: Isinabay na natin i-save yung oras sa bagong column mo
+        .update({ 
+            current_status: newStatus,
+            updated_at: currentTime
+        })
         .eq('order_id', orderId);
 
     if (error) {

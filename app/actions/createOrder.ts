@@ -17,7 +17,7 @@ interface OrderInfo {
 }
 
 export async function createOrder(orderInfo: OrderInfo) {
-    const { supabase } = await ensureAuthenticated();
+    const { supabase, user } = await ensureAuthenticated();
 
     // Validation: Prevent negative quantities or empty orders
     if (orderInfo.slimCount < 0 || orderInfo.roundCount < 0) {
@@ -141,7 +141,7 @@ export async function createOrder(orderInfo: OrderInfo) {
     }
 
     // Log the activity
-    await logActivity(`Created ${orderInfo.transaction_type} order for ${orderInfo.name}`);
+    await logActivity(`Created ${orderInfo.transaction_type} order for ${orderInfo.name}`, { supabase, user });
 
     return { success: true, data: rpcData };
 }

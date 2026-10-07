@@ -111,7 +111,7 @@ export default function OrderStatus() {
               round,
               total: order.total_amount,
               status: statusString,
-              date: new Date(order.order_dt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+              date: new Date(order.order_dt.replace(/[+-]\d{2}(:\d{2})?$/, '').replace(' ', 'T') + 'Z').toLocaleString('en-US', { timeZone: 'UTC', month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
               transactionType: order.transaction_type || "N/A",
               paymentMode: order.payment_mode,
               receiptUrl: receipt_url,

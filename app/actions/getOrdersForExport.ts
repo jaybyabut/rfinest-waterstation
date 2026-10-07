@@ -6,48 +6,99 @@ export async function getOrdersForExport(selectedMonth: string) {
   try {
     const supabase = await createClient();
 
-    // 1. Kunin ang start at end date ng napiling buwan
+    // 1. Kunin ang start at end date ng napiling buwan sa Manila Time
     const [yearStr, monthStr] = selectedMonth.split('-');
     const year = parseInt(yearStr);
-    const month = parseInt(monthStr) - 1; // 0-indexed ang buwan sa JS Date
+    const monthIndex = parseInt(monthStr) - 1;
+    const startDate = `${yearStr}-${monthStr}-01T00:00:00+08:00`;
 
-    const startDate = new Date(year, month, 1).toISOString();
-    // Kukunin ang pinaka-last millisecond ng buwan
-    const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999).toISOString(); 
+    // Kunin ang huling araw ng buwan
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    const endDate = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999+08:00`;
 
-    // 2. I-query ang database, isama yung related tables na kailangan sa CSV (Inalis na ang current_status)
-    const { data: orders, error } = await supabase
-      .from('orders')
-      .select(`
-        order_id,
-        order_dt,
-        name,
-        total_amount,
-        transaction_type,
-        payment_mode,
-        location_pricing ( location_name ),
-        order_items (
-          quantity,
-          products ( product_name )
-        )
-      `)
-      .gte('order_dt', startDate)
-      .lte('order_dt', endDate)
-      .order('order_dt', { ascending: false });
+    // 2. I-query ang database (paginated to bypass 1000-row limit)
+    const PAGE_SIZE = 1000;
+    let orders: any[] = [];
+    let page = 0;
+    let hasMore = true;
 
-    if (error) {
-      console.error("Error fetching orders for export:", error);
-      return [];
+    while (hasMore) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          order_id,
+          order_dt,
+          updated_at,
+          name,
+          total_amount,
+          transaction_type,
+          payment_mode,
+          current_status, 
+          location_pricing ( location_name ),
+          order_items (
+            quantity,
+            products ( product_name )
+          )
+        `)
+        // MODIFIED: Kunin lahat ng orders na CREATED o kaya ay UPDATED ngayong buwan
+        .or(`updated_at.gte.${startDate},order_dt.gte.${startDate}`)
+        .order('order_dt', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error("Error fetching orders for export:", error);
+        return [];
+      }
+
+      if (data && data.length > 0) {
+        orders = orders.concat(data);
+        hasMore = data.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
+      page++;
     }
 
-    if (!orders) return [];
+    console.log(`[Export Orders] Total rows fetched: ${orders.length}`);
+
+    // ================= FIX 1: FILTER ONLY DELIVERED ORDERS & CORRECT DATE =================
+    const validOrders = orders.filter((order: any) => {
+      const status = order.current_status?.toLowerCase() || "";
+      if (status !== "delivered") return false;
+
+      // MODIFIED: JavaScript Fallback Filter. Kung walang updated_at, gamitin ang order_dt.
+      // Siguraduhing pasok sa selected month yung date na gagamitin natin.
+      const dateToUse = new Date(order.updated_at || order.order_dt);
+      return dateToUse >= new Date(startDate) && dateToUse <= new Date(endDate);
+    });
+
+    // ================= FIX 2: PRE-CALCULATE DAILY TOTALS (MANILA TIME) =================
+    const dailyTotals: Record<string, number> = {};
+    const manilaFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Manila',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+
+    validOrders.forEach((order: any) => {
+      const dateToUse = order.updated_at || order.order_dt;
+      const formattedDate = manilaFormatter.format(new Date(dateToUse));
+
+      order._formattedDate = formattedDate;
+      dailyTotals[formattedDate] = (dailyTotals[formattedDate] || 0) + (order.total_amount || 0);
+    });
 
     // 3. I-format ang data para swak na swak sa hinihingi ng frontend Excel exporter natin
-    const formattedOrders = orders.map((order: any) => {
+    const seenDates = new Set<string>();
+
+    const formattedOrders = validOrders.map((order: any) => {
       let slimCount = 0;
       let roundCount = 0;
 
-      // Bilangin ang Slim at Round gallons per order
       if (order.order_items && Array.isArray(order.order_items)) {
         order.order_items.forEach((item: any) => {
           const product = Array.isArray(item.products) ? item.products[0] : item.products;
@@ -58,23 +109,26 @@ export async function getOrdersForExport(selectedMonth: string) {
         });
       }
 
-      // Kunin ang Location/Zone name
       const location = Array.isArray(order.location_pricing) ? order.location_pricing[0] : order.location_pricing;
       const zoneName = location?.location_name || "Walk-in";
 
-      // Format the date to a readable string (e.g., 2026-03-24)
-      const dateObj = new Date(order.order_dt);
-      const formattedDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+      const fDate = order._formattedDate;
 
-      // Inalis na ang status field dito para match sa frontend
+      let currentDailyTotal: number | string = "";
+      if (!seenDates.has(fDate)) {
+        currentDailyTotal = dailyTotals[fDate];
+        seenDates.add(fDate);
+      }
+
       return {
         id: `ORD-${order.order_id}`,
-        date: formattedDate,
+        date: fDate,
         name: order.name || "Unknown",
         zone: zoneName,
         slim: slimCount,
         round: roundCount,
         total: order.total_amount || 0,
+        daily_total: currentDailyTotal,
         type: order.transaction_type || "N/A",
         payment: order.payment_mode || "Cash"
       };

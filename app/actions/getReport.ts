@@ -17,15 +17,19 @@ export async function getAnalyticsData(selectedMonth: string) {
     const phMonth = todayPhParts.find(p => p.type === 'month')?.value;
     const phDay = todayPhParts.find(p => p.type === 'day')?.value;
 
-    const startOfToday = new Date(`${phYear}-${phMonth}-${phDay}T00:00:00+08:00`).toISOString();
-    const endOfToday = new Date(`${phYear}-${phMonth}-${phDay}T23:59:59.999+08:00`).toISOString();
+    const startOfToday = `${phYear}-${phMonth}-${phDay}T00:00:00+08:00`;
+    const endOfToday = `${phYear}-${phMonth}-${phDay}T23:59:59.999+08:00`;
 
     const [yearStr, monthStr] = selectedMonth.split('-');
-    const startOfMonth = new Date(`${yearStr}-${monthStr}-01T00:00:00+08:00`).toISOString();
+    const year = parseInt(yearStr);
+    const monthIndex = parseInt(monthStr) - 1;
 
-    const nextMonth = new Date(`${yearStr}-${monthStr}-01T00:00:00+08:00`);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    const endOfMonth = new Date(nextMonth.getTime() - 1).toISOString();
+    // Last day of selected month
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+
+    // Manila Time strings (with UTC+8 offset for correct timestamptz comparison)
+    const startOfMonth = `${yearStr}-${monthStr}-01T00:00:00+08:00`;
+    const endOfMonth = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}T23:59:59.999+08:00`;
 
     const result = {
         today: {
@@ -37,10 +41,13 @@ export async function getAnalyticsData(selectedMonth: string) {
         }
     };
 
+
     try {
-        const { data: todayOrders, error: todayError } = await supabase
+        const { data: todayOrdersRaw, error: todayError } = await supabase
             .from('orders')
             .select(`
+                order_dt,
+                updated_at,
                 total_amount,
                 transaction_type,
                 payment_mode,
@@ -51,17 +58,25 @@ export async function getAnalyticsData(selectedMonth: string) {
                     )
                 )
             `)
-            .gte('order_dt', startOfToday)
-            .lte('order_dt', endOfToday)
-            .eq('current_status', 'Delivered');
+            .eq('current_status', 'Delivered')
+            // MODIFIED: Fetch kapag updated OR created today
+            .or(`updated_at.gte.${startOfToday},order_dt.gte.${startOfToday}`)
+            .range(0, 9999);
 
         if (todayError) {
             console.error("Error fetching today's orders:", todayError);
             throw todayError;
         }
 
-        if (todayOrders) {
-            todayOrders.forEach(order => {
+        if (todayOrdersRaw) {
+            // ================= FIX: FALLBACK LOGIC =================
+            // Gamitin ang updated_at, pero kung walang laman (lumang data), gamitin ang order_dt
+            const todayOrders = todayOrdersRaw.filter((order: any) => {
+                const dateToUse = new Date(order.updated_at || order.order_dt);
+                return dateToUse >= new Date(startOfToday) && dateToUse <= new Date(endOfToday);
+            });
+
+            todayOrders.forEach((order: any) => {
                 // Calculate Earnings
                 const amount = order.total_amount || 0;
                 result.today.earnings.total += amount;
@@ -76,7 +91,7 @@ export async function getAnalyticsData(selectedMonth: string) {
                 // Group by payment_mode
                 if (order.payment_mode?.toLowerCase() === 'cash') {
                     result.today.earnings.cash += amount;
-                } else {
+                } else if (order.payment_mode?.toLowerCase() === 'e-bank') {
                     result.today.earnings.eBank += amount;
                 }
 
@@ -95,21 +110,51 @@ export async function getAnalyticsData(selectedMonth: string) {
             });
         }
 
-        // Fetch Monthly Orders
-        const { data: monthOrders, error: monthError } = await supabase
-            .from('orders')
-            .select('total_amount')
-            .gte('order_dt', startOfMonth)
-            .lt('order_dt', endOfMonth)
-            .eq('current_status', 'Delivered');
+        // Fetch Monthly Orders (paginated to bypass 1000-row limit)
+        const PAGE_SIZE = 1000;
+        let monthOrdersRaw: any[] = [];
+        let page = 0;
+        let hasMore = true;
 
-        if (monthError) {
-            console.error("Error fetching monthly orders:", monthError);
-            throw monthError;
+        while (hasMore) {
+            const from = page * PAGE_SIZE;
+            const to = from + PAGE_SIZE - 1;
+
+            const { data, error: monthError } = await supabase
+                .from('orders')
+                .select('order_dt, updated_at, total_amount')
+                .eq('current_status', 'Delivered')
+                // MODIFIED: Fetch kapag updated OR created sa selected month
+                .or(`updated_at.gte.${startOfMonth},order_dt.gte.${startOfMonth}`)
+                .range(from, to);
+
+            if (monthError) {
+                console.error("Error fetching monthly orders:", monthError);
+                throw monthError;
+            }
+
+            if (data && data.length > 0) {
+                monthOrdersRaw = monthOrdersRaw.concat(data);
+                // If we got fewer rows than PAGE_SIZE, we've reached the end
+                hasMore = data.length === PAGE_SIZE;
+            } else {
+                hasMore = false;
+            }
+            page++;
         }
 
-        if (monthOrders) {
-            result.monthly.earnings = monthOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+        console.log(`[Monthly Orders] Raw rows fetched from Supabase: ${monthOrdersRaw.length}`);
+
+        if (monthOrdersRaw) {
+            // ================= FIX: FALLBACK LOGIC =================
+            const monthOrders = monthOrdersRaw.filter((order: any) => {
+                const dateToUse = new Date(order.updated_at || order.order_dt);
+                return dateToUse >= new Date(startOfMonth) && dateToUse <= new Date(endOfMonth);
+            });
+
+            console.log(`[Monthly Orders] Filtered rows (within ${selectedMonth}): ${monthOrders.length}`);
+
+            result.monthly.earnings = monthOrders.reduce((sum: any, order: any) => sum + (order.total_amount || 0), 0);
         }
 
         return { success: true, data: result };

@@ -6,7 +6,7 @@ import QueueCard, { QueueOrder } from "./queue-card";
 import { getQueueOrders } from "@/app/actions/getQueueOrders";
 import { createClient } from "@/lib/supabase/client";
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 4;
 
 interface OrderItemRecord {
   quantity: number;
@@ -36,37 +36,40 @@ export default function LiveQueueDisplay() {
 
   const prevOrderCount = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isInitialLoad = useRef(true); // Safety guard for initial refresh
 
   const fetchOrders = async () => {
     const data = await getQueueOrders();
     if (data && !('error' in data)) {
       const fetchedOrders = data as unknown as RawOrderRecord[];
-      const newTotalPages = Math.ceil(fetchedOrders.length / ITEMS_PER_PAGE);
+      const currentCount = fetchedOrders.length;
+      const newTotalPages = Math.ceil(currentCount / ITEMS_PER_PAGE);
 
-      if (mounted && fetchedOrders.length > prevOrderCount.current) {
+      // JUMP LOGIC: Tatalon lang kung hindi ito ang unang load AT nadagdagan ang orders
+      if (!isInitialLoad.current && currentCount > prevOrderCount.current) {
         if (audioRef.current) {
           audioRef.current.play().catch((err) => {
             console.log("Audio play blocked by browser:", err);
           });
         }
         
-        if (newTotalPages > 0) {
-          setCurrentPage(newTotalPages - 1); 
-        } else {
-          setCurrentPage(0);
-        }
-        setPageResetToken(prev => prev + 1); 
+        // Explicit jump to the last page
+        const targetPage = newTotalPages > 0 ? newTotalPages - 1 : 0;
+        setCurrentPage(targetPage);
+        setPageResetToken(Date.now()); // Restart pagination timer from 0
       } 
       else if (mounted) {
-        if (currentPage >= newTotalPages && newTotalPages > 0) {
-          setCurrentPage(newTotalPages - 1);
-        } else if (newTotalPages === 0) {
-          setCurrentPage(0);
-        }
+        // Auto-adjust page index if items were deleted or marked done
+        setCurrentPage(prev => {
+          if (prev >= newTotalPages && newTotalPages > 0) return newTotalPages - 1;
+          if (newTotalPages === 0) return 0;
+          return prev;
+        });
       }
       
-      prevOrderCount.current = fetchedOrders.length;
+      prevOrderCount.current = currentCount;
       setOrders(fetchedOrders);
+      isInitialLoad.current = false; // Initial load is finished
     } else {
       console.error("Failed to fetch orders:", data.error);
     }
@@ -76,18 +79,29 @@ export default function LiveQueueDisplay() {
   useEffect(() => {
     setMounted(true);
     setTime(new Date()); 
+
     audioRef.current = new Audio("/bell.wav");
+    
     fetchOrders();
 
-    const timer = setInterval(() => setTime(new Date()), 1000);
-    const pollingTimer = setInterval(() => fetchOrders(), 10000);
+    const timer = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+
+    const pollingTimer = setInterval(() => {
+      fetchOrders();
+    }, 10000);
 
     const supabase = createClient();
     const channel = supabase
       .channel('schema-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
           fetchOrders(); 
-      })
+        }
+      )
       .subscribe();
 
     return () => {
@@ -105,23 +119,33 @@ export default function LiveQueueDisplay() {
       setCurrentPage(0);
       return;
     }
+    
+    // 7 SECONDS INTERVAL + RESET TOKEN DEPENDENCY
     const pageTimer = setInterval(() => {
       setCurrentPage((prevPage) => (prevPage + 1) % totalPages);
     }, 7000); 
+
     return () => clearInterval(pageTimer);
   }, [totalPages, pageResetToken]); 
 
   useEffect(() => {
-    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => console.error(err));
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
     }
   };
 
@@ -173,7 +197,15 @@ export default function LiveQueueDisplay() {
   return (
     <div className="h-[100dvh] w-full bg-slate-50 p-4 sm:p-6 lg:p-8 2xl:p-12 flex flex-col relative overflow-hidden">
       
-      <button onClick={toggleFullscreen} className={`absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-8 2xl:top-12 2xl:right-12 z-50 p-2 sm:p-3 2xl:p-4 rounded-full transition-all duration-300 shadow-md ${isFullscreen ? "opacity-0 hover:opacity-100 bg-black/50 text-white" : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"}`}>
+      <button
+        onClick={toggleFullscreen}
+        className={`absolute top-4 right-4 sm:top-6 sm:right-6 lg:top-8 lg:right-8 2xl:top-12 2xl:right-12 z-50 p-2 sm:p-3 2xl:p-4 rounded-full transition-all duration-300 shadow-md ${
+          isFullscreen 
+            ? "opacity-0 hover:opacity-100 bg-black/50 text-white" 
+            : "opacity-100 bg-slate-200 hover:bg-slate-300 text-slate-700"
+        }`}
+        title={isFullscreen ? "Exit Fullscreen" : "Go Fullscreen"}
+      >
         {isFullscreen ? <Minimize size={24} className="sm:w-7 sm:h-7 2xl:w-10 2xl:h-10" strokeWidth={2.5} /> : <Maximize size={24} className="sm:w-7 sm:h-7 2xl:w-10 2xl:h-10" strokeWidth={2.5} />}
       </button>
 
@@ -192,14 +224,17 @@ export default function LiveQueueDisplay() {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl 2xl:text-7xl font-black text-slate-300 uppercase leading-none">LOADING TIME...</h1>
           )}
         </div>
+
         {totalPages > 1 && (
           <div className="bg-slate-200 px-4 sm:px-6 2xl:px-8 py-2 sm:py-3 2xl:py-4 rounded-xl 2xl:rounded-2xl self-end sm:self-auto mt-2 sm:mt-0">
-            <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-4xl font-black text-slate-700 tracking-widest leading-none">PAGE {currentPage + 1} OF {totalPages}</h2>
+            <h2 className="text-lg sm:text-xl lg:text-2xl 2xl:text-4xl font-black text-slate-700 tracking-widest leading-none">
+              PAGE {currentPage + 1} OF {totalPages}
+            </h2>
           </div>
         )}
       </div>
 
-      <div className="flex-1 min-h-0 w-full flex flex-col gap-3 sm:gap-4 lg:gap-6 2xl:gap-8 transition-all duration-500 pb-2 sm:pb-4 2xl:pb-0">
+      <div className="flex-1 min-h-0 w-full flex flex-col gap-4 sm:gap-6 lg:gap-8 transition-all duration-500 pb-2 sm:pb-4 2xl:pb-0">
         {mappedOrders.map((order) => (
           <QueueCard key={order.id} order={order} />
         ))}
