@@ -18,30 +18,19 @@ export default function StoreHoursBanner() {
 
       // SUNDAY LOGIC
       if (day === 0) {
-        setTodaySchedule("6:00 AM - 12:00 PM");
-        setCutoffText("We will accept orders until 10:00 AM");
-        
-        if (currentTime < 6) {
-          setNoticeType("closed");
-        } else if (currentTime >= 10) {
-          // Sunday cut-off is 11 AM
-          setNoticeType("cutoff");
-        } else {
-          setNoticeType("none");
-        }
+        setTodaySchedule("Closed");
+        setCutoffText("We are closed on Sundays");
+        setNoticeType("closed");
       } 
       // MONDAY - SATURDAY LOGIC
       else {
-        setTodaySchedule("6:30 AM - 6:00 PM");
-        setCutoffText("We will accept orders until 4:00 PM");
+        setTodaySchedule("8:00 AM - 5:00 PM");
+        setCutoffText("We will accept orders until 1:00 PM");
         
-        if (currentTime < 6.5) {
+        if (currentTime < 8) {
           setNoticeType("closed");
-        } else if (currentTime >= 12 && currentTime < 13) {
-          // Lunch break from 12:00 PM to 1:00 PM
-          setNoticeType("lunch");
-        } else if (currentTime >= 16) {
-          // Mon-Sat cut-off is 4:00 PM (16:00)
+        } else if (currentTime >= 13) {
+          // Mon-Sat cut-off is exactly 1:00 PM (13:00)
           setNoticeType("cutoff");
         } else {
           setNoticeType("none");
@@ -102,7 +91,7 @@ export default function StoreHoursBanner() {
                   Orders for today are now cut off.
                 </h3>
                 <p className="text-amber-700 text-xs sm:text-sm font-medium leading-snug">
-                  Sorry, you can still place an order but it will be processed and delivered <span className="font-bold">tomorrow morning</span>.
+                  Sorry, you can still place an order but it will be processed and delivered <span className="font-bold">on the next operating day</span>.
                 </p>
               </>
             )}
@@ -113,7 +102,7 @@ export default function StoreHoursBanner() {
                   Station is currently closed.
                 </h3>
                 <p className="text-amber-700 text-xs sm:text-sm font-medium leading-snug">
-                  You can still place an order, but it will be processed and delivered <span className="font-bold">tomorrow morning</span>.
+                  You can still place an order, but it will be processed and delivered <span className="font-bold">on the next operating day</span>.
                 </p>
               </>
             )}
