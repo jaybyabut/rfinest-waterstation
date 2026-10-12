@@ -26,7 +26,8 @@ export async function getAllOrders() {
                 )
             )
         `)
-        .order('order_dt', { ascending: false });
+        .order('order_dt', { ascending: false })
+        .limit(50);
 
     if (error) {
         console.error("Error fetching orders:", error);
