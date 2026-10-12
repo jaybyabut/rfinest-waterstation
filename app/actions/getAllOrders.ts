@@ -1,8 +1,9 @@
 'use server'
-import { ensureRole } from "../../lib/supabase/server"
+import { ensureRole, createAdminClient } from "../../lib/supabase/server"
 
 export async function getAllOrders() {
-    const { supabase } = await ensureRole(['admin', 'employee']);
+    await ensureRole(['admin', 'employee']);
+    const supabase = await createAdminClient();
 
     const { data, error } = await supabase
         .from('orders')
@@ -29,7 +30,7 @@ export async function getAllOrders() {
 
     if (error) {
         console.error("Error fetching orders:", error);
-        return { error: "Failed to fetch orders" };
+        return { error: error.message || "Failed to fetch orders" };
     }
 
     return data;
